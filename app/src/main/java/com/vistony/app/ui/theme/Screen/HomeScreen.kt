@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -34,11 +35,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +49,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -114,13 +118,13 @@ fun BodyHome(
     sharedViewModel: SharedViewModel
 ) {
     var turno by remember { mutableStateOf("") }
-    var ot by remember { mutableStateOf("") }
-    var new_ot by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var um by remember { mutableStateOf("") }
-    var cantidad by remember { mutableStateOf("") }
-    var linea by remember { mutableStateOf("") }
-    val operador = remember { mutableStateOf("") }
+    var ot by rememberSaveable { mutableStateOf("") }
+    var new_ot by rememberSaveable { mutableStateOf("") }
+    var description by rememberSaveable { mutableStateOf("") }
+    var um by rememberSaveable { mutableStateOf("") }
+    var cantidad by rememberSaveable { mutableStateOf("") }
+    var linea by rememberSaveable { mutableStateOf("") }
+    val operador = rememberSaveable{ mutableStateOf("") }
     val fecha by remember { mutableStateOf(SimpleDateFormat("dd/MM/yyyy").format(Date())) }
     val newfecha by remember { mutableStateOf(SimpleDateFormat("yyyyMMdd").format(Date())) }
     val expanded = remember { mutableStateOf(false) }
@@ -130,9 +134,7 @@ fun BodyHome(
 
     var textFieldSize by remember { mutableStateOf(Size.Zero) }
     //operarioState.operarioResponse?.data?.map { it.Nonbre } ?: emptyList()
-    um = otState.productoResponse?.data?.UM.toString()
-    description = otState.productoResponse?.data?.Producto.toString()
-    linea = otState.productoResponse?.data?.Linea.toString()
+
 
     val scanLauncher = rememberLauncherForActivityResult(
         contract = ScanContract(),
@@ -141,8 +143,12 @@ fun BodyHome(
             val scannedText = reslt.contents ?: "Sin Lectura"
             val startIndex = scannedText.indexOf("(10)") + 4
             val endIndex = scannedText.indexOf("(17)")
-            new_ot = scannedText.substring(startIndex, endIndex)
-            ot = scannedText
+            if (startIndex != -1 && endIndex != -1 && startIndex < endIndex) {
+                new_ot = scannedText.substring(startIndex, endIndex)
+                ot = new_ot
+            } else {
+                ot = "Codigo de barra, no válido" // Valor por defecto o manejo de error
+            }
 
         }
     )
@@ -150,18 +156,9 @@ fun BodyHome(
     LaunchedEffect(currentOt) {
         if (currentOt.isNotEmpty()) {
             otViewModel.getCodigoBarra(currentOt)
-            //um = otState.productoResponse?.data?.UM.toString()
-            //description = otState.productoResponse?.data?.Producto.toString()
-            //linea = otState.productoResponse?.data?.Linea.toString()
-            //um = otState.productoResponse?.data?.UM.toString()
-            //description = otState.productoResponse?.data?.Producto.toString()
-            //linea = otState.productoResponse?.data?.Linea.toString()
-            // Provisional
-            //val startIndex = ot.indexOf("(10)") + 4
-            //val endIndex = ot.indexOf("(17)")
-            //new_ot = ot.substring(startIndex, endIndex)
-            // Provisional
-
+            um = otState.productoResponse?.data?.UM.toString()
+            description = otState.productoResponse?.data?.Producto.toString()
+            linea = otState.productoResponse?.data?.Linea.toString()
             Log.i("VER", "ENTRO AL NO VACIO")
         } else {
             um = ""
@@ -170,6 +167,9 @@ fun BodyHome(
             Log.i("VER", "ENTRO AL VACIO")
         }
     }
+    um = otState.productoResponse?.data?.UM.toString()
+    description = otState.productoResponse?.data?.Producto.toString()
+    linea = otState.productoResponse?.data?.Linea.toString()
 
 
     Box(
@@ -237,7 +237,7 @@ fun BodyHome(
             CustomOutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
-                label = "Descripcion",
+                label = "Descripción",
                 readOnly = true
             )
             Row(
@@ -257,7 +257,8 @@ fun BodyHome(
                     modifier = Modifier.weight(1f),
                     value = cantidad,
                     onValueChange = { cantidad = it },
-                    label = "Cantidad"
+                    label = "Cantidad",
+                    keyboardOption = KeyboardOptions().copy(keyboardType = KeyboardType.Number),
                 )
             }
             Row(
@@ -269,8 +270,7 @@ fun BodyHome(
                 CustomOutlinedTextField(
                     modifier = Modifier
                         .weight(1f)
-                        .clickable { expanded.value = true }
-                        .onGloballyPositioned { textFieldSize = it.size.toSize()},
+                        .onGloballyPositioned { textFieldSize = it.size.toSize() },
                     value = operador.value,
                     onValueChange = { operador.value = it },
                     label = "Maquinista Encargado",
@@ -279,7 +279,8 @@ fun BodyHome(
                             Icon(Icons.Filled.ArrowDropDown, contentDescription = "Expandir")
                         }
                     },
-                    readOnly = true
+                    readOnly = true,
+                    onclick = {expanded.value = true}
                 )
                 val options = operarioState.operarioResponse?.data?.map { it.Nonbre } ?: emptyList()
                 CustomSpinner(expanded, options, operador, textFieldSize)
@@ -288,13 +289,13 @@ fun BodyHome(
                     modifier = Modifier.weight(1f),
                     value = linea,
                     onValueChange = { linea = it },
-                    label = "LINEA",
+                    label = "Línea",
                     readOnly = true
                 )
             }
             Spacer(modifier = Modifier.height(30.dp))
             BotonH(
-                new_ot,
+                ot,
                 description,
                 um,
                 cantidad,
@@ -340,7 +341,8 @@ fun BotonH(
     navController: NavController,
     sharedViewModel: SharedViewModel
 ) {
-    var stateButton by remember { mutableStateOf(false) }
+    //var stateButton by remember { mutableStateOf(false) }
+    val stateButton = ot.isNotEmpty() && description.isNotEmpty() && um.isNotEmpty() && cantidad.isNotEmpty() && operador.isNotEmpty()
     LaunchedEffect(ot, description, um, cantidad, turno, fecha, linea, operador) {
         sharedViewModel.turno = turno
         sharedViewModel.ot = ot
@@ -350,10 +352,8 @@ fun BotonH(
         sharedViewModel.linea = linea
         sharedViewModel.operador = operador
         sharedViewModel.fecha = fecha
-        stateButton =
-            ot.isNotEmpty() && description.isNotEmpty() && um.isNotEmpty() && cantidad.isNotEmpty()
+        //stateButton = ot.isNotEmpty() && description.isNotEmpty() && um.isNotEmpty() && cantidad.isNotEmpty()
     }
-
     val buttonColors = ButtonDefaults.elevatedButtonColors(
         containerColor = if (stateButton) Color(0xFF0054A3) else Color(0XFF9C9B9B),
         contentColor = if (stateButton) Color(0xFFC9C9C9) else Color.White,

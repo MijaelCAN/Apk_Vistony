@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -33,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -70,7 +73,7 @@ fun LoginScreen(
                 )*/
             ),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
+        verticalArrangement = Arrangement.Center
     ) {
         /*Image(
             painterResource(id = R.drawable.fondo_vistony2),
@@ -91,7 +94,10 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(540.dp)// Tamaño del círculo
-                    .background(Color.White, shape = RoundedCornerShape(bottomStart = 150.dp, bottomEnd = 150.dp))
+                    .background(
+                        Color.White,
+                        shape = RoundedCornerShape(bottomStart = 150.dp, bottomEnd = 150.dp)
+                    )
                     //.offset(x = 0.dp, y = (-100).dp) // Puedes ajustar el desplazamiento aquí
             )
             Body(navController,viewModel)
@@ -126,12 +132,15 @@ fun Titulo(){
 @ExperimentalMaterial3Api
 @Composable
 fun Body(navController: NavHostController, viewModel: LoginViewModel) {
-    var user by remember { mutableStateOf("") }
-    var pass by remember { mutableStateOf("") }
-    var passVisible by remember { mutableStateOf(false) }
+    var user by rememberSaveable { mutableStateOf("") }
+    var pass by rememberSaveable { mutableStateOf("") }
+    var passVisible by rememberSaveable { mutableStateOf(false) }
+    var rememberMe by rememberSaveable { mutableStateOf(false) }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 32.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -177,6 +186,17 @@ fun Body(navController: NavHostController, viewModel: LoginViewModel) {
             },
             visualTransformation = if (passVisible) VisualTransformation.None else PasswordVisualTransformation()
         )
+        /*Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Checkbox(
+                checked = rememberMe,
+                onCheckedChange = { checked -> rememberMe = checked }
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = "Recordar mis credenciales")
+        }*/
         Spacer(modifier = Modifier.height(25.dp))
         Boton(user, pass, navController, viewModel)
     }

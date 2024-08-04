@@ -16,10 +16,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,10 +32,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,7 +63,6 @@ import com.vistony.app.ui.theme.Screen.Generic.CustomText
 import com.vistony.app.ui.theme.Screen.Generic.MyCheckbox
 import com.vistony.app.ui.theme.Screen.Generic.SuccessDialog
 import com.vistony.app.ui.theme.Screen.Generic.TopBar
-import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,6 +71,7 @@ fun DetalleScreen(
     sharedViewModel: SharedViewModel,
     viewModel: EvalViewModel = hiltViewModel()
 ) {
+    val scrollState = rememberScrollState()
     Scaffold(
         topBar = { TopBar(navController = navController) }
     ) {
@@ -73,7 +79,8 @@ fun DetalleScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(it)
-                .background(color = Color(0xFF0B4FAF)),
+                .background(color = Color(0xFF0B4FAF))
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
@@ -103,24 +110,24 @@ fun BodyDetalle(
     viewModel: EvalViewModel,
     sharedViewModel: SharedViewModel
 ) {
-    var pesoCheck by remember { mutableStateOf(false) }
-    var pesoComment by remember { mutableStateOf("") }
-    var etiqCheck by remember { mutableStateOf(false) }
-    var etiqComment by remember { mutableStateOf("") }
-    var lotCheck by remember { mutableStateOf(false) }
-    var lotComment by remember { mutableStateOf("") }
-    var limpCheck by remember { mutableStateOf(false) }
-    var limpComment by remember { mutableStateOf("") }
-    var sellCheck by remember { mutableStateOf(false) }
-    var sellComment by remember { mutableStateOf("") }
-    var encCheck by remember { mutableStateOf(false) }
-    var encComment by remember { mutableStateOf("") }
-    var rotuloCheck by remember { mutableStateOf(false) }
-    var rotuloComment by remember { mutableStateOf("") }
-    var paletCheck by remember { mutableStateOf(false) }
-    var paletComment by remember { mutableStateOf("") }
-    var conformidad = remember { mutableStateOf("") }
-    var conformidadComment by remember { mutableStateOf("") }
+    var pesoCheck by rememberSaveable { mutableStateOf(false) }
+    var pesoComment by rememberSaveable { mutableStateOf("") }
+    var etiqCheck by rememberSaveable { mutableStateOf(false) }
+    var etiqComment by rememberSaveable { mutableStateOf("") }
+    var lotCheck by rememberSaveable { mutableStateOf(false) }
+    var lotComment by rememberSaveable { mutableStateOf("") }
+    var limpCheck by rememberSaveable { mutableStateOf(false) }
+    var limpComment by rememberSaveable { mutableStateOf("") }
+    var sellCheck by rememberSaveable { mutableStateOf(false) }
+    var sellComment by rememberSaveable { mutableStateOf("") }
+    var encCheck by rememberSaveable { mutableStateOf(false) }
+    var encComment by rememberSaveable { mutableStateOf("") }
+    var rotuloCheck by rememberSaveable { mutableStateOf(false) }
+    var rotuloComment by rememberSaveable { mutableStateOf("") }
+    var paletCheck by rememberSaveable { mutableStateOf(false) }
+    var paletComment by rememberSaveable { mutableStateOf("") }
+    var conformidad = rememberSaveable { mutableStateOf("") }
+    var conformidadComment by rememberSaveable { mutableStateOf("") }
 
     var textFieldSize by remember { mutableStateOf(Size.Zero) }
 
@@ -152,7 +159,6 @@ fun BodyDetalle(
 
     val expanded = remember { mutableStateOf(false) }
     val options = listOf("CONFORME", "NO CONFORME")
-    //val operador = remember { mutableStateOf("") }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -181,13 +187,17 @@ fun BodyDetalle(
                 CustomText(text = "PESO")
                 MyCheckbox(
                     checked = pesoCheck,
-                    onCheckedChange = { pesoCheck = it },
+                    onCheckedChange = { it ->
+                        if (!it) pesoComment = ""
+                        pesoCheck = it
+                    },
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 CustomOutlinedTextField2(
-                    value = pesoComment,
-                    onValueChange = { pesoComment = it },
-                    label = "Comentario",
+                    value = if (pesoCheck) pesoComment else "",
+                    onValueChange = { it -> if (pesoCheck) pesoComment = it },
+                    label = if (pesoCheck) "Comentario" else "",
+                    readOnly = !pesoCheck
                 )
             }
             Row(
@@ -198,13 +208,17 @@ fun BodyDetalle(
                 CustomText(text = "ETIQ.")
                 MyCheckbox(
                     checked = etiqCheck,
-                    onCheckedChange = { etiqCheck = it },
+                    onCheckedChange = { it ->
+                        if (!it) etiqComment = ""
+                        etiqCheck = it
+                    },
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 CustomOutlinedTextField2(
                     value = etiqComment,
-                    onValueChange = { etiqComment = it },
-                    label = "Comentario",
+                    onValueChange = { it -> if (etiqCheck) etiqComment = it },
+                    label = if (etiqCheck) "Comentario" else "",
+                    readOnly = !etiqCheck
                 )
             }
             //----------------------------------------------------------------------
@@ -216,13 +230,17 @@ fun BodyDetalle(
                 CustomText(text = "LOT.")
                 MyCheckbox(
                     checked = lotCheck,
-                    onCheckedChange = { lotCheck = it },
+                    onCheckedChange = { it ->
+                        if (!it) lotComment = ""
+                        lotCheck = it
+                    },
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 CustomOutlinedTextField2(
                     value = lotComment,
-                    onValueChange = { lotComment = it },
-                    label = "Comentario",
+                    onValueChange = { it -> if (lotCheck) lotComment = it },
+                    label = if (lotCheck) "Comentario" else "",
+                    readOnly = !lotCheck
                 )
             }
             //----------------------------------------------------------------------
@@ -234,13 +252,17 @@ fun BodyDetalle(
                 CustomText(text = "LIMP.")
                 MyCheckbox(
                     checked = limpCheck,
-                    onCheckedChange = { limpCheck = it },
+                    onCheckedChange = { it ->
+                        if (!it) limpComment = ""
+                        limpCheck = it
+                    },
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 CustomOutlinedTextField2(
                     value = limpComment,
-                    onValueChange = { limpComment = it },
-                    label = "Comentario",
+                    onValueChange = { it -> if (limpCheck) limpComment = it },
+                    label = if (limpCheck) "Comentario" else "",
+                    readOnly = !limpCheck
                 )
             }
             //----------------------------------------------------------------------
@@ -252,13 +274,17 @@ fun BodyDetalle(
                 CustomText(text = "SELL.")
                 MyCheckbox(
                     checked = sellCheck,
-                    onCheckedChange = { sellCheck = it },
+                    onCheckedChange = { it ->
+                        if (!it) sellComment = ""
+                        sellCheck = it
+                    },
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 CustomOutlinedTextField2(
                     value = sellComment,
-                    onValueChange = { sellComment = it },
-                    label = "Comentario",
+                    onValueChange = { it -> if (sellCheck) sellComment = it },
+                    label = if (sellCheck) "Comentario" else "",
+                    readOnly = !sellCheck
                 )
             }
             //----------------------------------------------------------------------
@@ -267,16 +293,20 @@ fun BodyDetalle(
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                CustomText(text = "ENC")
+                CustomText(text = "ENC.")
                 MyCheckbox(
                     checked = encCheck,
-                    onCheckedChange = { encCheck = it },
+                    onCheckedChange = { it ->
+                        if (!it) encComment = ""
+                        encCheck = it
+                    },
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 CustomOutlinedTextField2(
                     value = encComment,
-                    onValueChange = { encComment = it },
-                    label = "Comentario",
+                    onValueChange = { it -> if (encCheck) encComment = it },
+                    label = if (encCheck) "Comentario" else "",
+                    readOnly = !encCheck
                 )
             }
             //----------------------------------------------------------------------
@@ -285,16 +315,20 @@ fun BodyDetalle(
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                CustomText(text = "ROT.")
+                CustomText(text = "ROTUL.")
                 MyCheckbox(
                     checked = rotuloCheck,
-                    onCheckedChange = { rotuloCheck = it },
+                    onCheckedChange = { it ->
+                        if (!it) rotuloComment = ""
+                        rotuloCheck = it
+                    },
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 CustomOutlinedTextField2(
                     value = rotuloComment,
-                    onValueChange = { rotuloComment = it },
-                    label = "Comentario",
+                    onValueChange = { it -> if (rotuloCheck) rotuloComment = it },
+                    label = if (rotuloCheck) "Comentario" else "",
+                    readOnly = !rotuloCheck
                 )
             }
             //----------------------------------------------------------------------
@@ -303,22 +337,26 @@ fun BodyDetalle(
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                CustomText(text = "PALL.")
+                CustomText(text = "PALET.")
                 MyCheckbox(
                     checked = paletCheck,
-                    onCheckedChange = { paletCheck = it },
+                    onCheckedChange = { it ->
+                        if (!it) paletComment = ""
+                        paletCheck = it
+                    },
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 //CustomCheckbox(checked = isChecked, onCheckedChange = {isChecked = it}, modifier = Modifier.padding(top = 8.dp), checkboxSize = 24.dp)
                 CustomOutlinedTextField2(
                     value = paletComment,
-                    onValueChange = { paletComment = it },
-                    label = "Comentario",
+                    onValueChange = { it->if(paletCheck)paletComment = it },
+                    label = if (paletCheck) "Comentario" else "",
+                    readOnly = !paletCheck
                 )
             }
             //----------------------------------------------------------------------
             Text(
-                text = "EVALUACION",
+                text = "EVALUACIÓN",
                 modifier = Modifier.padding(end = 8.dp, top = 16.dp),
                 style = TextStyle(color = Color.Black)
             )
@@ -330,7 +368,6 @@ fun BodyDetalle(
             ) {
                 CustomOutlinedTextField(
                     modifier = Modifier
-                        .clickable { expanded.value = true }
                         .width(200.dp)
                         .onGloballyPositioned { textFieldSize = it.size.toSize() },
                     value = conformidad.value,
@@ -341,7 +378,8 @@ fun BodyDetalle(
                             Icon(Icons.Filled.ArrowDropDown, contentDescription = "Expandir")
                         }
                     },
-                    readOnly = true
+                    readOnly = true,
+                    onclick = { expanded.value = true }
                 )
                 CustomSpinner(
                     expanded = expanded,
@@ -358,7 +396,13 @@ fun BodyDetalle(
                     label = "Comentario",
                 )
             }
-            BotonD(navController = navController, viewModel, sharedViewModel, buildEvaluacion())
+            BotonD(
+                navController = navController,
+                viewModel,
+                sharedViewModel,
+                buildEvaluacion(),
+                conformidad
+            )
 
         }
     }
@@ -369,22 +413,18 @@ fun BotonD(
     navController: NavController,
     viewModel: EvalViewModel,
     sharedViewModel: SharedViewModel,
-    buildEvaluacion: Evaluacion
+    buildEvaluacion: Evaluacion,
+    conformidad: MutableState<String>
 ) {
-    var stateButton by remember { mutableStateOf(true) }
+
+    val evalState by viewModel.evalState.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    var stateButton = conformidad.value.isNotEmpty();
     var showDialog by remember { mutableStateOf(false) }
-    val evalState = viewModel._evalState
+    var dialogTitle by remember { mutableStateOf("") }
+    var dialogMessage by remember { mutableStateOf(evalState.evalResponde.data) }
 
-
-    /*LaunchedEffect(ot, description, um, cantidad) {
-        stateButton =
-            ot.isNotEmpty() && description.isNotEmpty() && um.isNotEmpty() && cantidad.isNotEmpty()
-    }*/
-    /*LaunchedEffect(Unit) {
-        delay(3000)
-        showDialog = false  // Cerrar des pues de 3 s
-        //navController.navigate("home")
-    }*/
 
     val buttonColors = ButtonDefaults.elevatedButtonColors(
         containerColor = if (stateButton) Color(0xFF0054A3) else Color(0XFF9C9B9B),
@@ -402,21 +442,68 @@ fun BotonD(
             val evaluacion = buildEvaluacion
             viewModel.EnviarEvaluacion(evaluacion)
             showDialog = true
+            /*titulo = "Envio Exitóso"
             if (evalState.state) {
                 showDialog = true
-                Log.e("Resultado2", evalState.evalResponde?.data.toString())
+                Log.e("Resultado2", evalState.evalResponde.data)
             }
-            Log.e("Evaluacion", evaluacion.toString())
+            Log.e("Evaluacion", evaluacion.toString())*/
         },
         colors = buttonColors,
         shape = RoundedCornerShape(18.dp)
     ) {
         Text(text = "ENVIAR")
     }
+    if (isLoading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f)),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+    } else {
+        //showDialog = true
+    }
+    if (evalState.state != null) {
+        LaunchedEffect(evalState.state) {
+            dialogTitle = if (evalState.state) "Envio Exitoso" else "Enviando"
+            dialogMessage = if (evalState.state) evalState.evalResponde.data else "Cargando..."
+            /*dialogMessage = if (evalState.state) {
+                evalState.evalResponde.data
+            } else {
+                "Hubo un problema con la solicitud."
+            }*/
+        }
+    }
+
+    if (showDialog) {
+        if (evalState.state) {
+            SuccessDialog(
+                isVisible = showDialog,
+                onDismiss = { showDialog = false },
+                message = dialogMessage,
+                navController = navController,
+                titulo = dialogTitle
+            )
+        } else {
+            /*ErrorDialog(
+                isVisible = showDialog,
+                onDismiss = { showDialog = false },
+                message = dialogMessage,
+                navController = navController,
+                titulo = dialogTitle
+            )*/
+        }
+    }
+
+
     //ConfirmationDialog(isVisible = showDialog, onConfirm = { viewModel._evalState.data }, onDismiss = { showDialog = false })
     SuccessDialog(
         isVisible = showDialog,
         onDismiss = { showDialog = false },
-        message = evalState.evalResponde?.data.toString(), navController = navController
+        message = dialogMessage, navController = navController,
+        titulo = dialogTitle
     )
 }

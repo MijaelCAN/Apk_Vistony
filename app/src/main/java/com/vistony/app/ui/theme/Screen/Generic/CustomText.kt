@@ -1,8 +1,10 @@
 package com.vistony.app.ui.theme.Screen.Generic
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -11,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
@@ -22,13 +25,16 @@ fun CustomOutlinedTextField(
     label: String,
     modifier: Modifier = Modifier,
     trailingIcon: (@Composable () -> Unit)? = null,
-    readOnly: Boolean = false
+    readOnly: Boolean = false,
+    keyboardOption: KeyboardOptions = KeyboardOptions.Default,
+    onclick: ()->Unit = {}
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier
             .fillMaxWidth()
+            .clickable { onclick.invoke() }
             .padding(top = 16.dp),
         label = {
             Text(
@@ -43,7 +49,9 @@ fun CustomOutlinedTextField(
             textColor = Color.Black
         ),
         trailingIcon = trailingIcon,
-        readOnly = readOnly,
+        keyboardOptions = keyboardOption,
+        readOnly = readOnly
+
     )
 }
 
@@ -75,7 +83,7 @@ fun CustomOutlinedTextField2(
             disabledPlaceholderColor = Color.Black
         ),
         trailingIcon = trailingIcon,
-        readOnly = readOnly,
+        readOnly = readOnly
     )
 }
 

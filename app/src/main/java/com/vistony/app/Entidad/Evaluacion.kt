@@ -27,6 +27,6 @@ data class Evaluacion (
 )
 
 data class EvaluacionResponse(
-    val statusCode: Int,
-    val data: String
+    val statusCode: Int = 0,
+    val data: String = "Cargando..."
 )

@@ -11,6 +11,9 @@ import com.vistony.app.Entidad.Evaluacion
 import com.vistony.app.Entidad.EvaluacionResponse
 import com.vistony.app.Service.RetrofitInstance
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -19,12 +22,16 @@ class EvalViewModel @Inject constructor() : ViewModel() {
 
     private val evalService = RetrofitInstance.evalService
 
-    var _evalState by mutableStateOf(EvalResponseState())
-        private set
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    private val _evalState = MutableStateFlow(EvalResponseState())
+    var evalState: StateFlow<EvalResponseState> = _evalState.asStateFlow()
 
     fun EnviarEvaluacion(data: Evaluacion) {
         Log.e("PASO1", "Entro a Funcion")
         viewModelScope.launch {
+            _isLoading.value = true
             try {
                 Log.e("PASO 2", "Entro al Try")
                 val response = evalService.postEvaluacion(data)
@@ -35,9 +42,9 @@ class EvalViewModel @Inject constructor() : ViewModel() {
                     val body = response.body()
                     if (body?.statusCode == 201) {
                         Log.e("PASO4", "Entro al IF")
-                        _evalState = EvalResponseState(state = true, evalResponde = body)
+                        _evalState.value = EvalResponseState(state = true, evalResponde = body)
                     } else {
-                        _evalState = EvalResponseState(state = false)
+                        _evalState.value = EvalResponseState(state = false)
                         Log.e("RESPONS", body?.data.toString())
                     }
                 } else {
@@ -46,6 +53,9 @@ class EvalViewModel @Inject constructor() : ViewModel() {
             } catch (e: Exception) {
                 Log.e("PASO3", "Entro al CATH")
                 Log.e("sdfsd", "Error de comunicacion $e")
+                _evalState.value = EvalResponseState(state = false)
+            }finally {
+                _isLoading.value = false
             }
         }
     }
@@ -53,7 +63,7 @@ class EvalViewModel @Inject constructor() : ViewModel() {
 
 data class EvalResponseState(
     val state: Boolean = false,
-    val evalResponde: EvaluacionResponse? = null,
+    val evalResponde: EvaluacionResponse = EvaluacionResponse(),
 )
 /*
 {
