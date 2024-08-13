@@ -12,7 +12,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
@@ -21,8 +20,9 @@ import androidx.navigation.compose.rememberNavController
 import com.vistony.app.Service.ConnectivityObserver
 import com.vistony.app.ViewModel.NetworkStatusViewModel
 import com.vistony.app.ViewModel.SharedViewModel
-import com.vistony.app.ui.theme.Screen.DetalleScreen
-import com.vistony.app.ui.theme.Screen.HomeScreen
+import com.vistony.app.ui.theme.Screen.Inspeccion.DetalleScreen
+import com.vistony.app.ui.theme.Screen.Inspeccion.HomeScreen
+import com.vistony.app.ui.theme.Screen.Inspeccion.ListScreen
 import com.vistony.app.ui.theme.Screen.LoginScreen
 import com.vistony.app.ui.theme.Screen.NoInternetScreen
 import com.vistony.app.ui.theme.VistonyTheme
@@ -46,7 +46,7 @@ class MainActivity : ComponentActivity() {
                     val status by networkStatusViewModel.status.collectAsState()
 
                     if(status == ConnectivityObserver.Status.Available){
-                        NavHost(startDestination = "login",navController =navController){
+                        NavHost(startDestination = "home",navController =navController){
                             composable("login"){
                                 LoginScreen(navController)
                             }
@@ -55,6 +55,9 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("detalle"){
                                 DetalleScreen(navController,sharedViewModel)
+                            }
+                            composable("listaInsp"){
+                                ListScreen(navController)
                             }
                         }
                     }else{
