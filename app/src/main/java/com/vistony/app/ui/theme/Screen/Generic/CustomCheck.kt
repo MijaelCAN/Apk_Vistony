@@ -21,6 +21,8 @@ import androidx.compose.material3.CheckboxColors
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TriStateCheckbox
@@ -87,6 +89,31 @@ fun CustomSpinner(
         }
     }
 }
+@ExperimentalMaterial3Api
+@Composable
+fun CustomSpinner2(
+    expanded: MutableState<Boolean>,
+    options: List<String>,
+    operador: MutableState<String>
+) {
+    ExposedDropdownMenuBox(
+        expanded = expanded.value,
+        onExpandedChange = { expanded.value = false },
+        modifier = Modifier
+            .background(Color.White)
+            .clip(RoundedCornerShape(8.dp))
+    ) {
+        options.forEach { option ->
+            DropdownMenuItem(
+                text = { Text(option, color = Color.Black) },
+                onClick = {
+                    operador.value = option
+                    expanded.value = false
+                }
+            )
+        }
+    }
+}
 
 @Composable
 fun CustomCheckbox(
@@ -119,6 +146,35 @@ fun CustomCheckbox(
         )
     }
 }
+
+@Preview
+@Composable
+fun CustomTriStateCheckbox() {
+    var state by remember { mutableStateOf(ToggleableState.Off) }
+
+    Column {
+        TriStateCheckbox(
+            state = state,
+            onClick = {
+                state = when (state) {
+                    ToggleableState.On -> ToggleableState.Off
+                    ToggleableState.Off -> ToggleableState.Indeterminate
+                    ToggleableState.Indeterminate -> ToggleableState.On
+                }
+            },
+            colors = CheckboxDefaults.colors(
+                checkedColor = Color.Green, // Color para el estado On
+                uncheckedColor = Color.Transparent, // Color para el estado Off (normal)
+                checkmarkColor = Color.White, // Color del checkmark
+                disabledCheckedColor = Color.Gray,
+                disabledUncheckedColor = Color.LightGray,
+                disabledIndeterminateColor = Color.Red // Color para el estado Indeterminate
+            )
+        )
+        Text(text = "Seleccionar opción")
+    }
+}
+
 @Preview
 @Composable
 fun Prueba(){

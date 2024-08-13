@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,18 +19,28 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -44,9 +55,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withAnnotation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -103,6 +121,7 @@ fun DetalleScreen(
     }
 }
 
+@OptIn(ExperimentalTextApi::class)
 @ExperimentalMaterial3Api
 @Composable
 fun BodyDetalle(
@@ -110,21 +129,21 @@ fun BodyDetalle(
     viewModel: EvalViewModel,
     sharedViewModel: SharedViewModel
 ) {
-    var pesoCheck by rememberSaveable { mutableStateOf(false) }
+    var pesoCheck by rememberSaveable { mutableStateOf(ToggleableState.Off) }
     var pesoComment by rememberSaveable { mutableStateOf("") }
-    var etiqCheck by rememberSaveable { mutableStateOf(false) }
+    var etiqCheck by rememberSaveable { mutableStateOf(ToggleableState.Off) }
     var etiqComment by rememberSaveable { mutableStateOf("") }
-    var lotCheck by rememberSaveable { mutableStateOf(false) }
+    var lotCheck by rememberSaveable { mutableStateOf(ToggleableState.Off) }
     var lotComment by rememberSaveable { mutableStateOf("") }
-    var limpCheck by rememberSaveable { mutableStateOf(false) }
+    var limpCheck by rememberSaveable { mutableStateOf(ToggleableState.Off) }
     var limpComment by rememberSaveable { mutableStateOf("") }
-    var sellCheck by rememberSaveable { mutableStateOf(false) }
+    var sellCheck by rememberSaveable { mutableStateOf(ToggleableState.Off) }
     var sellComment by rememberSaveable { mutableStateOf("") }
-    var encCheck by rememberSaveable { mutableStateOf(false) }
+    var encCheck by rememberSaveable { mutableStateOf(ToggleableState.Off) }
     var encComment by rememberSaveable { mutableStateOf("") }
-    var rotuloCheck by rememberSaveable { mutableStateOf(false) }
+    var rotuloCheck by rememberSaveable { mutableStateOf(ToggleableState.Off) }
     var rotuloComment by rememberSaveable { mutableStateOf("") }
-    var paletCheck by rememberSaveable { mutableStateOf(false) }
+    var paletCheck by rememberSaveable { mutableStateOf(ToggleableState.Off) }
     var paletComment by rememberSaveable { mutableStateOf("") }
     var conformidad = rememberSaveable { mutableStateOf("") }
     var conformidadComment by rememberSaveable { mutableStateOf("") }
@@ -136,21 +155,53 @@ fun BodyDetalle(
             U_Fecha = sharedViewModel.fecha,
             U_Turno = sharedViewModel.turno,
             U_OT = sharedViewModel.ot,
-            U_Peso_Check = if (pesoCheck) "Y" else "N",
+            U_Peso_Check = when (pesoCheck) {
+                ToggleableState.On -> "Y"
+                ToggleableState.Off -> "N"
+                ToggleableState.Indeterminate -> "X"
+            },
             U_Peso_Comment = pesoComment,
-            U_Etiq_Check = if (etiqCheck) "Y" else "N",
+            U_Etiq_Check = when (etiqCheck) {
+                ToggleableState.On -> "Y"
+                ToggleableState.Off -> "N"
+                ToggleableState.Indeterminate -> "X"
+            },
             U_Etiq_Comment = etiqComment,
-            U_Lot_Check = if (lotCheck) "Y" else "N",
+            U_Lot_Check = when (lotCheck) {
+                ToggleableState.On -> "Y"
+                ToggleableState.Off -> "N"
+                ToggleableState.Indeterminate -> "X"
+            },
             U_Lot_Comment = lotComment,
-            U_Limp_Check = if (limpCheck) "Y" else "N",
+            U_Limp_Check = when (limpCheck) {
+                ToggleableState.On -> "Y"
+                ToggleableState.Off -> "N"
+                ToggleableState.Indeterminate -> "X"
+            },
             U_Limp_Comment = limpComment,
-            U_Sell_Check = if (sellCheck) "Y" else "N",
+            U_Sell_Check = when (sellCheck) {
+                ToggleableState.On -> "Y"
+                ToggleableState.Off -> "N"
+                ToggleableState.Indeterminate -> "X"
+            },
             U_Sell_Comment = sellComment,
-            U_Enc_Check = if (encCheck) "Y" else "N",
+            U_Enc_Check = when (encCheck) {
+                ToggleableState.On -> "Y"
+                ToggleableState.Off -> "N"
+                ToggleableState.Indeterminate -> "X"
+            },
             U_Enc_Comment = encComment,
-            U_Rotulo_Check = if (rotuloCheck) "Y" else "N",
+            U_Rotulo_Check = when (rotuloCheck) {
+                ToggleableState.On -> "Y"
+                ToggleableState.Off -> "N"
+                ToggleableState.Indeterminate -> "X"
+            },
             U_Rotulo_Comment = rotuloComment,
-            U_Palet_Check = if (paletCheck) "Y" else "N",
+            U_Palet_Check = when (paletCheck) {
+                ToggleableState.On -> "Y"
+                ToggleableState.Off -> "N"
+                ToggleableState.Indeterminate -> "X"
+            },
             U_Palet_Comment = paletComment,
             U_Conformidad = if (conformidad.value.equals("CONFORME")) "Y" else "N",
             U_Conformidad_Comment = conformidadComment
@@ -179,25 +230,55 @@ fun BodyDetalle(
                 modifier = Modifier.padding(end = 8.dp, top = 16.dp),
                 style = TextStyle(color = Color.Black)
             )
+            val keyboardController = LocalSoftwareKeyboardController.current
+            val focusManager= LocalFocusManager.current
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 CustomText(text = "PESO")
-                MyCheckbox(
-                    checked = pesoCheck,
-                    onCheckedChange = { it ->
-                        if (!it) pesoComment = ""
-                        pesoCheck = it
+                TriStateCheckbox(
+                    state = pesoCheck,
+                    onClick = {
+                        pesoComment = ""
+                        pesoCheck = when (pesoCheck) {
+                            ToggleableState.Off -> ToggleableState.On
+                            ToggleableState.On -> ToggleableState.Indeterminate
+                            ToggleableState.Indeterminate -> ToggleableState.Off
+                        }
                     },
-                    modifier = Modifier.padding(top = 8.dp)
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = when (pesoCheck) {
+                            ToggleableState.On -> Color.Green
+                            ToggleableState.Indeterminate -> Color.Red
+                            ToggleableState.Off -> Color.Gray
+                        },
+                        uncheckedColor = Color.Gray,
+                        checkmarkColor = Color.White,
+                        disabledCheckedColor = Color.Gray,
+                        disabledUncheckedColor = Color.LightGray,
+                        disabledIndeterminateColor = Color.Red
+                    )
                 )
+
                 CustomOutlinedTextField2(
-                    value = if (pesoCheck) pesoComment else "",
-                    onValueChange = { it -> if (pesoCheck) pesoComment = it },
-                    label = if (pesoCheck) "Comentario" else "",
-                    readOnly = !pesoCheck
+                    value = when (pesoCheck) {
+                        ToggleableState.On -> pesoComment
+                        ToggleableState.Indeterminate -> pesoComment
+                        ToggleableState.Off -> ""
+                    },
+                    onValueChange = { it ->
+                        if (pesoCheck == ToggleableState.On || pesoCheck == ToggleableState.Indeterminate) {
+                            pesoComment = it
+                        }
+                    },
+                    label = when (pesoCheck) {
+                        ToggleableState.On -> "Comentario"
+                        ToggleableState.Indeterminate -> "Comentario"
+                        ToggleableState.Off -> ""
+                    },
+                    readOnly = pesoCheck == ToggleableState.Off
                 )
             }
             Row(
@@ -206,19 +287,46 @@ fun BodyDetalle(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 CustomText(text = "ETIQ.")
-                MyCheckbox(
-                    checked = etiqCheck,
-                    onCheckedChange = { it ->
-                        if (!it) etiqComment = ""
-                        etiqCheck = it
+                TriStateCheckbox(
+                    state = etiqCheck,
+                    onClick = {
+                        etiqComment = ""
+                        etiqCheck = when (etiqCheck) {
+                            ToggleableState.Off -> ToggleableState.On
+                            ToggleableState.On -> ToggleableState.Indeterminate
+                            ToggleableState.Indeterminate -> ToggleableState.Off
+                        }
                     },
-                    modifier = Modifier.padding(top = 8.dp)
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = when (etiqCheck) {
+                            ToggleableState.On -> Color.Green
+                            ToggleableState.Indeterminate -> Color.Red
+                            ToggleableState.Off -> Color.Gray
+                        },
+                        uncheckedColor = Color.Gray,
+                        checkmarkColor = Color.White,
+                        disabledCheckedColor = Color.Gray,
+                        disabledUncheckedColor = Color.LightGray,
+                        disabledIndeterminateColor = Color.Red
+                    )
                 )
                 CustomOutlinedTextField2(
-                    value = etiqComment,
-                    onValueChange = { it -> if (etiqCheck) etiqComment = it },
-                    label = if (etiqCheck) "Comentario" else "",
-                    readOnly = !etiqCheck
+                    value = when (etiqCheck) {
+                        ToggleableState.On -> etiqComment
+                        ToggleableState.Indeterminate -> etiqComment
+                        ToggleableState.Off -> ""
+                    },
+                    onValueChange = { it ->
+                        if (etiqCheck == ToggleableState.On || etiqCheck == ToggleableState.Indeterminate) {
+                            etiqComment = it
+                        }
+                    },
+                    label = when (etiqCheck) {
+                        ToggleableState.On -> "Comentario"
+                        ToggleableState.Indeterminate -> "Comentario"
+                        ToggleableState.Off -> ""
+                    },
+                    readOnly = etiqCheck == ToggleableState.Off
                 )
             }
             //----------------------------------------------------------------------
@@ -228,19 +336,46 @@ fun BodyDetalle(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 CustomText(text = "LOT.")
-                MyCheckbox(
-                    checked = lotCheck,
-                    onCheckedChange = { it ->
-                        if (!it) lotComment = ""
-                        lotCheck = it
+                TriStateCheckbox(
+                    state = lotCheck,
+                    onClick = {
+                        lotComment = ""
+                        lotCheck = when (lotCheck) {
+                            ToggleableState.Off -> ToggleableState.On
+                            ToggleableState.On -> ToggleableState.Indeterminate
+                            ToggleableState.Indeterminate -> ToggleableState.Off
+                        }
                     },
-                    modifier = Modifier.padding(top = 8.dp)
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = when (lotCheck) {
+                            ToggleableState.On -> Color.Green
+                            ToggleableState.Indeterminate -> Color.Red
+                            ToggleableState.Off -> Color.Gray
+                        },
+                        uncheckedColor = Color.Gray,
+                        checkmarkColor = Color.White,
+                        disabledCheckedColor = Color.Gray,
+                        disabledUncheckedColor = Color.LightGray,
+                        disabledIndeterminateColor = Color.Red
+                    )
                 )
                 CustomOutlinedTextField2(
-                    value = lotComment,
-                    onValueChange = { it -> if (lotCheck) lotComment = it },
-                    label = if (lotCheck) "Comentario" else "",
-                    readOnly = !lotCheck
+                    value = when (lotCheck) {
+                        ToggleableState.On -> lotComment
+                        ToggleableState.Indeterminate -> lotComment
+                        ToggleableState.Off -> ""
+                    },
+                    onValueChange = { it ->
+                        if (lotCheck == ToggleableState.On || lotCheck == ToggleableState.Indeterminate) {
+                            lotComment = it
+                        }
+                    },
+                    label = when (lotCheck) {
+                        ToggleableState.On -> "Comentario"
+                        ToggleableState.Indeterminate -> "Comentario"
+                        ToggleableState.Off -> ""
+                    },
+                    readOnly = lotCheck == ToggleableState.Off
                 )
             }
             //----------------------------------------------------------------------
@@ -250,19 +385,46 @@ fun BodyDetalle(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 CustomText(text = "LIMP.")
-                MyCheckbox(
-                    checked = limpCheck,
-                    onCheckedChange = { it ->
-                        if (!it) limpComment = ""
-                        limpCheck = it
+                TriStateCheckbox(
+                    state = limpCheck,
+                    onClick = {
+                        limpComment = ""
+                        limpCheck = when (limpCheck) {
+                            ToggleableState.Off -> ToggleableState.On
+                            ToggleableState.On -> ToggleableState.Indeterminate
+                            ToggleableState.Indeterminate -> ToggleableState.Off
+                        }
                     },
-                    modifier = Modifier.padding(top = 8.dp)
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = when (limpCheck) {
+                            ToggleableState.On -> Color.Green
+                            ToggleableState.Indeterminate -> Color.Red
+                            ToggleableState.Off -> Color.Gray
+                        },
+                        uncheckedColor = Color.Gray,
+                        checkmarkColor = Color.White,
+                        disabledCheckedColor = Color.Gray,
+                        disabledUncheckedColor = Color.LightGray,
+                        disabledIndeterminateColor = Color.Red
+                    )
                 )
                 CustomOutlinedTextField2(
-                    value = limpComment,
-                    onValueChange = { it -> if (limpCheck) limpComment = it },
-                    label = if (limpCheck) "Comentario" else "",
-                    readOnly = !limpCheck
+                    value = when (limpCheck) {
+                        ToggleableState.On -> limpComment
+                        ToggleableState.Indeterminate -> limpComment
+                        ToggleableState.Off -> ""
+                    },
+                    onValueChange = { it ->
+                        if (limpCheck == ToggleableState.On || limpCheck == ToggleableState.Indeterminate) {
+                            limpComment = it
+                        }
+                    },
+                    label = when (limpCheck) {
+                        ToggleableState.On -> "Comentario"
+                        ToggleableState.Indeterminate -> "Comentario"
+                        ToggleableState.Off -> ""
+                    },
+                    readOnly = limpCheck == ToggleableState.Off
                 )
             }
             //----------------------------------------------------------------------
@@ -272,19 +434,46 @@ fun BodyDetalle(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 CustomText(text = "SELL.")
-                MyCheckbox(
-                    checked = sellCheck,
-                    onCheckedChange = { it ->
-                        if (!it) sellComment = ""
-                        sellCheck = it
+                TriStateCheckbox(
+                    state = sellCheck,
+                    onClick = {
+                        sellComment = ""
+                        sellCheck = when (sellCheck) {
+                            ToggleableState.Off -> ToggleableState.On
+                            ToggleableState.On -> ToggleableState.Indeterminate
+                            ToggleableState.Indeterminate -> ToggleableState.Off
+                        }
                     },
-                    modifier = Modifier.padding(top = 8.dp)
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = when (sellCheck) {
+                            ToggleableState.On -> Color.Green
+                            ToggleableState.Indeterminate -> Color.Red
+                            ToggleableState.Off -> Color.Gray
+                        },
+                        uncheckedColor = Color.Gray,
+                        checkmarkColor = Color.White,
+                        disabledCheckedColor = Color.Gray,
+                        disabledUncheckedColor = Color.LightGray,
+                        disabledIndeterminateColor = Color.Red
+                    )
                 )
                 CustomOutlinedTextField2(
-                    value = sellComment,
-                    onValueChange = { it -> if (sellCheck) sellComment = it },
-                    label = if (sellCheck) "Comentario" else "",
-                    readOnly = !sellCheck
+                    value = when (sellCheck) {
+                        ToggleableState.On -> sellComment
+                        ToggleableState.Indeterminate -> sellComment
+                        ToggleableState.Off -> ""
+                    },
+                    onValueChange = { it ->
+                        if (sellCheck == ToggleableState.On || sellCheck == ToggleableState.Indeterminate) {
+                            sellComment = it
+                        }
+                    },
+                    label = when (sellCheck) {
+                        ToggleableState.On -> "Comentario"
+                        ToggleableState.Indeterminate -> "Comentario"
+                        ToggleableState.Off -> ""
+                    },
+                    readOnly = sellCheck == ToggleableState.Off
                 )
             }
             //----------------------------------------------------------------------
@@ -294,19 +483,46 @@ fun BodyDetalle(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 CustomText(text = "ENC.")
-                MyCheckbox(
-                    checked = encCheck,
-                    onCheckedChange = { it ->
-                        if (!it) encComment = ""
-                        encCheck = it
+                TriStateCheckbox(
+                    state = encCheck,
+                    onClick = {
+                        encComment = ""
+                        encCheck = when (encCheck) {
+                            ToggleableState.Off -> ToggleableState.On
+                            ToggleableState.On -> ToggleableState.Indeterminate
+                            ToggleableState.Indeterminate -> ToggleableState.Off
+                        }
                     },
-                    modifier = Modifier.padding(top = 8.dp)
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = when (encCheck) {
+                            ToggleableState.On -> Color.Green
+                            ToggleableState.Indeterminate -> Color.Red
+                            ToggleableState.Off -> Color.Gray
+                        },
+                        uncheckedColor = Color.Gray,
+                        checkmarkColor = Color.White,
+                        disabledCheckedColor = Color.Gray,
+                        disabledUncheckedColor = Color.LightGray,
+                        disabledIndeterminateColor = Color.Red
+                    )
                 )
                 CustomOutlinedTextField2(
-                    value = encComment,
-                    onValueChange = { it -> if (encCheck) encComment = it },
-                    label = if (encCheck) "Comentario" else "",
-                    readOnly = !encCheck
+                    value = when (encCheck) {
+                        ToggleableState.On -> encComment
+                        ToggleableState.Indeterminate -> encComment
+                        ToggleableState.Off -> ""
+                    },
+                    onValueChange = { it ->
+                        if (encCheck == ToggleableState.On || encCheck == ToggleableState.Indeterminate) {
+                            encComment = it
+                        }
+                    },
+                    label = when (encCheck) {
+                        ToggleableState.On -> "Comentario"
+                        ToggleableState.Indeterminate -> "Comentario"
+                        ToggleableState.Off -> ""
+                    },
+                    readOnly = encCheck == ToggleableState.Off
                 )
             }
             //----------------------------------------------------------------------
@@ -316,19 +532,46 @@ fun BodyDetalle(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 CustomText(text = "ROTUL.")
-                MyCheckbox(
-                    checked = rotuloCheck,
-                    onCheckedChange = { it ->
-                        if (!it) rotuloComment = ""
-                        rotuloCheck = it
+                TriStateCheckbox(
+                    state = rotuloCheck,
+                    onClick = {
+                        rotuloComment = ""
+                        rotuloCheck = when (rotuloCheck) {
+                            ToggleableState.Off -> ToggleableState.On
+                            ToggleableState.On -> ToggleableState.Indeterminate
+                            ToggleableState.Indeterminate -> ToggleableState.Off
+                        }
                     },
-                    modifier = Modifier.padding(top = 8.dp)
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = when (rotuloCheck) {
+                            ToggleableState.On -> Color.Green
+                            ToggleableState.Indeterminate -> Color.Red
+                            ToggleableState.Off -> Color.Gray
+                        },
+                        uncheckedColor = Color.Gray,
+                        checkmarkColor = Color.White,
+                        disabledCheckedColor = Color.Gray,
+                        disabledUncheckedColor = Color.LightGray,
+                        disabledIndeterminateColor = Color.Red
+                    )
                 )
                 CustomOutlinedTextField2(
-                    value = rotuloComment,
-                    onValueChange = { it -> if (rotuloCheck) rotuloComment = it },
-                    label = if (rotuloCheck) "Comentario" else "",
-                    readOnly = !rotuloCheck
+                    value = when (rotuloCheck) {
+                        ToggleableState.On -> rotuloComment
+                        ToggleableState.Indeterminate -> rotuloComment
+                        ToggleableState.Off -> ""
+                    },
+                    onValueChange = { it ->
+                        if (rotuloCheck == ToggleableState.On || rotuloCheck == ToggleableState.Indeterminate) {
+                            rotuloComment = it
+                        }
+                    },
+                    label = when (rotuloCheck) {
+                        ToggleableState.On -> "Comentario"
+                        ToggleableState.Indeterminate -> "Comentario"
+                        ToggleableState.Off -> ""
+                    },
+                    readOnly = rotuloCheck == ToggleableState.Off
                 )
             }
             //----------------------------------------------------------------------
@@ -338,23 +581,59 @@ fun BodyDetalle(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 CustomText(text = "PALET.")
-                MyCheckbox(
-                    checked = paletCheck,
-                    onCheckedChange = { it ->
-                        if (!it) paletComment = ""
-                        paletCheck = it
+                TriStateCheckbox(
+                    state = paletCheck,
+                    onClick = {
+                        paletComment = ""
+                        paletCheck = when (paletCheck) {
+                            ToggleableState.Off -> ToggleableState.On
+                            ToggleableState.On -> ToggleableState.Indeterminate
+                            ToggleableState.Indeterminate -> ToggleableState.Off
+                        }
                     },
-                    modifier = Modifier.padding(top = 8.dp)
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = when (paletCheck) {
+                            ToggleableState.On -> Color.Green
+                            ToggleableState.Indeterminate -> Color.Red
+                            ToggleableState.Off -> Color.Gray
+                        },
+                        uncheckedColor = Color.Gray,
+                        checkmarkColor = Color.White,
+                        disabledCheckedColor = Color.Gray,
+                        disabledUncheckedColor = Color.LightGray,
+                        disabledIndeterminateColor = Color.Red
+                    )
                 )
                 //CustomCheckbox(checked = isChecked, onCheckedChange = {isChecked = it}, modifier = Modifier.padding(top = 8.dp), checkboxSize = 24.dp)
                 CustomOutlinedTextField2(
-                    value = paletComment,
-                    onValueChange = { it->if(paletCheck)paletComment = it },
-                    label = if (paletCheck) "Comentario" else "",
-                    readOnly = !paletCheck
+                    value = when (paletCheck) {
+                        ToggleableState.On -> paletComment
+                        ToggleableState.Indeterminate -> paletComment
+                        ToggleableState.Off -> ""
+                    },
+                    onValueChange = { it ->
+                        if (paletCheck == ToggleableState.On || paletCheck == ToggleableState.Indeterminate) {
+                            paletComment = it
+                        }
+                    },
+                    label = when (paletCheck) {
+                        ToggleableState.On -> "Comentario"
+                        ToggleableState.Indeterminate -> "Comentario"
+                        ToggleableState.Off -> ""
+                    },
+                    readOnly = paletCheck == ToggleableState.Off
                 )
             }
-            //----------------------------------------------------------------------
+            var prueba by rememberSaveable { mutableStateOf("") }
+
+            val text = buildAnnotatedString {
+                append("This is not clickable ")
+                withAnnotation("tag", "annotation") {
+                    append("This is clickable")
+                }
+            }
+            
+            //------------------------------ EVALUACION ----------------------------------------
             Text(
                 text = "EVALUACIÓN",
                 modifier = Modifier.padding(end = 8.dp, top = 16.dp),
@@ -366,7 +645,41 @@ fun BodyDetalle(
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                CustomOutlinedTextField(
+                ExposedDropdownMenuBox(
+                    modifier = Modifier.width(200.dp),
+                    expanded = expanded.value,
+                    onExpandedChange = {
+                        expanded.value = !expanded.value
+                        conformidad.value = ""
+                        conformidadComment = ""
+                    }) {
+                    CustomOutlinedTextField(
+                        modifier = Modifier.menuAnchor(),
+                        value = conformidad.value,
+                        onValueChange = { },
+                        label = "Estado",
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded.value) },
+                        readOnly = true
+                    )
+                    ExposedDropdownMenu(
+                        modifier = Modifier
+                            .background(Color.White)
+                            .clip(RoundedCornerShape(8.dp)),
+                        expanded = expanded.value,
+                        onDismissRequest = { expanded.value = false }) {
+                        options.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option, color = Color.Black) },
+                                onClick = {
+                                    conformidad.value = option
+                                    expanded.value = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                /*CustomOutlinedTextField(
                     modifier = Modifier
                         .width(200.dp)
                         .onGloballyPositioned { textFieldSize = it.size.toSize() },
@@ -378,15 +691,14 @@ fun BodyDetalle(
                             Icon(Icons.Filled.ArrowDropDown, contentDescription = "Expandir")
                         }
                     },
-                    readOnly = true,
-                    onclick = { expanded.value = true }
+                    readOnly = true
                 )
                 CustomSpinner(
                     expanded = expanded,
                     options = options,
                     operador = conformidad,
                     textFieldSize = textFieldSize
-                )
+                )*/
                 CustomOutlinedTextField2(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -394,6 +706,7 @@ fun BodyDetalle(
                     value = conformidadComment,
                     onValueChange = { conformidadComment = it },
                     label = "Comentario",
+                    readOnly = !conformidad.value.isNotEmpty()
                 )
             }
             BotonD(
@@ -446,8 +759,8 @@ fun BotonD(
             if (evalState.state) {
                 showDialog = true
                 Log.e("Resultado2", evalState.evalResponde.data)
-            }
-            Log.e("Evaluacion", evaluacion.toString())*/
+            }*/
+            Log.e("Evaluacion", evaluacion.toString())
         },
         colors = buttonColors,
         shape = RoundedCornerShape(18.dp)

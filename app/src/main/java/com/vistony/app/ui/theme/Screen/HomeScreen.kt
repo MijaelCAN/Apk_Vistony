@@ -7,6 +7,8 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,12 +29,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -47,6 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -62,10 +69,12 @@ import com.vistony.app.ViewModel.OperarioViewModel
 import com.vistony.app.ViewModel.SharedViewModel
 import com.vistony.app.ui.theme.Screen.Generic.CustomOutlinedTextField
 import com.vistony.app.ui.theme.Screen.Generic.CustomSpinner
+import com.vistony.app.ui.theme.Screen.Generic.CustomSpinner2
 import com.vistony.app.ui.theme.Screen.Generic.TopBar
 import java.text.SimpleDateFormat
 import java.time.LocalTime
 import java.util.Date
+import kotlin.math.exp
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -124,12 +133,15 @@ fun BodyHome(
     var um by rememberSaveable { mutableStateOf("") }
     var cantidad by rememberSaveable { mutableStateOf("") }
     var linea by rememberSaveable { mutableStateOf("") }
-    val operador = rememberSaveable{ mutableStateOf("") }
+    val newLinea = remember { mutableStateOf("Seleccione") }
+    val operador = rememberSaveable { mutableStateOf("Seleccione") }
     val fecha by remember { mutableStateOf(SimpleDateFormat("dd/MM/yyyy").format(Date())) }
     val newfecha by remember { mutableStateOf(SimpleDateFormat("yyyyMMdd").format(Date())) }
     val expanded = remember { mutableStateOf(false) }
+    val expandedLine = remember { mutableStateOf(false) }
 
     val operarioState = viewModel._operarioState
+    val lineaState = viewModel._lineaState
     val otState = otViewModel._otState
 
     var textFieldSize by remember { mutableStateOf(Size.Zero) }
@@ -159,6 +171,7 @@ fun BodyHome(
             um = otState.productoResponse?.data?.UM.toString()
             description = otState.productoResponse?.data?.Producto.toString()
             linea = otState.productoResponse?.data?.Linea.toString()
+            newLinea.value = lineaState.lineaResponse?.data?.find { it.ID == linea }?.Descripcion ?: newLinea.value
             Log.i("VER", "ENTRO AL NO VACIO")
         } else {
             um = ""
@@ -170,6 +183,7 @@ fun BodyHome(
     um = otState.productoResponse?.data?.UM.toString()
     description = otState.productoResponse?.data?.Producto.toString()
     linea = otState.productoResponse?.data?.Linea.toString()
+    newLinea.value = lineaState.lineaResponse?.data?.find { it.ID == linea }?.Descripcion ?: newLinea.value
 
 
     Box(
@@ -267,31 +281,124 @@ fun BodyHome(
                     .padding(horizontal = 24.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                CustomOutlinedTextField(
-                    modifier = Modifier
-                        .weight(1f)
-                        .onGloballyPositioned { textFieldSize = it.size.toSize() },
-                    value = operador.value,
-                    onValueChange = { operador.value = it },
-                    label = "Maquinista Encargado",
-                    trailingIcon = {
-                        IconButton(onClick = { expanded.value = true }) {
-                            Icon(Icons.Filled.ArrowDropDown, contentDescription = "Expandir")
+                ExposedDropdownMenuBox(
+                    modifier = Modifier.weight(1f),
+                    expanded = expanded.value,
+                    onExpandedChange = { expanded.value = !expanded.value }) {
+
+                    /*TextField(
+                        value = operador.value,
+                        onValueChange = {},
+                        readOnly = true,
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded.value)
+                        },
+                        colors = ExposedDropdownMenuDefaults.textFieldColors(),
+                        modifier = Modifier.menuAnchor()
+                    )*/
+                    CustomOutlinedTextField(
+                        modifier = Modifier.menuAnchor(),
+                        value = operador.value,
+                        onValueChange = {},
+                        label = "Maquinista Encargado",
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded.value)
+                            /*IconButton(onClick = { expanded.value = true }) {
+                                Icon(Icons.Filled.ArrowDropDown, contentDescription = "Expandir")
+                            }*/
+                        },
+                        readOnly = true
+                    )
+                    val options = operarioState.operarioResponse?.data?.map { it.Nonbre } ?: emptyList()
+
+                    ExposedDropdownMenu(
+                        modifier = Modifier
+                            .background(Color.White)
+                            .clip(RoundedCornerShape(8.dp)),
+                        expanded = expanded.value,
+                        onDismissRequest = { expanded.value = false }) {
+                        options.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option, color = Color.Black) },
+                                onClick = {
+                                    operador.value = option
+                                    expanded.value = false
+                                }
+                            )
                         }
-                    },
-                    readOnly = true,
-                    onclick = {expanded.value = true}
-                )
-                val options = operarioState.operarioResponse?.data?.map { it.Nonbre } ?: emptyList()
-                CustomSpinner(expanded, options, operador, textFieldSize)
+                    }
+                }
+
+
+                /*val onClickAction = remember { { expanded.value = true } }
+                Box(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .weight(1f)
+                        .pointerInput(Unit) {
+                            detectTapGestures(onTap = { onClickAction() })
+                        }
+                ) {
+                    CustomOutlinedTextField(
+                        modifier = Modifier
+                            //.weight(1f)
+                            .onGloballyPositioned { textFieldSize = it.size.toSize() },
+                        value = operador.value,
+                        onValueChange = { operador.value = it },
+                        label = "Maquinista Encargado",
+                        trailingIcon = {
+                            IconButton(onClick = { expanded.value = true }) {
+                                Icon(Icons.Filled.ArrowDropDown, contentDescription = "Expandir")
+                            }
+                        },
+                        readOnly = true
+                    )
+                }*/
+                /*val options = operarioState.operarioResponse?.data?.map { it.Nonbre } ?: emptyList()
+                CustomSpinner(expanded, options, operador, textFieldSize)*/
                 Spacer(modifier = Modifier.width(16.dp))
-                CustomOutlinedTextField(
+                /*CustomOutlinedTextField(
                     modifier = Modifier.weight(1f),
                     value = linea,
                     onValueChange = { linea = it },
                     label = "Línea",
                     readOnly = true
-                )
+                )*/
+                //--------------------- Linea ----------------------------
+
+                ExposedDropdownMenuBox(
+                    modifier = Modifier.weight(1f),
+                    expanded = expandedLine.value,
+                    onExpandedChange = { expandedLine.value = !expandedLine.value }) {
+                    CustomOutlinedTextField(
+                        modifier = Modifier.menuAnchor(),
+                        value = newLinea.value,
+                        onValueChange = {},
+                        label = "Línea",
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded.value) },
+                        readOnly = true
+                    )
+                    val optionsLinea = lineaState.lineaResponse?.data?.map { it.Descripcion } ?: emptyList()
+
+
+                    ExposedDropdownMenu(
+                        modifier = Modifier
+                            .background(Color.White)
+                            .clip(RoundedCornerShape(8.dp)),
+                        expanded = expandedLine.value,
+                        onDismissRequest = { expandedLine.value = false }) {
+                        optionsLinea.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option, color = Color.Black) },
+                                onClick = {
+                                    newLinea.value = option
+                                    expandedLine.value = false
+                                }
+                            )
+                        }
+                    }
+                }
+
             }
             Spacer(modifier = Modifier.height(30.dp))
             BotonH(
@@ -300,7 +407,7 @@ fun BodyHome(
                 um,
                 cantidad,
                 turno,
-                linea,
+                newLinea.value,
                 operador.value,
                 newfecha,
                 navController,
@@ -342,7 +449,8 @@ fun BotonH(
     sharedViewModel: SharedViewModel
 ) {
     //var stateButton by remember { mutableStateOf(false) }
-    val stateButton = ot.isNotEmpty() && description.isNotEmpty() && um.isNotEmpty() && cantidad.isNotEmpty() && operador.isNotEmpty()
+    val stateButton =
+        ot.isNotEmpty() && description.isNotEmpty() && um.isNotEmpty() && cantidad.isNotEmpty() && operador.isNotEmpty() &&  linea!="Seleccione"
     LaunchedEffect(ot, description, um, cantidad, turno, fecha, linea, operador) {
         sharedViewModel.turno = turno
         sharedViewModel.ot = ot
@@ -376,6 +484,18 @@ fun BotonH(
         Text(text = "Inspección")
     }
 }
-
+/*
+Dosimetría
+Sonometría
+Iluminación
+Estrés Térmico
+Estrés por Frio
+Confort Térmico
+Radiación UV
+Radiación Electromagnética
+Vibración
+Velocidad del Aire
+Humedad Relativa
+ */
 
 
