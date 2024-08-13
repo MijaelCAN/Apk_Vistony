@@ -22,14 +22,17 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TriStateCheckbox
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -38,6 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,11 +64,13 @@ import com.vistony.app.Entidad.Evaluacion
 import com.vistony.app.R
 import com.vistony.app.ViewModel.EvalViewModel
 import com.vistony.app.ViewModel.SharedViewModel
+import com.vistony.app.ui.theme.Screen.Generic.CustomDrawer
 import com.vistony.app.ui.theme.Screen.Generic.CustomOutlinedTextField
 import com.vistony.app.ui.theme.Screen.Generic.CustomOutlinedTextField2
 import com.vistony.app.ui.theme.Screen.Generic.CustomText
 import com.vistony.app.ui.theme.Screen.Generic.SuccessDialog
 import com.vistony.app.ui.theme.Screen.Generic.TopBar
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,34 +79,41 @@ fun DetalleScreen(
     sharedViewModel: SharedViewModel,
     viewModel: EvalViewModel = hiltViewModel()
 ) {
-    val scrollState = rememberScrollState()
-    Scaffold(
-        topBar = { TopBar("Parada de Maquina",navController = navController, onMenuClick = {}) }
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(it)
-                .background(color = Color(0xFF0B4FAF))
-                .verticalScroll(scrollState),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = { CustomDrawer(navController = navController) }) {
+        Scaffold(
+            topBar = { TopBar("Detalle de Inspección", navController = navController, onMenuClick = {
+                scope.launch { drawerState.open() }
+            }) }
         ) {
-            Box(
+            Column(
                 modifier = Modifier
-                    .width(610.dp)
-                    .height(210.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color.White)
+                    .fillMaxSize()
+                    .padding(it)
+                    .background(color = Color(0xFF0B4FAF))
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Top
             ) {
-                Image(
-                    modifier = Modifier.size(width = 600.dp, height = 200.dp),
-                    painter = painterResource(id = R.drawable.vistony),
-                    contentDescription = "Logo"
-                )
+                Box(
+                    modifier = Modifier
+                        .width(610.dp)
+                        .height(210.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White)
+                ) {
+                    Image(
+                        modifier = Modifier.size(width = 600.dp, height = 200.dp),
+                        painter = painterResource(id = R.drawable.vistony),
+                        contentDescription = "Logo"
+                    )
+                }
+                Spacer(modifier = Modifier.height(15.dp))
+                BodyDetalle(navController, viewModel, sharedViewModel)
             }
-            Spacer(modifier = Modifier.height(15.dp))
-            BodyDetalle(navController, viewModel, sharedViewModel)
         }
     }
 }
@@ -215,7 +228,7 @@ fun BodyDetalle(
                 style = TextStyle(color = Color.Black)
             )
             val keyboardController = LocalSoftwareKeyboardController.current
-            val focusManager= LocalFocusManager.current
+            val focusManager = LocalFocusManager.current
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -616,7 +629,7 @@ fun BodyDetalle(
                     append("This is clickable")
                 }
             }
-            
+
             //------------------------------ EVALUACION ----------------------------------------
             Text(
                 text = "EVALUACIÓN",

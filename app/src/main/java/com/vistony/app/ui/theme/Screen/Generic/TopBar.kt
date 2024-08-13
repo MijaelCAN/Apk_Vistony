@@ -17,15 +17,15 @@ import androidx.navigation.NavController
 @Composable
 fun TopBar(title:String,navController: NavController, onMenuClick: () -> Unit) {
     TopAppBar(
-        title = { Text(text = title) },
+        title = { Text(text = title, color = Color.White) },
         navigationIcon = {
             IconButton(onClick = { onMenuClick() }) {
-                Icon(Icons.Filled.Menu, contentDescription = "Menú")
+                Icon(Icons.Filled.Menu, contentDescription = "Menú", tint = Color.White)
             }
         },
         actions = {
             IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.Filled.ArrowBack, contentDescription = "Atrás")
+                Icon(Icons.Filled.ArrowBack, contentDescription = "Atrás", tint = Color.White)
             }
         },
         colors = TopAppBarDefaults.mediumTopAppBarColors(containerColor = Color(0xFF0B4FAF))

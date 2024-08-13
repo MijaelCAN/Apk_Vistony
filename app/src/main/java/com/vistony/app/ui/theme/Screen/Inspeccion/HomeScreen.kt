@@ -6,7 +6,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,9 +24,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Construction
-import androidx.compose.material.icons.filled.FormatLineSpacing
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenuItem
@@ -37,7 +33,6 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -61,6 +56,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.journeyapps.barcodescanner.CaptureActivity
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import com.vistony.app.R
@@ -187,6 +183,8 @@ fun BodyHome(
     val lineaState = viewModel._lineaState
     val otState = otViewModel._otState
 
+    var showDialog by remember { mutableStateOf(false) }
+
     var textFieldSize by remember { mutableStateOf(Size.Zero) }
     //operarioState.operarioResponse?.data?.map { it.Nonbre } ?: emptyList()
 
@@ -202,11 +200,13 @@ fun BodyHome(
                 new_ot = scannedText.substring(startIndex, endIndex)
                 ot = new_ot
             } else {
-                ot = "Codigo de barra, no válido" // Valor por defecto o manejo de error
+                ot = "Codigo de barra, no válido"
             }
 
         }
     )
+
+
     val currentOt by rememberUpdatedState(ot)
     LaunchedEffect(currentOt) {
         if (currentOt.isNotEmpty()) {
@@ -284,9 +284,7 @@ fun BodyHome(
                 onValueChange = { ot = it },
                 label = "OT",
                 trailingIcon = {
-                    IconButton(onClick = {
-                        scanLauncher.launch(ScanOptions())
-                    }
+                    IconButton(onClick = { scanLauncher.launch(ScanOptions()) }
                     ) {
                         Icon(Icons.Filled.CameraAlt, contentDescription = "Camera")
                     }
@@ -315,7 +313,7 @@ fun BodyHome(
                 CustomOutlinedTextField(
                     modifier = Modifier.weight(1f),
                     value = cantidad,
-                    onValueChange = { cantidad = it },
+                    onValueChange = { cantidad = it.filter { char -> char.isDigit() } },
                     label = "Cantidad",
                     keyboardOption = KeyboardOptions().copy(keyboardType = KeyboardType.Number),
                 )
@@ -403,16 +401,16 @@ fun BodyHome(
                 /*val options = operarioState.operarioResponse?.data?.map { it.Nonbre } ?: emptyList()
                 CustomSpinner(expanded, options, operador, textFieldSize)*/
                 Spacer(modifier = Modifier.width(16.dp))
-                /*CustomOutlinedTextField(
+                CustomOutlinedTextField(
                     modifier = Modifier.weight(1f),
                     value = linea,
                     onValueChange = { linea = it },
                     label = "Línea",
                     readOnly = true
-                )*/
+                )
                 //--------------------- Linea ----------------------------
 
-                ExposedDropdownMenuBox(
+                /*ExposedDropdownMenuBox(
                     modifier = Modifier.weight(1f),
                     expanded = expandedLine.value,
                     onExpandedChange = { expandedLine.value = !expandedLine.value }) {
@@ -444,7 +442,7 @@ fun BodyHome(
                             )
                         }
                     }
-                }
+                }*/
 
             }
             Spacer(modifier = Modifier.height(30.dp))
@@ -454,7 +452,7 @@ fun BodyHome(
                 um,
                 cantidad,
                 turno,
-                newLinea.value,
+                linea,
                 operador.value,
                 newfecha,
                 navController,
@@ -477,6 +475,26 @@ fun BodyHome(
                     )
                 }
             }*/
+            /*AlertDialog(
+                modifier = Modifier
+                    .width(400.dp)
+                    .height(300.dp)
+                    .clip(RoundedCornerShape(30.dp))
+                    .background(Color.White),
+                onDismissRequest = {showDialog = false},
+                title = {},
+                text = {},
+                confirmButton = {
+                    Button(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 48.dp, vertical = 0.dp),
+                        onClick = { navController.navigate("home") },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0054A3))
+                    ) {
+                        Text(text = "Cerrar", color = Color.White)
+                    }
+                })*/
 
         }
     }
@@ -497,7 +515,7 @@ fun BotonH(
 ) {
     //var stateButton by remember { mutableStateOf(false) }
     val stateButton =
-        ot.isNotEmpty() && description.isNotEmpty() && um.isNotEmpty() && cantidad.isNotEmpty() && operador.isNotEmpty() && linea != "Seleccione"
+        ot.isNotEmpty() && description.isNotEmpty() && um.isNotEmpty() && cantidad.isNotEmpty() && operador != "Seleccione" && linea.isNotEmpty()
     LaunchedEffect(ot, description, um, cantidad, turno, fecha, linea, operador) {
         sharedViewModel.turno = turno
         sharedViewModel.ot = ot

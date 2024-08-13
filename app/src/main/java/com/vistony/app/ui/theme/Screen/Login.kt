@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Login
@@ -43,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -98,18 +100,20 @@ fun LoginScreen(
                         Color.White,
                         shape = RoundedCornerShape(bottomStart = 150.dp, bottomEnd = 150.dp)
                     )
-                    //.offset(x = 0.dp, y = (-100).dp) // Puedes ajustar el desplazamiento aquí
+                //.offset(x = 0.dp, y = (-100).dp) // Puedes ajustar el desplazamiento aquí
             )
-            Body(navController,viewModel)
+            Body(navController, viewModel)
         }
 
     }
 }
+
 @Composable
-fun Titulo(){
+fun Titulo() {
     Text(
         modifier = Modifier.fillMaxWidth(),
-        text = "Iniciar Sesión", style = TextStyle(
+        text = "Iniciar Sesión",
+        style = TextStyle(
             fontWeight = FontWeight.Bold,
             fontSize = 30.sp,
             textAlign = TextAlign.Center,
@@ -144,12 +148,18 @@ fun Body(navController: NavHostController, viewModel: LoginViewModel) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Image(modifier = Modifier.size(width = 400.dp, height = 150.dp), painter = painterResource(id = R.drawable.vistony), contentDescription = "Logo")
+        Image(
+            modifier = Modifier.size(width = 400.dp, height = 150.dp),
+            painter = painterResource(id = R.drawable.vistony),
+            contentDescription = "Logo"
+        )
         Titulo()
         Spacer(modifier = Modifier.height(50.dp))
         OutlinedTextField(
             value = user,
-            onValueChange = { user = it },
+            onValueChange = {
+                user = it.filter { char -> char.isLetterOrDigit() }
+            },
             label = { Text(text = "Usuario") },
             colors = TextFieldDefaults.outlinedTextFieldColors(
                 focusedLabelColor = Color.Black,
@@ -159,9 +169,11 @@ fun Body(navController: NavHostController, viewModel: LoginViewModel) {
                 unfocusedBorderColor = Color(0xFFA2A2A2),
                 focusedBorderColor = Color(0xFF0054A3)
             ),
+            keyboardOptions = KeyboardOptions().copy(keyboardType = KeyboardType.Text),
             leadingIcon = {
                 Icon(Icons.Filled.Person, contentDescription = "User", tint = Color(0xFFA2A2A2))
-            }
+            },
+            maxLines = 1
         )
         OutlinedTextField(
             value = pass,
@@ -179,9 +191,13 @@ fun Body(navController: NavHostController, viewModel: LoginViewModel) {
                 Icon(Icons.Filled.Lock, contentDescription = "User", tint = Color(0xFFA2A2A2))
             },
             trailingIcon = {
-                val image = if(passVisible)Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                val image = if (passVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                 IconButton(onClick = { passVisible = !passVisible }) {
-                   Icon(imageVector = image, contentDescription = "Contraseña", tint = Color(0xFFA2A2A2))
+                    Icon(
+                        imageVector = image,
+                        contentDescription = "Contraseña",
+                        tint = Color(0xFFA2A2A2)
+                    )
                 }
             },
             visualTransformation = if (passVisible) VisualTransformation.None else PasswordVisualTransformation()
@@ -232,11 +248,12 @@ fun Boton(user: String, pass: String, navController: NavHostController, viewMode
             .width(200.dp)
             .height(58.dp),
         enabled = stateButton,
-        onClick = { viewModel.validar(user,pass)
-            if(viewModel._loginstate.state){
+        onClick = {
+            viewModel.validar(user, pass)
+            if (viewModel._loginstate.state) {
                 navController.navigate("home")
             }
-                  },
+        },
         colors = buttonColors,
         shape = RoundedCornerShape(18.dp)
     ) {

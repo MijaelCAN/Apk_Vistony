@@ -1,7 +1,6 @@
 package com.vistony.app
 
-import android.content.Context
-import android.net.ConnectivityManager
+import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -22,9 +21,10 @@ import com.vistony.app.ViewModel.NetworkStatusViewModel
 import com.vistony.app.ViewModel.SharedViewModel
 import com.vistony.app.ui.theme.Screen.Inspeccion.DetalleScreen
 import com.vistony.app.ui.theme.Screen.Inspeccion.HomeScreen
-import com.vistony.app.ui.theme.Screen.Inspeccion.ListScreen
 import com.vistony.app.ui.theme.Screen.LoginScreen
 import com.vistony.app.ui.theme.Screen.NoInternetScreen
+import com.vistony.app.ui.theme.Screen.Parada.HomeParada
+import com.vistony.app.ui.theme.Screen.Parada.QrCodeScanner
 import com.vistony.app.ui.theme.VistonyTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -33,6 +33,7 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         setContent {
             VistonyTheme {
                 // A surface container using the 'background' color from the theme
@@ -46,7 +47,7 @@ class MainActivity : ComponentActivity() {
                     val status by networkStatusViewModel.status.collectAsState()
 
                     if(status == ConnectivityObserver.Status.Available){
-                        NavHost(startDestination = "home",navController =navController){
+                        NavHost(startDestination = "login",navController =navController){
                             composable("login"){
                                 LoginScreen(navController)
                             }
@@ -57,19 +58,19 @@ class MainActivity : ComponentActivity() {
                                 DetalleScreen(navController,sharedViewModel)
                             }
                             composable("listaInsp"){
-                                ListScreen(navController)
+                                LoginScreen(navController = navController)
+                            }
+                            composable("homeParada"){
+                                HomeParada(navController = navController)
                             }
                         }
                     }else{
                         NoInternetScreen()
                     }
+
                 }
             }
         }
     }
-    public fun isInternetAvailable(context: Context): Boolean {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val networkInfo = connectivityManager.activeNetworkInfo
-        return networkInfo != null && networkInfo.isConnected
-    }
+
 }

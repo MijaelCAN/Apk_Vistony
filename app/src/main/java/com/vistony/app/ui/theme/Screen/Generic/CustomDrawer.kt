@@ -47,7 +47,7 @@ fun CustomDrawer(navController: NavController) {
             DrawerMenuItem(
                 icon = Icons.Filled.Construction,
                 text = "Parada Máquina",
-                onClick = { navController.navigate("parada") }
+                onClick = { navController.navigate("homeParada") }
             )
             DrawerMenuItem(
                 icon = Icons.Filled.Settings,
