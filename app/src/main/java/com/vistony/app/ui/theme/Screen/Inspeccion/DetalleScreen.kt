@@ -223,7 +223,7 @@ fun BodyDetalle(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "COMENTARIO",
+                text = "OBSERVACIONES",
                 modifier = Modifier.padding(end = 8.dp, top = 16.dp),
                 style = TextStyle(color = Color.Black)
             )
@@ -248,7 +248,7 @@ fun BodyDetalle(
                     colors = CheckboxDefaults.colors(
                         checkedColor = when (pesoCheck) {
                             ToggleableState.On -> Color.Green
-                            ToggleableState.Indeterminate -> Color.Red
+                            ToggleableState.Indeterminate -> Color.Yellow
                             ToggleableState.Off -> Color.Gray
                         },
                         uncheckedColor = Color.Gray,
@@ -272,7 +272,7 @@ fun BodyDetalle(
                     },
                     label = when (pesoCheck) {
                         ToggleableState.On -> "Comentario"
-                        ToggleableState.Indeterminate -> "Comentario"
+                        ToggleableState.Indeterminate -> "Observacion"
                         ToggleableState.Off -> ""
                     },
                     readOnly = pesoCheck == ToggleableState.Off
@@ -297,7 +297,7 @@ fun BodyDetalle(
                     colors = CheckboxDefaults.colors(
                         checkedColor = when (etiqCheck) {
                             ToggleableState.On -> Color.Green
-                            ToggleableState.Indeterminate -> Color.Red
+                            ToggleableState.Indeterminate -> Color.Yellow
                             ToggleableState.Off -> Color.Gray
                         },
                         uncheckedColor = Color.Gray,
@@ -320,7 +320,7 @@ fun BodyDetalle(
                     },
                     label = when (etiqCheck) {
                         ToggleableState.On -> "Comentario"
-                        ToggleableState.Indeterminate -> "Comentario"
+                        ToggleableState.Indeterminate -> "Observacion"
                         ToggleableState.Off -> ""
                     },
                     readOnly = etiqCheck == ToggleableState.Off
@@ -346,7 +346,7 @@ fun BodyDetalle(
                     colors = CheckboxDefaults.colors(
                         checkedColor = when (lotCheck) {
                             ToggleableState.On -> Color.Green
-                            ToggleableState.Indeterminate -> Color.Red
+                            ToggleableState.Indeterminate -> Color.Yellow
                             ToggleableState.Off -> Color.Gray
                         },
                         uncheckedColor = Color.Gray,
@@ -369,7 +369,7 @@ fun BodyDetalle(
                     },
                     label = when (lotCheck) {
                         ToggleableState.On -> "Comentario"
-                        ToggleableState.Indeterminate -> "Comentario"
+                        ToggleableState.Indeterminate -> "Observacion"
                         ToggleableState.Off -> ""
                     },
                     readOnly = lotCheck == ToggleableState.Off
@@ -395,7 +395,7 @@ fun BodyDetalle(
                     colors = CheckboxDefaults.colors(
                         checkedColor = when (limpCheck) {
                             ToggleableState.On -> Color.Green
-                            ToggleableState.Indeterminate -> Color.Red
+                            ToggleableState.Indeterminate -> Color.Yellow
                             ToggleableState.Off -> Color.Gray
                         },
                         uncheckedColor = Color.Gray,
@@ -418,7 +418,7 @@ fun BodyDetalle(
                     },
                     label = when (limpCheck) {
                         ToggleableState.On -> "Comentario"
-                        ToggleableState.Indeterminate -> "Comentario"
+                        ToggleableState.Indeterminate -> "Observacion"
                         ToggleableState.Off -> ""
                     },
                     readOnly = limpCheck == ToggleableState.Off
@@ -444,7 +444,7 @@ fun BodyDetalle(
                     colors = CheckboxDefaults.colors(
                         checkedColor = when (sellCheck) {
                             ToggleableState.On -> Color.Green
-                            ToggleableState.Indeterminate -> Color.Red
+                            ToggleableState.Indeterminate -> Color.Yellow
                             ToggleableState.Off -> Color.Gray
                         },
                         uncheckedColor = Color.Gray,
@@ -467,7 +467,7 @@ fun BodyDetalle(
                     },
                     label = when (sellCheck) {
                         ToggleableState.On -> "Comentario"
-                        ToggleableState.Indeterminate -> "Comentario"
+                        ToggleableState.Indeterminate -> "Observacion"
                         ToggleableState.Off -> ""
                     },
                     readOnly = sellCheck == ToggleableState.Off
@@ -493,7 +493,7 @@ fun BodyDetalle(
                     colors = CheckboxDefaults.colors(
                         checkedColor = when (encCheck) {
                             ToggleableState.On -> Color.Green
-                            ToggleableState.Indeterminate -> Color.Red
+                            ToggleableState.Indeterminate -> Color.Yellow
                             ToggleableState.Off -> Color.Gray
                         },
                         uncheckedColor = Color.Gray,
@@ -516,7 +516,7 @@ fun BodyDetalle(
                     },
                     label = when (encCheck) {
                         ToggleableState.On -> "Comentario"
-                        ToggleableState.Indeterminate -> "Comentario"
+                        ToggleableState.Indeterminate -> "Observacion"
                         ToggleableState.Off -> ""
                     },
                     readOnly = encCheck == ToggleableState.Off
@@ -542,7 +542,7 @@ fun BodyDetalle(
                     colors = CheckboxDefaults.colors(
                         checkedColor = when (rotuloCheck) {
                             ToggleableState.On -> Color.Green
-                            ToggleableState.Indeterminate -> Color.Red
+                            ToggleableState.Indeterminate -> Color.Yellow
                             ToggleableState.Off -> Color.Gray
                         },
                         uncheckedColor = Color.Gray,
@@ -565,7 +565,7 @@ fun BodyDetalle(
                     },
                     label = when (rotuloCheck) {
                         ToggleableState.On -> "Comentario"
-                        ToggleableState.Indeterminate -> "Comentario"
+                        ToggleableState.Indeterminate -> "Observacion"
                         ToggleableState.Off -> ""
                     },
                     readOnly = rotuloCheck == ToggleableState.Off
@@ -591,7 +591,7 @@ fun BodyDetalle(
                     colors = CheckboxDefaults.colors(
                         checkedColor = when (paletCheck) {
                             ToggleableState.On -> Color.Green
-                            ToggleableState.Indeterminate -> Color.Red
+                            ToggleableState.Indeterminate -> Color.Yellow
                             ToggleableState.Off -> Color.Gray
                         },
                         uncheckedColor = Color.Gray,
@@ -615,7 +615,7 @@ fun BodyDetalle(
                     },
                     label = when (paletCheck) {
                         ToggleableState.On -> "Comentario"
-                        ToggleableState.Indeterminate -> "Comentario"
+                        ToggleableState.Indeterminate -> "Observacion"
                         ToggleableState.Off -> ""
                     },
                     readOnly = paletCheck == ToggleableState.Off
@@ -702,7 +702,7 @@ fun BodyDetalle(
                         .padding(top = 16.dp),
                     value = conformidadComment,
                     onValueChange = { conformidadComment = it },
-                    label = "Comentario",
+                    label = "Observacion",
                     readOnly = !conformidad.value.isNotEmpty()
                 )
             }
@@ -817,3 +817,60 @@ fun BotonD(
         titulo = dialogTitle
     )
 }
+/*
+@Composable
+fun FilterableDropdownMenu(options: List<String>) {
+    val expanded = remember { mutableStateOf(false) }
+    val conformidad = remember { mutableStateOf("") }
+    val filteredOptions = remember { mutableStateOf(options) }
+
+    // Función para filtrar las opciones
+    fun filterOptions(query: String) {
+        filteredOptions.value = if (query.isEmpty()) {
+            options
+        } else {
+            options.filter { it.contains(query, ignoreCase = true) }
+        }
+    }
+
+    ExposedDropdownMenuBox(
+        modifier = Modifier.width(200.dp),
+        expanded = expanded.value,
+        onExpandedChange = {
+            expanded.value = !expanded.value
+            if (!expanded.value) {
+                conformidad.value = ""
+                filteredOptions.value = options // Resetear las opciones filtradas
+            }
+        }
+    ) {
+        CustomOutlinedTextField(
+            modifier = Modifier.menuAnchor(),
+            value = conformidad.value,
+            onValueChange = { newValue ->
+                conformidad.value = newValue
+                filterOptions(newValue) // Filtrar opciones al cambiar el texto
+            },
+            label = { Text("Estado") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded.value) },
+            readOnly = false // Permitir la edición
+        )
+        ExposedDropdownMenu(
+            modifier = Modifier
+                .background(Color.White)
+                .clip(RoundedCornerShape(8.dp)),
+            expanded = expanded.value,
+            onDismissRequest = { expanded.value = false }
+        ) {
+            filteredOptions.value.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option, color = Color.Black) },
+                    onClick = {
+                        conformidad.value = option
+                        expanded.value = false
+                    }
+                )
+            }
+        }
+    }
+}*/

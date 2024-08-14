@@ -66,7 +66,9 @@ import com.vistony.app.ViewModel.SharedViewModel
 import com.vistony.app.ui.theme.Screen.Generic.CustomDrawer
 import com.vistony.app.ui.theme.Screen.Generic.CustomOutlinedTextField
 import com.vistony.app.ui.theme.Screen.Generic.TopBar
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.time.LocalTime
 import java.util.Date
@@ -173,7 +175,7 @@ fun BodyHome(
     var cantidad by rememberSaveable { mutableStateOf("") }
     var linea by rememberSaveable { mutableStateOf("") }
     val newLinea = remember { mutableStateOf("Seleccione") }
-    val operador = rememberSaveable { mutableStateOf("Seleccione") }
+    val operador = rememberSaveable { mutableStateOf("") }
     val fecha by remember { mutableStateOf(SimpleDateFormat("dd/MM/yyyy").format(Date())) }
     val newfecha by remember { mutableStateOf(SimpleDateFormat("yyyyMMdd").format(Date())) }
     val expanded = remember { mutableStateOf(false) }
@@ -211,11 +213,11 @@ fun BodyHome(
     LaunchedEffect(currentOt) {
         if (currentOt.isNotEmpty()) {
             otViewModel.getCodigoBarra(currentOt)
+
             um = otState.productoResponse?.data?.UM.toString()
             description = otState.productoResponse?.data?.Producto.toString()
             linea = otState.productoResponse?.data?.Linea.toString()
-            newLinea.value = lineaState.lineaResponse?.data?.find { it.ID == linea }?.Descripcion
-                ?: newLinea.value
+            newLinea.value = lineaState.lineaResponse?.data?.find { it.ID == linea }?.Descripcion ?: newLinea.value
             Log.i("VER", "ENTRO AL NO VACIO")
         } else {
             um = ""
@@ -224,9 +226,9 @@ fun BodyHome(
             Log.i("VER", "ENTRO AL VACIO")
         }
     }
-    um = otState.productoResponse?.data?.UM.toString()
-    description = otState.productoResponse?.data?.Producto.toString()
-    linea = otState.productoResponse?.data?.Linea.toString()
+    um = otState.productoResponse?.data?.UM.orEmpty()
+    description = otState.productoResponse?.data?.Producto.orEmpty()
+    linea = otState.productoResponse?.data?.Linea.orEmpty()
     newLinea.value =
         lineaState.lineaResponse?.data?.find { it.ID == linea }?.Descripcion ?: newLinea.value
 
@@ -289,6 +291,7 @@ fun BodyHome(
                         Icon(Icons.Filled.CameraAlt, contentDescription = "Camera")
                     }
                 },
+                keyboardOption = KeyboardOptions().copy(keyboardType = KeyboardType.Number),
                 readOnly = false
             )
             CustomOutlinedTextField(
@@ -314,7 +317,7 @@ fun BodyHome(
                     modifier = Modifier.weight(1f),
                     value = cantidad,
                     onValueChange = { cantidad = it.filter { char -> char.isDigit() } },
-                    label = "Cantidad",
+                    label = "Cant. de cajas y/o Pallets",
                     keyboardOption = KeyboardOptions().copy(keyboardType = KeyboardType.Number),
                 )
             }
@@ -324,44 +327,44 @@ fun BodyHome(
                     .padding(horizontal = 24.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                val options = operarioState.operarioResponse?.data?.map { it.Nonbre } ?: emptyList()
+                val filteredOptions = remember { mutableStateOf(options) }
+
+                LaunchedEffect(operador.value) {
+                    if (operador.value.isEmpty()) {
+                        filteredOptions.value = options
+                        expanded.value = false
+                    } else {
+                        expanded.value = true
+                        filteredOptions.value =
+                            withContext(Dispatchers.Default) { // En segundo plano
+                                options.filter { it.contains(operador.value, ignoreCase = true) }
+                            }
+                    }
+                }
+
                 ExposedDropdownMenuBox(
                     modifier = Modifier.weight(1f),
                     expanded = expanded.value,
-                    onExpandedChange = { expanded.value = !expanded.value }) {
-
-                    /*TextField(
-                        value = operador.value,
-                        onValueChange = {},
-                        readOnly = true,
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded.value)
-                        },
-                        colors = ExposedDropdownMenuDefaults.textFieldColors(),
-                        modifier = Modifier.menuAnchor()
-                    )*/
+                    onExpandedChange = { expanded.value = !expanded.value
+                    }) {
                     CustomOutlinedTextField(
                         modifier = Modifier.menuAnchor(),
                         value = operador.value,
-                        onValueChange = {},
+                        onValueChange = {newValue ->
+                            operador.value = newValue.filter { char-> char.isLetter() }
+                            /*filterOptions(newValue)*/},
                         label = "Maquinista Encargado",
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded.value)
-                            /*IconButton(onClick = { expanded.value = true }) {
-                                Icon(Icons.Filled.ArrowDropDown, contentDescription = "Expandir")
-                            }*/
-                        },
-                        readOnly = true
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded.value) },
+                        readOnly = false
                     )
-                    val options =
-                        operarioState.operarioResponse?.data?.map { it.Nonbre } ?: emptyList()
-
                     ExposedDropdownMenu(
                         modifier = Modifier
                             .background(Color.White)
                             .clip(RoundedCornerShape(8.dp)),
                         expanded = expanded.value,
                         onDismissRequest = { expanded.value = false }) {
-                        options.forEach { option ->
+                        filteredOptions.value.forEach { option ->
                             DropdownMenuItem(
                                 text = { Text(option, color = Color.Black) },
                                 onClick = {
@@ -515,7 +518,7 @@ fun BotonH(
 ) {
     //var stateButton by remember { mutableStateOf(false) }
     val stateButton =
-        ot.isNotEmpty() && description.isNotEmpty() && um.isNotEmpty() && cantidad.isNotEmpty() && operador != "Seleccione" && linea.isNotEmpty()
+        ot.isNotEmpty() && description.isNotEmpty() && um.isNotEmpty() && cantidad.isNotEmpty() && operador.isNotEmpty() && linea.isNotEmpty()
     LaunchedEffect(ot, description, um, cantidad, turno, fecha, linea, operador) {
         sharedViewModel.turno = turno
         sharedViewModel.ot = ot

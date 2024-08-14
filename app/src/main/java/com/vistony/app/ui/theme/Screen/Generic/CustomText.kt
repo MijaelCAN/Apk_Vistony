@@ -89,7 +89,8 @@ fun CustomOutlinedTextField2(
             cursorColor = Color(0xFF0054A3),
             textColor = Color.Black,
             placeholderColor = Color.White,
-            disabledPlaceholderColor = Color.Black
+            disabledPlaceholderColor = Color.Black,
+            unfocusedLabelColor = Color.LightGray
         ),
         trailingIcon = trailingIcon,
         readOnly = readOnly

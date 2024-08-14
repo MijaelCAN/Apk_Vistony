@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
                     val status by networkStatusViewModel.status.collectAsState()
 
                     if(status == ConnectivityObserver.Status.Available){
-                        NavHost(startDestination = "login",navController =navController){
+                        NavHost(startDestination = "home",navController =navController){
                             composable("login"){
                                 LoginScreen(navController)
                             }

@@ -42,7 +42,7 @@ fun CustomDrawer(navController: NavController) {
             DrawerMenuItem(
                 icon = Icons.Filled.FormatLineSpacing,
                 text = "Inspección",
-                onClick = { navController.navigate("listaInsp") }
+                onClick = { navController.navigate("home") }
             )
             DrawerMenuItem(
                 icon = Icons.Filled.Construction,
