@@ -13,14 +13,17 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.vistony.app.Service.ConnectivityObserver
 import com.vistony.app.ViewModel.NetworkStatusViewModel
 import com.vistony.app.ViewModel.SharedViewModel
 import com.vistony.app.ui.theme.Screen.Inspeccion.DetalleScreen
 import com.vistony.app.ui.theme.Screen.Inspeccion.HomeScreen
+import com.vistony.app.ui.theme.Screen.Inspeccion.ListScreen
 import com.vistony.app.ui.theme.Screen.LoginScreen
 import com.vistony.app.ui.theme.Screen.NoInternetScreen
 import com.vistony.app.ui.theme.Screen.Parada.HomeParada
@@ -46,25 +49,28 @@ class MainActivity : ComponentActivity() {
                     val networkStatusViewModel: NetworkStatusViewModel = hiltViewModel()
                     val status by networkStatusViewModel.status.collectAsState()
 
-                    if(status == ConnectivityObserver.Status.Available){
-                        NavHost(startDestination = "home",navController =navController){
-                            composable("login"){
+                    if (status == ConnectivityObserver.Status.Available) {
+                        NavHost(startDestination = "login", navController = navController) {
+                            composable("login") {
                                 LoginScreen(navController)
                             }
-                            composable("home"){
-                                HomeScreen(navController,sharedViewModel)
+                            composable(
+                                route = "home/{user}",
+                                arguments = listOf(navArgument("user") { type = NavType.StringType })
+                            ) { it ->
+                                HomeScreen(navController, sharedViewModel, id = it.arguments?.getString("user") ?: "")
                             }
-                            composable("detalle"){
-                                DetalleScreen(navController,sharedViewModel)
+                            composable("detalle") {
+                                DetalleScreen(navController, sharedViewModel)
                             }
-                            composable("listaInsp"){
-                                LoginScreen(navController = navController)
+                            composable("listaInsp") {
+                                ListScreen(navController = navController)
                             }
-                            composable("homeParada"){
+                            composable("homeParada") {
                                 HomeParada(navController = navController)
                             }
                         }
-                    }else{
+                    } else {
                         NoInternetScreen()
                     }
 

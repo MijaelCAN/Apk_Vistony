@@ -56,7 +56,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.journeyapps.barcodescanner.CaptureActivity
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import com.vistony.app.R
@@ -80,7 +79,8 @@ fun HomeScreen(
     navController: NavController,
     sharedViewModel: SharedViewModel,
     viewModel: OperarioViewModel = hiltViewModel(),
-    otViewModel: OTViewModel = hiltViewModel()
+    otViewModel: OTViewModel = hiltViewModel(),
+    id: String = "prueba"
 ) {
     /*val scrollState = rememberScrollState()
     Scaffold(
@@ -114,6 +114,7 @@ fun HomeScreen(
     }*/
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    Log.e("id", id)
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -151,7 +152,7 @@ fun HomeScreen(
                         )
                     }
                     Spacer(modifier = Modifier.height(15.dp))
-                    BodyHome(navController, viewModel, otViewModel, sharedViewModel)
+                    BodyHome(navController, viewModel, otViewModel, sharedViewModel,id)
                 }
             }
         )
@@ -165,7 +166,8 @@ fun BodyHome(
     navController: NavController,
     viewModel: OperarioViewModel,
     otViewModel: OTViewModel,
-    sharedViewModel: SharedViewModel
+    sharedViewModel: SharedViewModel,
+    id: String
 ) {
     var turno by remember { mutableStateOf("") }
     var ot by rememberSaveable { mutableStateOf("") }
@@ -317,7 +319,7 @@ fun BodyHome(
                     modifier = Modifier.weight(1f),
                     value = cantidad,
                     onValueChange = { cantidad = it.filter { char -> char.isDigit() } },
-                    label = "Cant. de cajas y/o Pallets",
+                    label = "Cant. de cajas y/o Pallets muestreados",
                     keyboardOption = KeyboardOptions().copy(keyboardType = KeyboardType.Number),
                 )
             }
@@ -459,7 +461,8 @@ fun BodyHome(
                 operador.value,
                 newfecha,
                 navController,
-                sharedViewModel
+                sharedViewModel,
+                id
             )
             /*DropdownMenu(
                 expanded = expanded,
@@ -514,12 +517,13 @@ fun BotonH(
     operador: String,
     fecha: String,
     navController: NavController,
-    sharedViewModel: SharedViewModel
+    sharedViewModel: SharedViewModel,
+    id: String
 ) {
     //var stateButton by remember { mutableStateOf(false) }
     val stateButton =
         ot.isNotEmpty() && description.isNotEmpty() && um.isNotEmpty() && cantidad.isNotEmpty() && operador.isNotEmpty() && linea.isNotEmpty()
-    LaunchedEffect(ot, description, um, cantidad, turno, fecha, linea, operador) {
+    LaunchedEffect(ot, description, um, cantidad, turno, fecha, linea, operador,id) {
         sharedViewModel.turno = turno
         sharedViewModel.ot = ot
         sharedViewModel.description = description
@@ -528,6 +532,7 @@ fun BotonH(
         sharedViewModel.linea = linea
         sharedViewModel.operador = operador
         sharedViewModel.fecha = fecha
+        sharedViewModel.usuario = id
         //stateButton = ot.isNotEmpty() && description.isNotEmpty() && um.isNotEmpty() && cantidad.isNotEmpty()
     }
     val buttonColors = ButtonDefaults.elevatedButtonColors(

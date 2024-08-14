@@ -23,7 +23,9 @@ data class Evaluacion (
     @SerializedName("U_Palet_Check") val U_Palet_Check: String,
     @SerializedName("U_Palet_Comment") val U_Palet_Comment: String,
     @SerializedName("U_Conformidad") val U_Conformidad: String,
-    @SerializedName("U_Conformidad_Comment") val U_Conformidad_Comment: String
+    @SerializedName("U_Conformidad_Comment") val U_Conformidad_Comment: String,
+    @SerializedName("U_Usuario") val U_Usuario: String,
+    @SerializedName("U_Cantidad") val U_Cantidad: String
 )
 
 data class EvaluacionResponse(

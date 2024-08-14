@@ -52,6 +52,7 @@ import androidx.navigation.NavController
 import com.vistony.app.R
 import com.vistony.app.ui.theme.Screen.Generic.CustomDrawer
 import com.vistony.app.ui.theme.Screen.Generic.CustomOutlinedTextField
+import com.vistony.app.ui.theme.Screen.Generic.CustomOutlinedTextField2
 import com.vistony.app.ui.theme.Screen.Generic.CustomSpinner
 import com.vistony.app.ui.theme.Screen.Generic.TopBar
 import kotlinx.coroutines.launch
@@ -352,7 +353,7 @@ fun BodyParada(navController: NavController) {
                         fontSize = 24.sp
                     ),
                 )
-                TextField(
+                /*TextField(
                     modifier = Modifier.weight(1f),
                     value = comentarios,
                     onValueChange = { comentarios = it },
@@ -362,6 +363,15 @@ fun BodyParada(navController: NavController) {
                         containerColor = Color(0xFFD3CECE),
                         focusedIndicatorColor = Color.Transparent
                     )
+                )*/
+                CustomOutlinedTextField2(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(0.dp),
+                    value = comentarios,
+                    onValueChange = { comentarios = it },
+                    label = "Observacion",
+                    readOnly = false
                 )
 
             }

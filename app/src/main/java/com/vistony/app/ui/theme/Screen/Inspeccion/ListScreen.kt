@@ -8,17 +8,26 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
+import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -30,6 +39,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.vistony.app.R
@@ -58,7 +69,7 @@ fun ListScreen(
                 })
             },
             content = { paddingValues ->
-                LazyColumn(
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
@@ -66,25 +77,21 @@ fun ListScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Top
                 ) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .width(610.dp)
-                                .height(210.dp)
-                                .clip(RoundedCornerShape(25.dp))
-                                .background(Color.White)
-                        ) {
-                            Image(
-                                modifier = Modifier.size(width = 600.dp, height = 200.dp),
-                                painter = painterResource(id = R.drawable.vistony),
-                                contentDescription = "Logo"
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(15.dp))
+                    Box(
+                        modifier = Modifier
+                            .width(610.dp)
+                            .height(210.dp)
+                            .clip(RoundedCornerShape(25.dp))
+                            .background(Color.White)
+                    ) {
+                        Image(
+                            modifier = Modifier.size(width = 600.dp, height = 200.dp),
+                            painter = painterResource(id = R.drawable.vistony),
+                            contentDescription = "Logo"
+                        )
                     }
-                    item {
-                        BodyList()
-                    }
+                    Spacer(modifier = Modifier.height(15.dp))
+                    BodyList()
                 }
             }
         )
@@ -94,13 +101,14 @@ fun ListScreen(
 @Composable
 fun BodyList() {
 
-    val data = listOf(
-        listOf("1", "John Doe"),
-        listOf("2", "Jane Smith"),
-        listOf("3", "Sam Wilson"),
-        // Agrega más registros según sea necesario
-    )
-    LazyColumn {
+    /*val data = listOf(
+        listOf("1", "John Doe", "Aceptado", "14/08/2023", "123:00"),
+        listOf("2", "Jane Smith", "Rechazado", "14/08/2023", "14:00"),
+        listOf("3", "Sam Wilson", "Aceptado", "14/08/2023", "09:00"),
+    )*/
+    val data = emptyList<List<String>>()
+    //val data = emptyList<String>()
+    /*LazyColumn {
         // Encabezados
         item {
             Row {
@@ -113,6 +121,92 @@ fun BodyList() {
             Row {
                 row.forEach { item ->
                     Text(item, modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }*/
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 32.dp)
+            .wrapContentSize()
+            .clip(RoundedCornerShape(25.dp))
+            .background(color = Color(0xFFFFFFFF))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentSize()
+                .padding(vertical = 16.dp, horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "LISTA DE INSPECCIONES",
+                modifier = Modifier.padding(end = 8.dp, top = 16.dp),
+                color = Color.Black
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                item {
+                    Row {
+                        Text("N°", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                        Text("Nombre", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                        Text("Estado", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                        Text("Fecha", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                        Text(
+                            "Hora Insp",
+                            modifier = Modifier.weight(1f),
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text("", modifier = Modifier.weight(1f))
+                    }
+                    Divider()
+                }
+                if (data.isNotEmpty()) {
+                    items(data) { row ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(0.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            row.forEach { item ->
+                                Text(
+                                    text = item,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(4.dp),
+                                    textAlign = TextAlign.Start
+                                )
+                            }
+                            IconButton(
+                                onClick = { /*TODO*/ },
+                                modifier = Modifier.width(100.dp),
+                                colors = IconButtonDefaults.iconButtonColors(
+                                    containerColor = Color(0xFF0054A3),
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Icon(Icons.Filled.Search, contentDescription = null)
+                                    Text(text = "Ver")
+                                }
+                            }
+                        }
+                        Divider()
+                    }
+                } else {
+                    item {
+                        Text(
+                            text = "No hay Inspecciones",
+                            modifier = Modifier.fillMaxWidth().padding(end = 8.dp, top = 16.dp),
+                            color = Color.Black,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         }

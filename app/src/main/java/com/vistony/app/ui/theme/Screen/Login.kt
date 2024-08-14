@@ -41,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -62,28 +63,26 @@ fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel()
 ) {
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Color(0xFF0B4FAF)
-                /*brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF0054A3),
-                        Color(0xFFD6001C)
-                    )
-                )*/
             ),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        /*horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center*/
     ) {
-        /*Image(
-            painterResource(id = R.drawable.fondo_vistony2),
-            contentDescription = "logo",
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(233.dp)
-        )*/
+        Row(
+            horizontalArrangement = Arrangement.Start,
+            modifier=Modifier.fillMaxWidth()
+        ){
+            Image(
+                modifier = Modifier.fillMaxWidth(),
+                painter = painterResource(id = R.mipmap.tanques),
+                contentDescription = null,
+                contentScale = ContentScale.FillWidth
+            )
+        }
         Spacer(modifier = Modifier.height(50.dp))
         Box(
             modifier = Modifier
@@ -91,6 +90,7 @@ fun LoginScreen(
                 .height(600.dp)
                 .clip(RoundedCornerShape(25.dp))
                 .background(color = Color.Red)
+                .align(Alignment.Center)
         ) {
             Box(
                 modifier = Modifier
@@ -165,7 +165,8 @@ fun Body(navController: NavHostController, viewModel: LoginViewModel) {
                 focusedLabelColor = Color.Black,
                 unfocusedLabelColor = Color(0xFFA2A2A2),
                 cursorColor = Color(0xFF0054A3),
-                textColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                //textColor = Color.Black,
                 unfocusedBorderColor = Color(0xFFA2A2A2),
                 focusedBorderColor = Color(0xFF0054A3)
             ),
@@ -183,7 +184,7 @@ fun Body(navController: NavHostController, viewModel: LoginViewModel) {
                 focusedLabelColor = Color.Black,
                 unfocusedLabelColor = Color(0xFFA2A2A2),
                 cursorColor = Color(0xFF0054A3),
-                textColor = Color.Black,
+                //textColor = Color.Black,
                 unfocusedBorderColor = Color(0xFFA2A2A2),
                 focusedBorderColor = Color(0xFF0054A3)
             ),
@@ -230,7 +231,7 @@ fun Boton(user: String, pass: String, navController: NavHostController, viewMode
 
     LaunchedEffect(loginState) {
         if (loginState.state) {
-            navController.navigate("home")
+            navController.navigate("home/$user")
         } else {
             errorMessage = loginState.message ?: ""
         }
@@ -251,7 +252,7 @@ fun Boton(user: String, pass: String, navController: NavHostController, viewMode
         onClick = {
             viewModel.validar(user, pass)
             if (viewModel._loginstate.state) {
-                navController.navigate("home")
+                navController.navigate("home/$user")
             }
         },
         colors = buttonColors,

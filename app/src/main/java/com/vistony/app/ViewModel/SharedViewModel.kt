@@ -17,4 +17,5 @@ class SharedViewModel @Inject constructor():ViewModel() {
     var linea by mutableStateOf("")
     var operador by mutableStateOf("")
     var fecha by mutableStateOf("")
+    var usuario by mutableStateOf("")
 }

@@ -15,9 +15,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -28,6 +33,7 @@ import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -201,7 +207,9 @@ fun BodyDetalle(
             },
             U_Palet_Comment = paletComment,
             U_Conformidad = if (conformidad.value.equals("CONFORME")) "Y" else "N",
-            U_Conformidad_Comment = conformidadComment
+            U_Conformidad_Comment = conformidadComment,
+            U_Usuario = sharedViewModel.usuario,
+            U_Cantidad = sharedViewModel.cantidad,
         )
     }
 
@@ -817,6 +825,68 @@ fun BotonD(
         titulo = dialogTitle
     )
 }
+
+@Composable
+fun MyTable(data: List<List<String>>) {
+    LazyColumn(modifier = Modifier.fillMaxWidth()){
+        items(data) { row ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                row.forEach { item ->
+                    Text(
+                        text =item,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(4.dp)
+                    )
+                }
+                Button(onClick = { /* Acción para visualizar el registro */ }) {
+                    Text("Visualizar")
+                }
+            }
+        }
+    }
+}
+
+/*
+@Composable
+fun Prueba(){
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(color = Color.White)
+            .padding(start = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        DrawerMenuItem(
+            icon = Icons.Filled.Camera,
+            text = "Lista Inspecciones",
+            onClick = { /* Action for Lista Inspecciones */ }
+        )
+        Button(
+            onClick = { /* Action for NUEVA INSPECCIÓN */ },
+            modifier = Modifier.fillMaxWidth(), // Ensure button takes full width
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Blue, // Customizebackground color
+                contentColor = Color.White    // Customize text color
+            )
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = "Nueva Inspección"
+                )
+                Spacer(modifier = Modifier.width(8.dp)) // Add space between icon and text
+                Text("NUEVA INSPECCIÓN")
+            }
+        }
+    }
+}*/
+
 /*
 @Composable
 fun FilterableDropdownMenu(options: List<String>) {

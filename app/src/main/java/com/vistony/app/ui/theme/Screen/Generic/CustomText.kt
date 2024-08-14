@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -52,7 +53,10 @@ fun CustomOutlinedTextField(
             focusedBorderColor = Color(0xFF0054A3),
             unfocusedBorderColor = Color(0xFFA2A2A2),
             cursorColor = Color(0xFF0054A3),
-            textColor = Color.Black,
+            focusedTextColor = Color.Black,
+            unfocusedTextColor = Color.Black,
+            unfocusedPlaceholderColor = Color.LightGray,
+            //textColor = Color.Black,
             focusedLabelColor = Color(0xFF0054A3)
         ),
         trailingIcon = trailingIcon,
@@ -87,8 +91,11 @@ fun CustomOutlinedTextField2(
             focusedBorderColor = Color(0xFF0054A3),
             unfocusedBorderColor = Color(0xFFA2A2A2),
             cursorColor = Color(0xFF0054A3),
-            textColor = Color.Black,
-            placeholderColor = Color.White,
+            //textColor = Color.Black,
+            //placeholderColor = Color.White,
+            focusedTextColor = Color.Black,
+            unfocusedTextColor = Color.Black,
+            unfocusedPlaceholderColor = Color.LightGray,
             disabledPlaceholderColor = Color.Black,
             unfocusedLabelColor = Color.LightGray
         ),
