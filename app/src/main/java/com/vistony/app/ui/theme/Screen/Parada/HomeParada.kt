@@ -352,6 +352,7 @@ fun BodyParada(navController: NavController) {
                         fontWeight = FontWeight.Bold,
                         fontSize = 24.sp
                     ),
+                    maxLines = 5
                 )
                 /*TextField(
                     modifier = Modifier.weight(1f),

@@ -27,6 +27,7 @@ import com.vistony.app.ui.theme.Screen.Inspeccion.ListScreen
 import com.vistony.app.ui.theme.Screen.LoginScreen
 import com.vistony.app.ui.theme.Screen.NoInternetScreen
 import com.vistony.app.ui.theme.Screen.Parada.HomeParada
+import com.vistony.app.ui.theme.Screen.Parada.ListParada
 import com.vistony.app.ui.theme.Screen.Parada.QrCodeScanner
 import com.vistony.app.ui.theme.VistonyTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -50,7 +51,7 @@ class MainActivity : ComponentActivity() {
                     val status by networkStatusViewModel.status.collectAsState()
 
                     if (status == ConnectivityObserver.Status.Available) {
-                        NavHost(startDestination = "login", navController = navController) {
+                        NavHost(startDestination = "home/123456789", navController = navController) {
                             composable("login") {
                                 LoginScreen(navController)
                             }
@@ -68,6 +69,9 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("homeParada") {
                                 HomeParada(navController = navController)
+                            }
+                            composable("listaParada") {
+                                ListParada(navController = navController)
                             }
                         }
                     } else {

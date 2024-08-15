@@ -154,7 +154,7 @@ fun CustomDrawer(navController: NavController) {
                         DrawerMenuItem(
                             icon = Icons.Filled.List,
                             text = "Lista de Paradas",
-                            onClick = { /* Action for Notificaciones */ }
+                            onClick = { navController.navigate("listaParada") }
                         )
                         Button(
                             onClick = { navController.navigate("homeParada") },

@@ -73,6 +73,13 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
+
+    implementation("androidx.compose.material:material-icons-core:1.5.4")
+    //implementation("androidx.compose.material:material-icons-extended:1.5.4")
+    implementation("androidx.compose.ui:ui:1.5.4")
+    implementation("androidx.compose.material:material:1.5.4")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.5.4")
+
     //
     implementation("androidx.compose.material:material-icons-extended:1.6.8")
 
@@ -96,5 +103,6 @@ dependencies {
     //Zxing
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
     implementation("com.google.zxing:core:3.5.1")
+    implementation(kotlin("script-runtime"))
 
 }
