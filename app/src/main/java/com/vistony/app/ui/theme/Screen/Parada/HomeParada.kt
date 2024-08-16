@@ -28,8 +28,6 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -53,7 +51,6 @@ import com.vistony.app.R
 import com.vistony.app.ui.theme.Screen.Generic.CustomDrawer
 import com.vistony.app.ui.theme.Screen.Generic.CustomOutlinedTextField
 import com.vistony.app.ui.theme.Screen.Generic.CustomOutlinedTextField2
-import com.vistony.app.ui.theme.Screen.Generic.CustomSpinner
 import com.vistony.app.ui.theme.Screen.Generic.TopBar
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -61,14 +58,14 @@ import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeParada(navController: NavController) {
+fun HomeParada(navController: NavController, id: String) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        drawerContent = { CustomDrawer(navController = navController) }
+        drawerContent = { CustomDrawer(navController = navController, id = id) }
     ){
         Scaffold(
             topBar = {

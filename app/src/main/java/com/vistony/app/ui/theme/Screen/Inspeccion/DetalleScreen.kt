@@ -20,8 +20,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CheckboxDefaults
@@ -33,7 +31,6 @@ import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -83,13 +80,14 @@ import kotlinx.coroutines.launch
 fun DetalleScreen(
     navController: NavHostController,
     sharedViewModel: SharedViewModel,
-    viewModel: EvalViewModel = hiltViewModel()
+    viewModel: EvalViewModel = hiltViewModel(),
+    id: String
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     ModalNavigationDrawer(
         drawerState = drawerState,
-        drawerContent = { CustomDrawer(navController = navController) }) {
+        drawerContent = { CustomDrawer(navController = navController, id = id) }) {
         Scaffold(
             topBar = { TopBar("Detalle de Inspección", navController = navController, onMenuClick = {
                 scope.launch { drawerState.open() }
@@ -118,7 +116,7 @@ fun DetalleScreen(
                     )
                 }
                 Spacer(modifier = Modifier.height(15.dp))
-                BodyDetalle(navController, viewModel, sharedViewModel)
+                BodyDetalle(navController, viewModel, sharedViewModel,id)
             }
         }
     }
@@ -130,7 +128,8 @@ fun DetalleScreen(
 fun BodyDetalle(
     navController: NavHostController,
     viewModel: EvalViewModel,
-    sharedViewModel: SharedViewModel
+    sharedViewModel: SharedViewModel,
+    id: String
 ) {
     var pesoCheck by rememberSaveable { mutableStateOf(ToggleableState.Off) }
     var pesoComment by rememberSaveable { mutableStateOf("") }
@@ -211,8 +210,9 @@ fun BodyDetalle(
             U_Usuario = sharedViewModel.usuario,
             U_Cantidad = sharedViewModel.cantidad,
         )
-    }
 
+    }
+    Log.e("USUARIO",sharedViewModel.usuario)
     val expanded = remember { mutableStateOf(false) }
     val options = listOf("CONFORME", "NO CONFORME")
     Box(
@@ -719,7 +719,8 @@ fun BodyDetalle(
                 viewModel,
                 sharedViewModel,
                 buildEvaluacion(),
-                conformidad
+                conformidad,
+                id = id
             )
 
         }
@@ -732,7 +733,8 @@ fun BotonD(
     viewModel: EvalViewModel,
     sharedViewModel: SharedViewModel,
     buildEvaluacion: Evaluacion,
-    conformidad: MutableState<String>
+    conformidad: MutableState<String>,
+    id: String
 ) {
 
     val evalState by viewModel.evalState.collectAsState()
@@ -800,10 +802,12 @@ fun BotonD(
         if (evalState.state) {
             SuccessDialog(
                 isVisible = showDialog,
-                onDismiss = { showDialog = false },
                 message = dialogMessage,
+                titulo = dialogTitle,
+                usuario = sharedViewModel.usuario,
+                onDismiss = { showDialog = false },
                 navController = navController,
-                titulo = dialogTitle
+                id = id
             )
         } else {
             /*ErrorDialog(
@@ -822,7 +826,8 @@ fun BotonD(
         isVisible = showDialog,
         onDismiss = { showDialog = false },
         message = dialogMessage, navController = navController,
-        titulo = dialogTitle
+        titulo = dialogTitle,
+        id = id
     )
 }
 

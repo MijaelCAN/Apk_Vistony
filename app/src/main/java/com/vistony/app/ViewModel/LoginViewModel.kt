@@ -47,14 +47,15 @@ class LoginViewModel @Inject constructor() : ViewModel() {
                 } else {
                     _loginstate = ResponseState(
                         state = false,
-                        message = "Error en la Respuesta: ${response?.message()}"
+                        message = "Error en la Respuesta"
                     )
+                    Log.e("LoginViewModel", "Error en la Respuesta: ${response?.message()}")
                 }
 
             } catch (e: Exception) {
                 _loginstate = ResponseState(
                     state = false,
-                    message = "Error de Comunicación: $e"
+                    message = "Error de Comunicación"
                 )
                 Log.e("LoginViewModel", "Error de Comunicacion: $e")
             }

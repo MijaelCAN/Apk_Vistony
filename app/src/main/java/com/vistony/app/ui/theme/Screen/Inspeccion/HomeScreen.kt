@@ -118,7 +118,7 @@ fun HomeScreen(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        drawerContent = { CustomDrawer(navController = navController) }
+        drawerContent = { CustomDrawer(navController = navController, id = id) }
     ) {
         Scaffold(
             topBar = {
@@ -549,7 +549,7 @@ fun BotonH(
         enabled = stateButton,
         onClick = {
             Log.e("vista", sharedViewModel.fecha + " " + sharedViewModel.turno)
-            navController.navigate("detalle")
+            navController.navigate("detalle/${id}")
         },
         colors = buttonColors,
         shape = RoundedCornerShape(18.dp)

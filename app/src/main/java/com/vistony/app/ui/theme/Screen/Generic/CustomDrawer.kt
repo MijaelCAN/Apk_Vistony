@@ -15,14 +15,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Construction
-import androidx.compose.material.icons.filled.FormatLineSpacing
-import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
@@ -50,7 +45,7 @@ import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomDrawer(navController: NavController) {
+fun CustomDrawer(navController: NavController, id: String) {
     var selectedItem by remember { mutableStateOf<String?>(null) }
     ModalDrawerSheet(
         modifier = Modifier.background(Color.White)
@@ -81,7 +76,7 @@ fun CustomDrawer(navController: NavController) {
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        "Nombre de Usuario",
+                        id,
                         color = Color.Black,
                         style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     )
@@ -110,10 +105,10 @@ fun CustomDrawer(navController: NavController) {
                     ) {
                         DrawerMenuItem(
                             icon = Icons.Filled.List,
-                            text = "Lista Inspecciones", onClick = { navController.navigate("listaInsp") }
+                            text = "Lista Inspecciones", onClick = { navController.navigate("listaInsp/${id}") }
                         )
                         Button(
-                            onClick = { navController.navigate("home/123456") },
+                            onClick = { navController.navigate("home/$id") },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(
@@ -154,10 +149,10 @@ fun CustomDrawer(navController: NavController) {
                         DrawerMenuItem(
                             icon = Icons.Filled.List,
                             text = "Lista de Paradas",
-                            onClick = { navController.navigate("listaParada") }
+                            onClick = { /*navController.navigate("listaParada")*/ }
                         )
                         Button(
-                            onClick = { navController.navigate("homeParada") },
+                            onClick = { /*navController.navigate("homeParada")*/ },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(
@@ -184,7 +179,7 @@ fun CustomDrawer(navController: NavController) {
                 DrawerMenuItem(
                     icon = Icons.Filled.Settings,
                     text = "Configuración",
-                    onClick = { navController.navigate("configuracion") }
+                    onClick = { /*navController.navigate("configuracion")*/ }
                 )
             }
         }

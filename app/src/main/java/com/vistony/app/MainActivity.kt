@@ -28,7 +28,6 @@ import com.vistony.app.ui.theme.Screen.LoginScreen
 import com.vistony.app.ui.theme.Screen.NoInternetScreen
 import com.vistony.app.ui.theme.Screen.Parada.HomeParada
 import com.vistony.app.ui.theme.Screen.Parada.ListParada
-import com.vistony.app.ui.theme.Screen.Parada.QrCodeScanner
 import com.vistony.app.ui.theme.VistonyTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -51,7 +50,7 @@ class MainActivity : ComponentActivity() {
                     val status by networkStatusViewModel.status.collectAsState()
 
                     if (status == ConnectivityObserver.Status.Available) {
-                        NavHost(startDestination = "home/123456789", navController = navController) {
+                        NavHost(startDestination = "login", navController = navController) {
                             composable("login") {
                                 LoginScreen(navController)
                             }
@@ -61,17 +60,29 @@ class MainActivity : ComponentActivity() {
                             ) { it ->
                                 HomeScreen(navController, sharedViewModel, id = it.arguments?.getString("user") ?: "")
                             }
-                            composable("detalle") {
-                                DetalleScreen(navController, sharedViewModel)
+                            composable(
+                                "detalle/{user}",
+                                arguments = listOf(navArgument("user") { type = NavType.StringType })
+                            ) {
+                                DetalleScreen(navController, sharedViewModel, id = it.arguments?.getString("user") ?: "")
                             }
-                            composable("listaInsp") {
-                                ListScreen(navController = navController)
+                            composable(
+                                route = "listaInsp/{user}",
+                                arguments = listOf(navArgument("user") { type = NavType.StringType })
+                            ) { it ->
+                                ListScreen(navController, id = it.arguments?.getString("user") ?: "")
                             }
-                            composable("homeParada") {
-                                HomeParada(navController = navController)
+                            composable(
+                                "homeParada",
+                                arguments = listOf(navArgument("user") { type = NavType.StringType })
+                            ) {
+                                HomeParada(navController = navController, id = it.arguments?.getString("user") ?: "")
                             }
-                            composable("listaParada") {
-                                ListParada(navController = navController)
+                            composable(
+                                "listaParada",
+                                arguments = listOf(navArgument("user") { type = NavType.StringType })
+                            ) {
+                                ListParada(navController = navController, id = it.arguments?.getString("user") ?: "")
                             }
                         }
                     } else {

@@ -24,8 +24,9 @@ fun TopBar(title:String,navController: NavController, onMenuClick: () -> Unit) {
             }
         },
         actions = {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.Filled.ArrowBack, contentDescription = "Atrás", tint = Color.White)
+            IconButton(onClick = { navController.navigate("login") }) {
+                //Icon(Icons.Filled.ArrowBack, contentDescription = "Atrás", tint = Color.White)
+                Text(text = "Salir", color = Color.White)
             }
         },
         colors = TopAppBarDefaults.mediumTopAppBarColors(containerColor = Color(0xFF0B4FAF))

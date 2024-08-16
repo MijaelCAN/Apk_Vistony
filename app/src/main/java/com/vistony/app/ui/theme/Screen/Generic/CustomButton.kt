@@ -25,12 +25,13 @@ fun CustomButton(
     modifier: Modifier = Modifier,
     search: ImageVector? = null,
     onClick: () -> Unit,
+    color: Color = Color(0xFF0054A3),
 ) {
     ElevatedButton(
         onClick = { onClick() },
         modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
         colors = ButtonDefaults.elevatedButtonColors(
-            containerColor = Color(0xFF0054A3),
+            containerColor = color,
             contentColor = Color.White,
             disabledContainerColor = Color.Gray,
             disabledContentColor = Color.Black

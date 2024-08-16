@@ -1,6 +1,7 @@
 package com.vistony.app.ui.theme.Screen.Inspeccion
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,10 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -35,6 +33,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -46,32 +46,39 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.vistony.app.Entidad.Inspeccion
 import com.vistony.app.R
+import com.vistony.app.ViewModel.EvalViewModel
 import com.vistony.app.ui.theme.Screen.Generic.CustomButton
 import com.vistony.app.ui.theme.Screen.Generic.CustomDrawer
-import com.vistony.app.ui.theme.Screen.Generic.CustomOutlinedTextField
 import com.vistony.app.ui.theme.Screen.Generic.DateOutlinedTextField
 import com.vistony.app.ui.theme.Screen.Generic.Detalle
 import com.vistony.app.ui.theme.Screen.Generic.TableCell
 import com.vistony.app.ui.theme.Screen.Generic.TableHeaderCell
 import com.vistony.app.ui.theme.Screen.Generic.TopBar
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListScreen(
-    navController: NavController
+    navController: NavController,
+    listViewModel: EvalViewModel = hiltViewModel(),
+    id: String = "prueba"
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        drawerContent = { CustomDrawer(navController = navController) }
+        drawerContent = { CustomDrawer(navController = navController,id) }
     ) {
         Scaffold(
             topBar = {
@@ -104,7 +111,7 @@ fun ListScreen(
                         )
                     }
                     Spacer(modifier = Modifier.height(15.dp))
-                    BodyList(navController)
+                    BodyList(navController, listViewModel,id)
                 }
             }
         )
@@ -114,15 +121,21 @@ fun ListScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun BodyList(navController: NavController) {
-
+fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: String) {
+    val listState by listViewModel.listInspeccionState.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
     var item by remember { mutableStateOf(Inspeccion()) }
-    var conformidad = rememberSaveable { mutableStateOf("") }
+    var txt_estado = rememberSaveable { mutableStateOf("") }
     val expanded = remember { mutableStateOf(false) }
-    val options = listOf("Iniciado", "En Proceso", "Finalizado")
+    val options = listOf("Iniciado", "Finalizado")
 
-    val data = listOf(
+    var selectedDateIni by remember { mutableStateOf(LocalDate.now()) }
+    var showDialogDateIni by remember { mutableStateOf(false) }
+    var selectedDateFin by remember { mutableStateOf(LocalDate.now()) }
+    var showDialogDateFin by remember { mutableStateOf(false) }
+    var lista_inspecciones by remember { mutableStateOf(emptyList<Inspeccion>()) }
+
+    /*val data2 = listOf(
         Inspeccion(1, "Inspecion 1", "Aprobado", "10/10/2024", "10:10"),
         Inspeccion(2, "Inspecion 2", "Desaprobado", "12/08/2024", "10:10"),
         Inspeccion(3, "Inspecion 3", "Aprobado", "03/10/2023", "10:10"),
@@ -139,9 +152,23 @@ fun BodyList(navController: NavController) {
         Inspeccion(14, "Inspecion 14", "Desaprobado", "22/05/2023", "10:10"),
         Inspeccion(15, "Inspecion 15", "Aprobado", "09/01/2023", "10:10"),
         Inspeccion(16, "Inspecion 16", "Desaprobado", "10/10/2024", "10:10"),
-    )
-    //val data = emptyList<List<String>>()
+    )*/
+    LaunchedEffect(Unit) { // Or any key that changes on every recomposition
+        val newfechaIni = selectedDateIni.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+        val newfechaFin = selectedDateFin.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+        Log.d("selectedDateIni", selectedDateIni.toString())
+        listViewModel.getListInspeccion(newfechaIni, newfechaFin)
+        lista_inspecciones = listState.listInspeccion.data
+    }
+    lista_inspecciones = listState.listInspeccion.data
 
+    LaunchedEffect(selectedDateIni, selectedDateFin) {
+        val newfechaIni = selectedDateIni.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+        val newfechaFin = selectedDateFin.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+        Log.d("selectedDateIni", selectedDateIni.toString())
+        listViewModel.getListInspeccion(newfechaIni, newfechaFin)
+        lista_inspecciones = listState.listInspeccion.data
+    }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -157,34 +184,21 @@ fun BodyList(navController: NavController) {
                 .padding(vertical = 16.dp, horizontal = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "LISTA DE INSPECCIONES",
-                modifier = Modifier.padding(end = 8.dp, top = 16.dp),
-                color = Color.Black
-            )
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.End
             ) {
-                DateOutlinedTextField(modifier = Modifier.weight(1f), "Fecha Inicio")
-                Spacer(modifier = Modifier.width(130.dp))
-                DateOutlinedTextField(modifier = Modifier.weight(1f), "Fecha Final")
-            }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+                /*
                 ExposedDropdownMenuBox(
                     modifier = Modifier.width(200.dp),
                     expanded = expanded.value,
                     onExpandedChange = {
                         expanded.value = !expanded.value
-                        conformidad.value = ""
+                        txt_estado.value = ""
                     }) {
                     CustomOutlinedTextField(
                         modifier = Modifier.menuAnchor(),
-                        value = conformidad.value,
+                        value = txt_estado.value,
                         onValueChange = { },
                         label = "Estado",
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded.value) },
@@ -200,55 +214,85 @@ fun BodyList(navController: NavController) {
                             DropdownMenuItem(
                                 text = { Text(option, color = Color.Black) },
                                 onClick = {
-                                    conformidad.value = option
+                                    txt_estado.value = option
                                     expanded.value = false
                                 }
                             )
                         }
                     }
-                }
-                Spacer(modifier = Modifier.width(60.dp))
+                }*/
+                Spacer(modifier = Modifier.width(430.dp))
                 CustomButton(
                     "Registro Nuevo",
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.width(200.dp),
                     Icons.Filled.Add,
-                    onClick = { navController.navigate("homeParada") })
+                    onClick = { navController.navigate("home/${id}") },
+                    Color(0xFF299203)
+                )
             }
+            Text(
+                text = "LISTA DE INSPECCIONES",
+                modifier = Modifier.padding(end = 8.dp, top = 16.dp),
+                color = Color.Black,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                DateOutlinedTextField(
+                    modifier = Modifier.weight(1f),
+                    "Fecha Inicio",
+                    selectedDate = selectedDateIni,
+                    onDateChange = { selectedDateIni = it },
+                    showDialog = showDialogDateIni,
+                    onShowDialogChange = { showDialogDateIni= it }
+                )
+                Spacer(modifier = Modifier.width(130.dp))
+                DateOutlinedTextField(
+                    modifier = Modifier.weight(1f),
+                    "Fecha Final",
+                    selectedDate = selectedDateFin,
+                    onDateChange = { selectedDateFin = it },
+                    showDialog = showDialogDateFin,
+                    onShowDialogChange = { showDialogDateFin= it }
+                )
+            }
+
             Spacer(modifier = Modifier.height(32.dp))
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
                 item {
                     Row {
-                        TableHeaderCell(text = "N°", modifier = Modifier.weight(0.5f))
-                        TableHeaderCell(text = "Nombre", modifier = Modifier.weight(1f))
-                        TableHeaderCell(text = "Estado", modifier = Modifier.weight(1f))
-                        TableHeaderCell(text = "Fecha", modifier = Modifier.weight(1f))
-                        TableHeaderCell(text = "Hora Insp", modifier = Modifier.weight(1f))
+                        TableHeaderCell(text = "OT", modifier = Modifier.weight(1f))
+                        TableHeaderCell(text = "FECHA", modifier = Modifier.weight(1f))
+                        TableHeaderCell(text = "TURNO", modifier = Modifier.weight(1f))
+                        TableHeaderCell(text = "USUARIO", modifier = Modifier.weight(1f))
                         TableHeaderCell(text = "", modifier = Modifier.weight(1f))
                     }
                 }
-                if (data.isNotEmpty()) {
-                    items(data) { row ->
+
+                if (lista_inspecciones.isNotEmpty()) {
+                    items(lista_inspecciones) { row ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(0.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            TableCell(text = row.id.toString(), modifier = Modifier.weight(0.5f))
-                            TableCell(text = row.nombre, modifier = Modifier.weight(1f))
-                            TableCell(text = row.estado, modifier = Modifier.weight(1f))
-                            TableCell(text = row.fecha_ins, modifier = Modifier.weight(1f))
-                            TableCell(text = row.hora_ins, modifier = Modifier.weight(1f))
+                            TableCell(text = row.OT, modifier = Modifier.weight(1f))
+                            TableCell(text = row.Fecha, modifier = Modifier.weight(1f))
+                            TableCell(text = row.Turno, modifier = Modifier.weight(1f))
+                            TableCell(text = row.Usuario, modifier = Modifier.weight(1f))
                             TableCell(value = 1) {
                                 IconButton(
                                     onClick = {
                                         showDialog = true
                                         item = Inspeccion(
-                                            row.id,
-                                            row.nombre,
-                                            row.estado,
-                                            row.fecha_ins,
-                                            row.hora_ins
+                                            row.OT,
+                                            row.Fecha,
+                                            row.Turno,
+                                            row.Usuario
                                         )
                                     },
                                     modifier = Modifier.width(100.dp),
@@ -285,16 +329,20 @@ fun BodyList(navController: NavController) {
                 isVisible = showDialog,
                 onDismiss = { showDialog = false },
                 data = item,
+                content = {
+                    Column() {
+                        Text(
+                            text = "Inspeccion de: ${item.OT}",
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                        )
+                        Text(text = "Fecha: ${item.Fecha}")
+                        Text(text = "Turno: ${item.Turno}")
+                        Text(text = "Usuario: ${item.Usuario}")
+                    }
+                }
             )
         }
     }
 }
 
-data class Inspeccion(
-    val id: Int = 0,
-    val nombre: String = "",
-    val estado: String = "",
-    val fecha_ins: String = "",
-    val hora_ins: String = ""
-)
 

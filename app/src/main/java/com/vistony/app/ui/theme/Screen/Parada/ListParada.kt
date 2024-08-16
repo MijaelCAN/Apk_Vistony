@@ -1,5 +1,7 @@
 package com.vistony.app.ui.theme.Screen.Parada
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -17,9 +19,15 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -36,28 +44,35 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.vistony.app.R
+import com.vistony.app.ui.theme.Screen.Generic.CustomButton
 import com.vistony.app.ui.theme.Screen.Generic.CustomDrawer
+import com.vistony.app.ui.theme.Screen.Generic.CustomOutlinedTextField
+import com.vistony.app.ui.theme.Screen.Generic.DateOutlinedTextField
 import com.vistony.app.ui.theme.Screen.Generic.Detalle
 import com.vistony.app.ui.theme.Screen.Generic.TableCell
 import com.vistony.app.ui.theme.Screen.Generic.TableHeaderCell
 import com.vistony.app.ui.theme.Screen.Generic.TopBar
-import com.vistony.app.ui.theme.Screen.Inspeccion.Inspeccion
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ListParada(
-    navController: NavController
+    navController: NavController,
+    id: String
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        drawerContent = { CustomDrawer(navController = navController) }
+        drawerContent = { CustomDrawer(navController = navController, id = id) }
     ) {
         Scaffold(
             topBar = {
@@ -90,19 +105,30 @@ fun ListParada(
                         )
                     }
                     Spacer(modifier = Modifier.height(15.dp))
-                    BodyListParada()
+                    BodyListParada(navController)
                 }
             }
         )
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BodyListParada() {
+fun BodyListParada(navController: NavController) {
 
     var detenerState by rememberSaveable { mutableStateOf(true) }
     var showDialog by remember { mutableStateOf(false) }
-    var item by remember { mutableStateOf(Inspeccion()) }
+    var item by remember { mutableStateOf(ListParada()) }
+    var txt_estado = rememberSaveable { mutableStateOf("") }
+
+    var selectedDateIni by remember { mutableStateOf(LocalDate.now()) }
+    var showDialogDateIni by remember { mutableStateOf(false) }
+    var selectedDateFin by remember { mutableStateOf(LocalDate.now()) }
+    var showDialogDateFin by remember { mutableStateOf(false) }
+
+    val expanded = remember { mutableStateOf(false) }
+    val options = listOf("Iniciado", "Finalizado")
 
 
     val data = listOf(
@@ -140,6 +166,74 @@ fun BodyListParada() {
                 modifier = Modifier.padding(end = 8.dp, top = 16.dp),
                 color = Color.Black
             )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                DateOutlinedTextField(
+                    modifier = Modifier.weight(1f),
+                    "Fecha Inicio",
+                    selectedDate = selectedDateIni,
+                    onDateChange = { selectedDateIni = it },
+                    showDialog = showDialogDateIni,
+                    onShowDialogChange = { showDialogDateIni= it }
+                )
+                Spacer(modifier = Modifier.width(130.dp))
+                DateOutlinedTextField(
+                    modifier = Modifier.weight(1f),
+                    "Fecha Final",
+                    selectedDate = selectedDateFin,
+                    onDateChange = { selectedDateFin = it },
+                    showDialog = showDialogDateFin,
+                    onShowDialogChange = { showDialogDateFin= it }
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ExposedDropdownMenuBox(
+                    modifier = Modifier.width(200.dp),
+                    expanded = expanded.value,
+                    onExpandedChange = {
+                        expanded.value = !expanded.value
+                        txt_estado.value = ""
+                    }) {
+                    CustomOutlinedTextField(
+                        modifier = Modifier.menuAnchor(),
+                        value = txt_estado.value,
+                        onValueChange = { },
+                        label = "Estado",
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded.value) },
+                        readOnly = true
+                    )
+                    ExposedDropdownMenu(
+                        modifier = Modifier
+                            .background(Color.White)
+                            .clip(RoundedCornerShape(8.dp)),
+                        expanded = expanded.value,
+                        onDismissRequest = { expanded.value = false }) {
+                        options.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option, color = Color.Black) },
+                                onClick = {
+                                    txt_estado.value = option
+                                    expanded.value = false
+                                }
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.width(60.dp))
+                CustomButton(
+                    "Registro Nuevo",
+                    modifier = Modifier.weight(1f),
+                    Icons.Filled.Add,
+                    onClick = { navController.navigate("homeParada") },
+ Color(0xFF299203)
+                )
+            }
             Spacer(modifier = Modifier.height(32.dp))
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
                 item {
@@ -193,6 +287,15 @@ fun BodyListParada() {
                 isVisible = showDialog,
                 onDismiss = { showDialog = false },
                 data = item,
+                content = {
+                    Column() {
+                        Text(text = "Inspeccion de: ${item.maquina}", fontWeight = FontWeight.Bold,fontSize = 22.sp)
+                        Text(text = "Estado: ${ item.estado }", fontWeight = FontWeight.Bold)
+                        Text(text = "Fecha: ${ item.fec_inicio }", fontWeight = FontWeight.Bold)
+                        Text(text = "Fecha: ${ item.fec_final }", fontWeight = FontWeight.Bold)
+                        Text(text = "Hora: ")
+                    }
+                }
             )
         }
     }

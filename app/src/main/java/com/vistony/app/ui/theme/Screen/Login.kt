@@ -231,7 +231,7 @@ fun Boton(user: String, pass: String, navController: NavHostController, viewMode
 
     LaunchedEffect(loginState) {
         if (loginState.state) {
-            navController.navigate("home/$user")
+            navController.navigate("listaInsp/$user")
         } else {
             errorMessage = loginState.message ?: ""
         }
