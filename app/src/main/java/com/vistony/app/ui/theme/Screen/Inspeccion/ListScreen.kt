@@ -325,7 +325,7 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
                     }
                 }
             }
-            Detalle(
+                Detalle(
                 isVisible = showDialog,
                 onDismiss = { showDialog = false },
                 data = item,

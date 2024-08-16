@@ -11,8 +11,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -757,7 +759,9 @@ fun BotonD(
         modifier = Modifier
             .width(300.dp)
             .height(58.dp)
-            .padding(top = 20.dp),
+            .padding(top = 20.dp)
+            .systemBarsPadding()
+            .imePadding(),
         onClick = {
             val evaluacion = buildEvaluacion
             viewModel.EnviarEvaluacion(evaluacion)

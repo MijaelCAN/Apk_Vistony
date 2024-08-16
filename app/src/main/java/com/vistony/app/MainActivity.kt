@@ -73,13 +73,13 @@ class MainActivity : ComponentActivity() {
                                 ListScreen(navController, id = it.arguments?.getString("user") ?: "")
                             }
                             composable(
-                                "homeParada",
+                                "homeParada/{user}",
                                 arguments = listOf(navArgument("user") { type = NavType.StringType })
                             ) {
                                 HomeParada(navController = navController, id = it.arguments?.getString("user") ?: "")
                             }
                             composable(
-                                "listaParada",
+                                "listaParada/{user}",
                                 arguments = listOf(navArgument("user") { type = NavType.StringType })
                             ) {
                                 ListParada(navController = navController, id = it.arguments?.getString("user") ?: "")

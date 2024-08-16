@@ -21,8 +21,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -105,7 +107,7 @@ fun ListParada(
                         )
                     }
                     Spacer(modifier = Modifier.height(15.dp))
-                    BodyListParada(navController)
+                    BodyListParada(navController, id)
                 }
             }
         )
@@ -115,7 +117,7 @@ fun ListParada(
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BodyListParada(navController: NavController) {
+fun BodyListParada(navController: NavController, id: String) {
 
     var detenerState by rememberSaveable { mutableStateOf(true) }
     var showDialog by remember { mutableStateOf(false) }
@@ -176,7 +178,7 @@ fun BodyListParada(navController: NavController) {
                     selectedDate = selectedDateIni,
                     onDateChange = { selectedDateIni = it },
                     showDialog = showDialogDateIni,
-                    onShowDialogChange = { showDialogDateIni= it }
+                    onShowDialogChange = { showDialogDateIni = it }
                 )
                 Spacer(modifier = Modifier.width(130.dp))
                 DateOutlinedTextField(
@@ -185,7 +187,7 @@ fun BodyListParada(navController: NavController) {
                     selectedDate = selectedDateFin,
                     onDateChange = { selectedDateFin = it },
                     showDialog = showDialogDateFin,
-                    onShowDialogChange = { showDialogDateFin= it }
+                    onShowDialogChange = { showDialogDateFin = it }
                 )
             }
             Row(
@@ -230,8 +232,8 @@ fun BodyListParada(navController: NavController) {
                     "Registro Nuevo",
                     modifier = Modifier.weight(1f),
                     Icons.Filled.Add,
-                    onClick = { navController.navigate("homeParada") },
- Color(0xFF299203)
+                    onClick = { navController.navigate("homeParada/${id}") },
+                    Color(0xFF299203)
                 )
             }
             Spacer(modifier = Modifier.height(32.dp))
@@ -265,7 +267,9 @@ fun BodyListParada(navController: NavController) {
                             }
                             TableCell(value = 1) {
                                 //CustomButtonRed(if(row.estado)?"Detener":"Finalizado", estado = row.estado, row, Color.Red)
-                                CustomButtonRed("Detener", estado = row.estado, row, Color.Red)
+                                CustomButtonRed("Detener", estado = row.estado, row, Color.Red) {
+
+                                }
                             }
 
                         }
@@ -289,10 +293,14 @@ fun BodyListParada(navController: NavController) {
                 data = item,
                 content = {
                     Column() {
-                        Text(text = "Inspeccion de: ${item.maquina}", fontWeight = FontWeight.Bold,fontSize = 22.sp)
-                        Text(text = "Estado: ${ item.estado }", fontWeight = FontWeight.Bold)
-                        Text(text = "Fecha: ${ item.fec_inicio }", fontWeight = FontWeight.Bold)
-                        Text(text = "Fecha: ${ item.fec_final }", fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "Inspeccion de: ${item.maquina}",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp
+                        )
+                        Text(text = "Estado: ${item.estado}", fontWeight = FontWeight.Bold)
+                        Text(text = "Fecha: ${item.fec_inicio}", fontWeight = FontWeight.Bold)
+                        Text(text = "Fecha: ${item.fec_final}", fontWeight = FontWeight.Bold)
                         Text(text = "Hora: ")
                     }
                 }
@@ -311,14 +319,22 @@ data class ListParada(
 )
 
 @Composable
-fun CustomButtonRed(text: String, estado: Boolean, row: ListParada, color: Color,onClick: () -> Unit = {}) {
+fun CustomButtonRed(
+    text: String,
+    estado: Boolean,
+    row: ListParada,
+    color: Color,
+    onClick: @Composable () -> Unit = {}
+) {
     //var detenerState by remember { mutableStateOf(estado) }
+
+    var isVisibilidad by remember { mutableStateOf(false) }
     Button(
         onClick = {
             if (color == Color.Red) {
                 row.estado = false
             } else {
-                onClick()
+                isVisibilidad = true
             }
         },
         modifier = Modifier.width(100.dp),
@@ -332,4 +348,35 @@ fun CustomButtonRed(text: String, estado: Boolean, row: ListParada, color: Color
     ) {
         Text(text)
     }
+    if (isVisibilidad) {
+        DialogEspera(onDismiss = { isVisibilidad = false })
+    }
+
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DialogEspera(onDismiss: () -> Unit = {}) {
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        modifier = Modifier.size(200.dp),
+        content = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(25.dp))
+                    .background(Color.White.copy(alpha = 0.7f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator(color = Color(0xFF0054A3))
+                    Text(text = "Espera")
+                }
+            }
+        }
+    )
 }

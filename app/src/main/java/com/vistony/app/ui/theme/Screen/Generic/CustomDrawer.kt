@@ -149,10 +149,10 @@ fun CustomDrawer(navController: NavController, id: String) {
                         DrawerMenuItem(
                             icon = Icons.Filled.List,
                             text = "Lista de Paradas",
-                            onClick = { /*navController.navigate("listaParada")*/ }
+                            onClick = { navController.navigate("listaParada/$id") }
                         )
                         Button(
-                            onClick = { /*navController.navigate("homeParada")*/ },
+                            onClick = { navController.navigate("homeParada/$id") },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(
