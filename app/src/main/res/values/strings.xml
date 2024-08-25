@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Producción</string>
+    <string name="switch_check">Check</string>
 </resources>

@@ -1,4 +1,4 @@
-package com.vistony.app.ui.theme.Screen
+package com.vistony.app.Screen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

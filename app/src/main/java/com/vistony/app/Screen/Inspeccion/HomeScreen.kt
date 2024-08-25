@@ -1,4 +1,4 @@
-package com.vistony.app.ui.theme.Screen.Inspeccion
+package com.vistony.app.Screen.Inspeccion
 
 import android.os.Build
 import android.util.Log
@@ -62,9 +62,9 @@ import com.vistony.app.R
 import com.vistony.app.ViewModel.OTViewModel
 import com.vistony.app.ViewModel.OperarioViewModel
 import com.vistony.app.ViewModel.SharedViewModel
-import com.vistony.app.ui.theme.Screen.Generic.CustomDrawer
-import com.vistony.app.ui.theme.Screen.Generic.CustomOutlinedTextField
-import com.vistony.app.ui.theme.Screen.Generic.TopBar
+import com.vistony.app.Screen.Generic.CustomDrawer
+import com.vistony.app.Screen.Generic.CustomOutlinedTextField
+import com.vistony.app.Screen.Generic.TopBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -80,8 +80,9 @@ fun HomeScreen(
     sharedViewModel: SharedViewModel,
     viewModel: OperarioViewModel = hiltViewModel(),
     otViewModel: OTViewModel = hiltViewModel(),
-    id: String = "prueba"
+    id: String = "20304050"
 ) {
+
     /*val scrollState = rememberScrollState()
     Scaffold(
         topBar = { TopBar(navController = navController) },

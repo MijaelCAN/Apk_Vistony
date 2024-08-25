@@ -52,6 +52,9 @@ object RetrofitInstance {
     val lineaService: LineaService by lazy {
         retrofit.create(LineaService::class.java)
     }
+    val paradaService: ParadaService by lazy {
+        retrofit.create(ParadaService::class.java)
+    }
 
 }
 //Configuracion Clase

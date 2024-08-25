@@ -1,4 +1,4 @@
-package com.vistony.app.ui.theme.Screen.Generic
+package com.vistony.app.Screen.Generic
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -47,6 +47,7 @@ import androidx.navigation.NavController
 @Composable
 fun CustomDrawer(navController: NavController, id: String) {
     var selectedItem by remember { mutableStateOf<String?>(null) }
+    val id = "70131373"
     ModalDrawerSheet(
         modifier = Modifier.background(Color.White)
     ) {
@@ -59,8 +60,7 @@ fun CustomDrawer(navController: NavController, id: String) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF0054A3).copy(alpha = 0.2f))
+                    .padding(16.dp)
             ) {
                 Column(
                     modifier = Modifier

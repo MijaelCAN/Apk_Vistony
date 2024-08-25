@@ -1,4 +1,4 @@
-package com.vistony.app.ui.theme.Screen.Inspeccion
+package com.vistony.app.Screen.Inspeccion
 
 import android.util.Log
 import androidx.compose.foundation.Image
@@ -22,6 +22,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CheckboxDefaults
@@ -67,14 +69,16 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.vistony.app.Entidad.Evaluacion
 import com.vistony.app.R
+import com.vistony.app.Screen.Generic.CustomAlertDialog
 import com.vistony.app.ViewModel.EvalViewModel
 import com.vistony.app.ViewModel.SharedViewModel
-import com.vistony.app.ui.theme.Screen.Generic.CustomDrawer
-import com.vistony.app.ui.theme.Screen.Generic.CustomOutlinedTextField
-import com.vistony.app.ui.theme.Screen.Generic.CustomOutlinedTextField2
-import com.vistony.app.ui.theme.Screen.Generic.CustomText
-import com.vistony.app.ui.theme.Screen.Generic.SuccessDialog
-import com.vistony.app.ui.theme.Screen.Generic.TopBar
+import com.vistony.app.Screen.Generic.CustomDrawer
+import com.vistony.app.Screen.Generic.CustomOutlinedTextField
+import com.vistony.app.Screen.Generic.CustomOutlinedTextField2
+import com.vistony.app.Screen.Generic.CustomText
+import com.vistony.app.Screen.Generic.DialogType
+import com.vistony.app.Screen.Generic.SuccessDialog
+import com.vistony.app.Screen.Generic.TopBar
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -249,7 +253,7 @@ fun BodyDetalle(
                     state = pesoCheck,
                     onClick = {
                         pesoComment = ""
-                        pesoCheck = when (pesoCheck) {
+                            pesoCheck = when (pesoCheck) {
                             ToggleableState.Off -> ToggleableState.On
                             ToggleableState.On -> ToggleableState.Indeterminate
                             ToggleableState.Indeterminate -> ToggleableState.Off
@@ -779,16 +783,23 @@ fun BotonD(
         Text(text = "ENVIAR")
     }
     if (isLoading) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f)),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
+        CustomAlertDialog(
+            showDialog = showDialog,
+            title = "Cargando",
+            message = "Enviando...",
+            confirmButtonText = "",
+            dismissButtonText = null,
+            onDismiss = {showDialog = false}
+        )
     } else {
-        //showDialog = true
+        CustomAlertDialog(
+            showDialog = showDialog,
+            title = "Envio Exitoso",
+            message = evalState.evalResponde.data,
+            icon = Icons.Default.Check,
+            dialogType = DialogType.SUCCESS,
+            onDismiss = {showDialog = false}
+        )
     }
     if (evalState.state != null) {
         LaunchedEffect(evalState.state) {

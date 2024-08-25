@@ -1,6 +1,7 @@
-package com.vistony.app.ui.theme.Screen.Parada
+package com.vistony.app.Screen.Parada
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -21,6 +22,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircleOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -30,11 +32,14 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,23 +55,34 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.vistony.app.Entidad.Parada
+import com.vistony.app.Extras.formatoFecha
+import com.vistony.app.Extras.formatoServidor
 import com.vistony.app.R
-import com.vistony.app.ui.theme.Screen.Generic.CustomButton
-import com.vistony.app.ui.theme.Screen.Generic.CustomDrawer
-import com.vistony.app.ui.theme.Screen.Generic.CustomOutlinedTextField
-import com.vistony.app.ui.theme.Screen.Generic.DateOutlinedTextField
-import com.vistony.app.ui.theme.Screen.Generic.Detalle
-import com.vistony.app.ui.theme.Screen.Generic.TableCell
-import com.vistony.app.ui.theme.Screen.Generic.TableHeaderCell
-import com.vistony.app.ui.theme.Screen.Generic.TopBar
+import com.vistony.app.Screen.Generic.CustomAlertDialog
+import com.vistony.app.Screen.Generic.CustomButton
+import com.vistony.app.Screen.Generic.CustomDrawer
+import com.vistony.app.Screen.Generic.CustomOutlinedTextField
+import com.vistony.app.Screen.Generic.DateOutlinedTextField
+import com.vistony.app.Screen.Generic.Detalle
+import com.vistony.app.Screen.Generic.DialogType
+import com.vistony.app.Screen.Generic.TableCell
+import com.vistony.app.Screen.Generic.TableHeaderCell
+import com.vistony.app.Screen.Generic.TopBar
+import com.vistony.app.ViewModel.EstadoParada
+import com.vistony.app.ViewModel.ParadaViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ListParada(
     navController: NavController,
+    paradaViewModel: ParadaViewModel = hiltViewModel(),
     id: String
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -107,7 +123,7 @@ fun ListParada(
                         )
                     }
                     Spacer(modifier = Modifier.height(15.dp))
-                    BodyListParada(navController, id)
+                    BodyListParada(navController, id, paradaViewModel)
                 }
             }
         )
@@ -117,11 +133,12 @@ fun ListParada(
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BodyListParada(navController: NavController, id: String) {
+fun BodyListParada(navController: NavController, id: String, paradaViewModel: ParadaViewModel) {
 
-    var detenerState by rememberSaveable { mutableStateOf(true) }
+    var fechaFinal by rememberSaveable { mutableStateOf<LocalDateTime?>(null) }
     var showDialog by remember { mutableStateOf(false) }
-    var item by remember { mutableStateOf(ListParada()) }
+    var showDialogDetalle by remember { mutableStateOf(false) }
+    var item by remember { mutableStateOf(Parada()) }
     var txt_estado = rememberSaveable { mutableStateOf("") }
 
     var selectedDateIni by remember { mutableStateOf(LocalDate.now()) }
@@ -132,17 +149,18 @@ fun BodyListParada(navController: NavController, id: String) {
     val expanded = remember { mutableStateOf(false) }
     val options = listOf("Iniciado", "Finalizado")
 
+    val paradas by paradaViewModel.paradas.collectAsState()
 
     val data = listOf(
-        ListParada(1, "Maquina 1", "10/10/2024", "10/10/2024", "10:10", true),
-        ListParada(2, "Maquina 2", "12/08/2024", "12/08/2024", "10:10", false),
-        ListParada(3, "Maquina 3", "03/10/2023", "03/10/2023", "10:10", false),
-        ListParada(4, "Maquina 4", "22/05/2023", "22/05/2023", "10:10", false),
-        ListParada(5, "Maquina 5", "09/01/2023", "09/01/2023", "10:10", true),
-        ListParada(6, "Maquina 6", "10/10/2024", "10/10/2024", "10:10", false),
-        ListParada(7, "Maquina 7", "12/08/2024", "12/08/2024", "10:10", false),
-        ListParada(8, "Maquina 8", "03/10/2023", "03/10/2023", "10:10", false),
-        ListParada(9, "Maquina 9", "22/05/2023", "22/05/2023", "10:10", true),
+        Parada(1, "Maquina 1", "10/10/2024", "10/10/2024", "10:10", ""),
+        Parada(2, "Maquina 2", "12/08/2024", "12/08/2024", "10:10", ""),
+        Parada(3, "Maquina 3", "03/10/2023", "03/10/2023", "10:10", ""),
+        Parada(4, "Maquina 4", "22/05/2023", "22/05/2023", "10:10", ""),
+        Parada(5, "Maquina 5", "09/01/2023", "09/01/2023", "10:10", ""),
+        Parada(6, "Maquina 6", "10/10/2024", "10/10/2024", "10:10", ""),
+        Parada(7, "Maquina 7", "12/08/2024", "12/08/2024", "10:10", ""),
+        Parada(8, "Maquina 8", "03/10/2023", "03/10/2023", "10:10", ""),
+        Parada(9, "Maquina 9", "22/05/2023", "22/05/2023", "10:10", ""),
 
         )
 
@@ -248,8 +266,9 @@ fun BodyListParada(navController: NavController, id: String) {
                         TableHeaderCell(text = "Finalizar", modifier = Modifier.weight(1f))
                     }
                 }
-                if (data.isNotEmpty()) {
-                    items(data) { row ->
+                val listaParadas = paradas.paradaResponse.data
+                if (listaParadas.isNotEmpty()) {
+                    items(listaParadas) { row ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -258,17 +277,49 @@ fun BodyListParada(navController: NavController, id: String) {
                         ) {
                             TableCell(text = row.id.toString(), modifier = Modifier.weight(0.5f))
                             TableCell(text = row.maquina, modifier = Modifier.weight(1f))
-                            TableCell(text = row.fec_inicio, modifier = Modifier.weight(1f))
-                            TableCell(text = row.fec_final, modifier = Modifier.weight(1f))
+                            TableCell(text = row.fechaInicio, modifier = Modifier.weight(1f))
+                            TableCell(
+                                text = if (row.fechaFinal.isNullOrEmpty()) "En curso" else row.fechaFinal.toString(),
+                                modifier = Modifier.weight(1f)
+                            )
                             TableCell(value = 1) {
-                                CustomButtonRed("Ver", estado = true, row, Color(0xFF0054A3)) {
-                                    showDialog = true
+                                Button(
+                                    modifier = Modifier.width(100.dp),
+                                    onClick = { showDialogDetalle = true; item = row },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFF0B4FAF),
+                                        contentColor = Color.White,
+                                        disabledContainerColor = Color.Gray,
+                                        disabledContentColor = Color.White
+                                    )
+                                ) {
+                                    Text("Ver")
                                 }
                             }
                             TableCell(value = 1) {
-                                //CustomButtonRed(if(row.estado)?"Detener":"Finalizado", estado = row.estado, row, Color.Red)
-                                CustomButtonRed("Detener", estado = row.estado, row, Color.Red) {
-
+                                if (row.fechaFinal.isNullOrEmpty()) { // Verificar si la parada está iniciada
+                                    Button(
+                                        modifier = Modifier.width(100.dp),
+                                        onClick = {
+                                            fechaFinal = LocalDateTime.now()
+                                            row.fechaFinal = formatoServidor(fechaFinal!!)
+                                            paradaViewModel.detenerParada(row)
+                                            showDialog = true
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color.Red,
+                                            contentColor = Color.White,
+                                            disabledContainerColor = Color.Gray,
+                                            disabledContentColor = Color.White
+                                        )
+                                    ) {
+                                        Text("Detener Parada")
+                                    }
+                                } else {
+                                    Text(
+                                        "Finalizado",
+                                        color = Color.Gray
+                                    ) // Mostrar texto si está finalizada
                                 }
                             }
 
@@ -277,7 +328,7 @@ fun BodyListParada(navController: NavController, id: String) {
                 } else {
                     item {
                         Text(
-                            text = "No hay Inspecciones",
+                            text = "No hay registros de Paradas",
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(end = 8.dp, top = 16.dp),
@@ -287,9 +338,10 @@ fun BodyListParada(navController: NavController, id: String) {
                     }
                 }
             }
+            Log.d("TAG", "BodyListParada: ${paradas}")
             Detalle(
-                isVisible = showDialog,
-                onDismiss = { showDialog = false },
+                isVisible = showDialogDetalle,
+                onDismiss = { showDialogDetalle = false },
                 data = item,
                 content = {
                     Column() {
@@ -298,31 +350,53 @@ fun BodyListParada(navController: NavController, id: String) {
                             fontWeight = FontWeight.Bold,
                             fontSize = 22.sp
                         )
-                        Text(text = "Estado: ${item.estado}", fontWeight = FontWeight.Bold)
-                        Text(text = "Fecha: ${item.fec_inicio}", fontWeight = FontWeight.Bold)
-                        Text(text = "Fecha: ${item.fec_final}", fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "Descripcion: ${item.motivoParada}",
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(text = "Fecha: ${item.fechaInicio}", fontWeight = FontWeight.Bold)
+                        Text(text = "Fecha: ${item.fechaFinal}", fontWeight = FontWeight.Bold)
                         Text(text = "Hora: ")
                     }
                 }
             )
+            if (showDialog){
+                when(paradaViewModel.estadoParada.value){
+                    EstadoParada.Cargando ->
+                        CustomAlertDialog(
+                            showDialog = true,
+                            title = "Cargando",
+                            message = "Espere por favor...",
+                            confirmButtonText = "",
+                            dismissButtonText = null,
+                            onDismiss = { showDialog = false },
+                            dialogType = DialogType.LOADING
+                        )
+                    is EstadoParada.Error -> TODO()
+                    EstadoParada.Exitoso -> {
+                        CustomAlertDialog(
+                            showDialog = true,
+                            title = "Exitoso",
+                            message = "Parada finalizada a las ${formatoFecha(fechaFinal!!)}",
+                            confirmButtonText = "Aceptar",
+                            dismissButtonText = null,
+                            onDismiss = { showDialog = false },
+                            dialogType = DialogType.SUCCESS
+                        )
+                    }
+                    EstadoParada.Idle -> TODO()
+                }
+            }
         }
     }
 }
 
-data class ListParada(
-    val id: Int = 0,
-    val maquina: String = "",
-    val fec_inicio: String = "",
-    val fec_final: String = "",
-    val hora_ins: String = "",
-    var estado: Boolean = false
-)
-
+/*
 @Composable
 fun CustomButtonRed(
     text: String,
     estado: Boolean,
-    row: ListParada,
+    row: Parada,
     color: Color,
     onClick: @Composable () -> Unit = {}
 ) {
@@ -350,31 +424,55 @@ fun CustomButtonRed(
     }
     if (isVisibilidad) {
         DialogEspera(onDismiss = { isVisibilidad = false })
+    }else{
+
     }
 
 }
+*/
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DialogEspera(onDismiss: () -> Unit = {}) {
+    var showSuccess by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        delay(5000) // Wait for 5 seconds
+        showSuccess = true
+    }
+
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        modifier = Modifier.size(200.dp),
-        content = {
+        modifier = Modifier.size(200.dp), content = {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(RoundedCornerShape(25.dp))
-                    .background(Color.White.copy(alpha = 0.7f)),
+                    .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    CircularProgressIndicator(color = Color(0xFF0054A3))
-                    Text(text = "Espera")
+                if (showSuccess) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.CheckCircleOutline,
+                            contentDescription = "Success",
+                            tint = Color.Green
+                        )
+                        Text(text = "Exitoso")
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(color = Color(0xFF0054A3))
+                        Text(text = "Espera")
+                    }
                 }
             }
         }

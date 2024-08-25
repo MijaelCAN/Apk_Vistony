@@ -21,14 +21,14 @@ import androidx.navigation.navArgument
 import com.vistony.app.Service.ConnectivityObserver
 import com.vistony.app.ViewModel.NetworkStatusViewModel
 import com.vistony.app.ViewModel.SharedViewModel
-import com.vistony.app.ui.theme.Screen.Inspeccion.DetalleScreen
-import com.vistony.app.ui.theme.Screen.Inspeccion.HomeScreen
-import com.vistony.app.ui.theme.Screen.Inspeccion.ListScreen
-import com.vistony.app.ui.theme.Screen.LoginScreen
-import com.vistony.app.ui.theme.Screen.NoInternetScreen
-import com.vistony.app.ui.theme.Screen.Parada.HomeParada
-import com.vistony.app.ui.theme.Screen.Parada.ListParada
-import com.vistony.app.ui.theme.VistonyTheme
+import com.vistony.app.ui.theme.AppTheme
+import com.vistony.app.Screen.Inspeccion.DetalleScreen
+import com.vistony.app.Screen.Inspeccion.HomeScreen
+import com.vistony.app.Screen.Inspeccion.ListScreen
+import com.vistony.app.Screen.LoginScreen
+import com.vistony.app.Screen.NoInternetScreen
+import com.vistony.app.Screen.Parada.HomeParada
+import com.vistony.app.Screen.Parada.ListParada
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         setContent {
-            VistonyTheme {
+            AppTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -48,9 +48,10 @@ class MainActivity : ComponentActivity() {
                     val sharedViewModel: SharedViewModel = hiltViewModel()
                     val networkStatusViewModel: NetworkStatusViewModel = hiltViewModel()
                     val status by networkStatusViewModel.status.collectAsState()
+                    var usuario = "70131373"
 
                     if (status == ConnectivityObserver.Status.Available) {
-                        NavHost(startDestination = "login", navController = navController) {
+                        NavHost(startDestination = "listaInsp/${usuario}", navController = navController) {
                             composable("login") {
                                 LoginScreen(navController)
                             }

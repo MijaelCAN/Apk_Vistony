@@ -1,4 +1,4 @@
-package com.vistony.app.ui.theme.Screen.Inspeccion
+package com.vistony.app.Screen.Inspeccion
 
 import android.os.Build
 import android.util.Log
@@ -54,13 +54,13 @@ import androidx.navigation.NavController
 import com.vistony.app.Entidad.Inspeccion
 import com.vistony.app.R
 import com.vistony.app.ViewModel.EvalViewModel
-import com.vistony.app.ui.theme.Screen.Generic.CustomButton
-import com.vistony.app.ui.theme.Screen.Generic.CustomDrawer
-import com.vistony.app.ui.theme.Screen.Generic.DateOutlinedTextField
-import com.vistony.app.ui.theme.Screen.Generic.Detalle
-import com.vistony.app.ui.theme.Screen.Generic.TableCell
-import com.vistony.app.ui.theme.Screen.Generic.TableHeaderCell
-import com.vistony.app.ui.theme.Screen.Generic.TopBar
+import com.vistony.app.Screen.Generic.CustomButton
+import com.vistony.app.Screen.Generic.CustomDrawer
+import com.vistony.app.Screen.Generic.DateOutlinedTextField
+import com.vistony.app.Screen.Generic.Detalle
+import com.vistony.app.Screen.Generic.TableCell
+import com.vistony.app.Screen.Generic.TableHeaderCell
+import com.vistony.app.Screen.Generic.TopBar
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -333,7 +333,7 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
                     Column() {
                         Text(
                             text = "Inspeccion de: ${item.OT}",
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                            fontWeight = FontWeight.Bold
                         )
                         Text(text = "Fecha: ${item.Fecha}")
                         Text(text = "Turno: ${item.Turno}")

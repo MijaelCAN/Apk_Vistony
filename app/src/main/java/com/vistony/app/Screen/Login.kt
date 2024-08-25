@@ -1,5 +1,6 @@
-package com.vistony.app.ui.theme.Screen
+package com.vistony.app.Screen
 
+import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,11 +26,11 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -44,13 +46,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -64,13 +67,15 @@ fun LoginScreen(
     navController: NavHostController,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
+    val isTablet = isTablet(context)
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF0B4FAF))
             .systemBarsPadding()
-            .imePadding(),
+            .imePadding()
         /*horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center*/
     ) {
@@ -86,58 +91,67 @@ fun LoginScreen(
             )
         }
         Spacer(modifier = Modifier.height(50.dp))
+        // Ajusta el tamaño del contenedor según el tamaño de la pantalla
+        val containerSize = if (isTablet) 600.dp else 300.dp
+        val cournerZise = containerSize * 0.1f
         Box(
             modifier = Modifier
-                .width(500.dp)
-                .height(600.dp)
-                .clip(RoundedCornerShape(25.dp))
+                .width(containerSize)
+                .height(containerSize * 1.2f)
+                .clip(RoundedCornerShape(cournerZise))
                 .background(color = Color.Red)
                 .align(Alignment.Center)
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(540.dp)// Tamaño del círculo
+                    .height(containerSize * 1.1f)// Tamaño del círculo
                     .background(
                         Color.White,
-                        shape = RoundedCornerShape(bottomStart = 150.dp, bottomEnd = 150.dp)
+                        shape = RoundedCornerShape(bottomStart = cournerZise, bottomEnd = cournerZise)
                     )
-                //.offset(x = 0.dp, y = (-100).dp) // Puedes ajustar el desplazamiento aquí
             )
-            Body(navController, viewModel)
+            Body(navController, viewModel,containerSize)
         }
 
     }
 }
+fun isTablet(context: Context): Boolean {
+    // Obtener las dimensiones de la pantalla
+    val metrics = context.resources.displayMetrics
+    val widthInches = metrics.widthPixels / metrics.xdpi
+    val heightInches = metrics.heightPixels / metrics.ydpi
+
+    // Calcular el tamaño diagonal en pulgadas
+    val diagonalInches = Math.sqrt((widthInches * widthInches + heightInches * heightInches).toDouble())
+
+    // Considerar un dispositivo como tablet si la diagonal es mayor o igual a 7.0 pulgadas
+    return diagonalInches >= 7.0
+}
 
 @Composable
-fun Titulo() {
+fun Titulo(titleSize: Dp) {
     Text(
         modifier = Modifier.fillMaxWidth(),
         text = "Iniciar Sesión",
         style = TextStyle(
-            fontWeight = FontWeight.Bold,
-            fontSize = 30.sp,
+            fontStyle = MaterialTheme.typography.titleLarge.fontStyle,
+            fontSize = titleSize.value.sp,
             textAlign = TextAlign.Center,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.onSurface,
         ),
     )
-    /*Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 64.dp)
-            .height(60.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(Color.White.copy(alpha = 0.5f)),
-        contentAlignment = Alignment.Center
-    ) {
-
-    }*/
 }
 
 @ExperimentalMaterial3Api
 @Composable
-fun Body(navController: NavHostController, viewModel: LoginViewModel) {
+fun Body(navController: NavHostController, viewModel: LoginViewModel, containerSize: Dp) {
+
+    val imageSize = containerSize * 0.4f
+    val titleSize = containerSize * 0.1f
+    val fieldSize = containerSize * 0.13f
+    val buttonSize = containerSize * 0.13f
+
     var user by rememberSaveable { mutableStateOf("") }
     var pass by rememberSaveable { mutableStateOf("") }
     var passVisible by rememberSaveable { mutableStateOf(false) }
@@ -145,53 +159,55 @@ fun Body(navController: NavHostController, viewModel: LoginViewModel) {
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 32.dp),
+            .fillMaxHeight()
+            .padding(horizontal = containerSize * 0.13f, vertical = containerSize * 0.1f),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
-            modifier = Modifier.size(width = 400.dp, height = 150.dp),
+            modifier = Modifier.size(width = imageSize, height = imageSize * 0.4f),
             painter = painterResource(id = R.drawable.vistony),
             contentDescription = "Logo"
         )
-        Titulo()
-        Spacer(modifier = Modifier.height(50.dp))
+        Titulo(titleSize)
+        Spacer(modifier = Modifier.height(containerSize * 0.05f))
         OutlinedTextField(
+            modifier = Modifier.height(fieldSize).fillMaxWidth(),
             value = user,
             onValueChange = {
                 user = it.filter { char -> char.isLetterOrDigit() }
             },
-            label = { Text(text = "Usuario") },
+            label = { Text(text = "Usuario",style = MaterialTheme.typography.labelMedium) },
             colors = TextFieldDefaults.outlinedTextFieldColors(
-                focusedLabelColor = Color.Black,
-                unfocusedLabelColor = Color(0xFFA2A2A2),
-                cursorColor = Color(0xFF0054A3),
-                unfocusedTextColor = Color.Black,
-                //textColor = Color.Black,
-                unfocusedBorderColor = Color(0xFFA2A2A2),
-                focusedBorderColor = Color(0xFF0054A3)
+                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                cursorColor = MaterialTheme.colorScheme.primary,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                focusedBorderColor = MaterialTheme.colorScheme.primary
             ),
             keyboardOptions = KeyboardOptions().copy(keyboardType = KeyboardType.Text),
             leadingIcon = {
-                Icon(Icons.Filled.Person, contentDescription = "User", tint = Color(0xFFA2A2A2))
+                Icon(Icons.Filled.Person, contentDescription = "User", tint = MaterialTheme.colorScheme.onSurface)
             },
-            maxLines = 1
+            singleLine = true
         )
+        Spacer(modifier = Modifier.height(containerSize * 0.05f))
         OutlinedTextField(
+            modifier = Modifier.height(fieldSize).fillMaxWidth(),
             value = pass,
             onValueChange = { pass = it },
-            label = { Text(text = "Contraseña") },
+            label = { Text(text = "Contraseña", style = MaterialTheme.typography.labelMedium) },
             colors = TextFieldDefaults.outlinedTextFieldColors(
-                focusedLabelColor = Color.Black,
-                unfocusedLabelColor = Color(0xFFA2A2A2),
-                cursorColor = Color(0xFF0054A3),
-                //textColor = Color.Black,
-                unfocusedBorderColor = Color(0xFFA2A2A2),
-                focusedBorderColor = Color(0xFF0054A3)
+                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                cursorColor = MaterialTheme.colorScheme.primary,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                focusedBorderColor = MaterialTheme.colorScheme.primary
             ),
             leadingIcon = {
-                Icon(Icons.Filled.Lock, contentDescription = "User", tint = Color(0xFFA2A2A2))
+                Icon(Icons.Filled.Lock, contentDescription = "User", tint = MaterialTheme.colorScheme.onSurface)
             },
             trailingIcon = {
                 val image = if (passVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
@@ -199,30 +215,25 @@ fun Body(navController: NavHostController, viewModel: LoginViewModel) {
                     Icon(
                         imageVector = image,
                         contentDescription = "Contraseña",
-                        tint = Color(0xFFA2A2A2)
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             },
             visualTransformation = if (passVisible) VisualTransformation.None else PasswordVisualTransformation()
         )
-        /*Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Checkbox(
-                checked = rememberMe,
-                onCheckedChange = { checked -> rememberMe = checked }
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = "Recordar mis credenciales")
-        }*/
-        Spacer(modifier = Modifier.height(25.dp))
-        Boton(user, pass, navController, viewModel)
+        Spacer(modifier = Modifier.height(containerSize * 0.05f))
+        Boton(user, pass, navController, viewModel,buttonSize)
     }
 }
 
 @Composable
-fun Boton(user: String, pass: String, navController: NavHostController, viewModel: LoginViewModel) {
+fun Boton(
+    user: String,
+    pass: String,
+    navController: NavHostController,
+    viewModel: LoginViewModel,
+    buttonSize: Dp
+) {
     var stateButton by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     val loginState = viewModel._loginstate
@@ -240,16 +251,16 @@ fun Boton(user: String, pass: String, navController: NavHostController, viewMode
     }
 
     val buttonColors = ButtonDefaults.elevatedButtonColors(
-        containerColor = if (stateButton) Color(0xFF0054A3) else Color(0XFF9C9B9B),
-        contentColor = if (stateButton) Color(0xFFC9C9C9) else Color.White,
-        disabledContentColor = Color.White,
-        disabledContainerColor = Color(0XFF9C9B9B)
+        containerColor = if (stateButton) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+        contentColor = if (stateButton) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+        disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+        disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     )
 
     ElevatedButton(
         modifier = Modifier
-            .width(200.dp)
-            .height(58.dp),
+            .height(buttonSize)
+            .fillMaxWidth(),
         enabled = stateButton,
         onClick = {
             viewModel.validar(user, pass)
@@ -258,16 +269,18 @@ fun Boton(user: String, pass: String, navController: NavHostController, viewMode
             }
         },
         colors = buttonColors,
-        shape = RoundedCornerShape(18.dp)
+        shape = MaterialTheme.shapes.medium // Utiliza la forma definida en el tema
     ) {
-        Icon(Icons.Filled.Login, contentDescription = "Login")
+        Icon(Icons.Filled.Login, contentDescription = "Login", tint = MaterialTheme.colorScheme.onPrimary)
         Spacer(modifier = Modifier.width(15.dp))
-        Text(text = "INICIAR SESIÓN")
+        Text(text = "INICIAR SESIÓN", style = MaterialTheme.typography.bodyMedium)
     }
+
     if (errorMessage.isNotEmpty()) {
         Text(
             text = errorMessage,
-            color = Color.Red,
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(top = 8.dp)
         )
     }

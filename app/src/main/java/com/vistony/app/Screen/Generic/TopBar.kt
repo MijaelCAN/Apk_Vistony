@@ -1,4 +1,4 @@
-package com.vistony.app.ui.theme.Screen.Generic
+package com.vistony.app.Screen.Generic
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
