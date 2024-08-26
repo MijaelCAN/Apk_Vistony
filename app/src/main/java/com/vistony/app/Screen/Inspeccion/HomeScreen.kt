@@ -523,7 +523,7 @@ fun BotonH(
 ) {
     //var stateButton by remember { mutableStateOf(false) }
     val stateButton =
-        ot.isNotEmpty() && description.isNotEmpty() && um.isNotEmpty() && cantidad.isNotEmpty() && operador.isNotEmpty() && linea.isNotEmpty()
+        ot.isNotEmpty() && description.isNotEmpty() && um.isNotEmpty() && cantidad.isNotEmpty() && operador.isNotEmpty()
     LaunchedEffect(ot, description, um, cantidad, turno, fecha, linea, operador,id) {
         sharedViewModel.turno = turno
         sharedViewModel.ot = ot
@@ -540,7 +540,7 @@ fun BotonH(
         containerColor = if (stateButton) Color(0xFF0054A3) else Color(0XFF9C9B9B),
         contentColor = if (stateButton) Color(0xFFC9C9C9) else Color.White,
         disabledContentColor = Color.White,
-        disabledContainerColor = Color(0XFF9C9B9B)
+        disabledContainerColor = Color(0XFF9C9B9B)//240011176
     )
 
     ElevatedButton(

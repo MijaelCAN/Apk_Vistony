@@ -51,7 +51,7 @@ class MainActivity : ComponentActivity() {
                     var usuario = "70131373"
 
                     if (status == ConnectivityObserver.Status.Available) {
-                        NavHost(startDestination = "listaInsp/${usuario}", navController = navController) {
+                        NavHost(startDestination = "login", navController = navController) {
                             composable("login") {
                                 LoginScreen(navController)
                             }
