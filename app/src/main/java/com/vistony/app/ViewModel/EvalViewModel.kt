@@ -9,6 +9,7 @@ import com.vistony.app.Entidad.InspecionRequest
 import com.vistony.app.Entidad.InspecionResponse
 import com.vistony.app.Service.RetrofitInstance
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,8 +22,12 @@ class EvalViewModel @Inject constructor() : ViewModel() {
 
     private val evalService = RetrofitInstance.evalService
 
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    private val _isLoading = MutableStateFlow<EstadoInspeccion>(EstadoInspeccion.Idle)
+    val isLoading: StateFlow<EstadoInspeccion> = _isLoading.asStateFlow()
+
+    fun actualizarEstadoInspeccion(nuevoEstado: EstadoInspeccion) {
+        _isLoading.value = nuevoEstado
+    }
 
     private val _evalState = MutableStateFlow(EvalResponseState())
     var evalState: StateFlow<EvalResponseState> = _evalState.asStateFlow()
@@ -33,31 +38,32 @@ class EvalViewModel @Inject constructor() : ViewModel() {
     fun EnviarEvaluacion(data: Evaluacion) {
         Log.e("PASO1", "Entro a Funcion")
         viewModelScope.launch {
-            _isLoading.value = true
+            _isLoading.value = EstadoInspeccion.Cargando
             try {
                 Log.e("PASO 2", "Entro al Try")
                 val response = evalService.postEvaluacion(data)
-                /*val gson = Gson()
-                val jsonData = gson.toJson(data)
-                Log.e("JSON_ENVIADO", jsonData)*/
+
                 if (response.isSuccessful) {
                     val body = response.body()
                     if (body?.statusCode == 201) {
                         Log.e("PASO4", "Entro al IF")
                         _evalState.value = EvalResponseState(state = true, evalResponde = body)
+                        _isLoading.value = EstadoInspeccion.Exitoso
                     } else {
                         _evalState.value = EvalResponseState(state = false)
                         Log.e("RESPONS", body?.data.toString())
+                        _isLoading.value = EstadoInspeccion.Error("Error al registrar la parada")
                     }
                 } else {
                     Log.e("PASO5", "Entro al Else - Respuesta, No exitoso")
+                    _isLoading.value = EstadoInspeccion.Error("Error al registrar la parada")
                 }
             } catch (e: Exception) {
                 Log.e("PASO3", "Entro al CATH")
                 Log.e("sdfsd", "Error de comunicacion $e")
                 _evalState.value = EvalResponseState(state = false)
             }finally {
-                _isLoading.value = false
+                //_isLoading.value = EstadoInspeccion.Idle
             }
         }
     }
@@ -66,8 +72,6 @@ class EvalViewModel @Inject constructor() : ViewModel() {
         Log.e("eeeeeeeee", "Entro a Funcion")
         viewModelScope.launch {
             try {
-                /*val fec_ini = SimpleDateFormat("yyyyMMdd").format(selectedDateIni)
-                val fec_fin = SimpleDateFormat("yyyyMMdd").format(selectedDateFin)*/
 
                 val response = evalService.getListInspeccion(InspecionRequest(newfechaIni, newfechaFin))
                 if (response.isSuccessful) {
@@ -101,3 +105,10 @@ data class ListInspeccionState(
     val listInspeccion: InspecionResponse = InspecionResponse(),
     val message: String = ""
 )
+
+sealed class EstadoInspeccion {
+    object Idle : EstadoInspeccion()
+    object Cargando : EstadoInspeccion()
+    object Exitoso : EstadoInspeccion()
+    data class Error(val mensaje: String) : EstadoInspeccion()
+}

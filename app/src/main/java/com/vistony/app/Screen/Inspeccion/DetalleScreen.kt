@@ -79,6 +79,8 @@ import com.vistony.app.Screen.Generic.CustomText
 import com.vistony.app.Screen.Generic.DialogType
 import com.vistony.app.Screen.Generic.SuccessDialog
 import com.vistony.app.Screen.Generic.TopBar
+import com.vistony.app.ViewModel.EstadoInspeccion
+import com.vistony.app.ViewModel.EstadoParada
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -215,6 +217,7 @@ fun BodyDetalle(
             U_Conformidad_Comment = conformidadComment,
             U_Usuario = sharedViewModel.usuario,
             U_Cantidad = sharedViewModel.cantidad,
+            U_Maquinista = sharedViewModel.operador,
         )
 
     }
@@ -782,7 +785,52 @@ fun BotonD(
     ) {
         Text(text = "ENVIAR")
     }
-    if (isLoading) {
+    when(isLoading){
+        EstadoInspeccion.Cargando -> {
+            CustomAlertDialog(
+                showDialog = showDialog,
+                title = "Cargando",
+                message = "Enviando...",
+                confirmButtonText = "",
+                dismissButtonText = null,
+                onDismiss = {showDialog = false}
+            )
+        }
+        EstadoInspeccion.Exitoso -> {
+            CustomAlertDialog(
+                showDialog = showDialog,
+                title = "Envio Exitoso",
+                message = evalState.evalResponde.data,
+                icon = Icons.Default.Check,
+                confirmButtonText = "OK",
+                dismissButtonText = null,
+                onConfirm = { viewModel.actualizarEstadoInspeccion(EstadoInspeccion.Idle) },
+                onDismiss = {
+                    showDialog = false
+                    viewModel.actualizarEstadoInspeccion(EstadoInspeccion.Idle)
+                    navController.navigate("listaInsp/$id")
+                },
+                dialogType = DialogType.SUCCESS,
+            )
+        }
+        is EstadoInspeccion.Error -> {
+            CustomAlertDialog(
+                showDialog = showDialog,
+                title = "Error",
+                message = (isLoading as EstadoParada.Error).mensaje,
+                confirmButtonText = "OK",
+                dismissButtonText = null,
+                onConfirm = { viewModel.actualizarEstadoInspeccion(EstadoInspeccion.Idle) },
+                onDismiss = {
+                    showDialog = false
+                    viewModel.actualizarEstadoInspeccion(EstadoInspeccion.Idle)
+                },
+                dialogType = DialogType.ERROR,
+            )
+        }
+        else -> {}
+    }
+    /*if (isLoading) {
         CustomAlertDialog(
             showDialog = showDialog,
             title = "Cargando",
@@ -798,9 +846,12 @@ fun BotonD(
             message = evalState.evalResponde.data,
             icon = Icons.Default.Check,
             dialogType = DialogType.SUCCESS,
-            onDismiss = {showDialog = false}
+            onDismiss = {
+                showDialog = false
+                navController.navigate("listaInsp/$id")
+            }
         )
-    }
+    }*/
     if (evalState.state != null) {
         LaunchedEffect(evalState.state) {
             dialogTitle = if (evalState.state) "Envio Exitoso" else "Enviando"
@@ -813,7 +864,7 @@ fun BotonD(
         }
     }
 
-    if (showDialog) {
+    /*if (showDialog) {
         if (evalState.state) {
             SuccessDialog(
                 isVisible = showDialog,
@@ -825,25 +876,25 @@ fun BotonD(
                 id = id
             )
         } else {
-            /*ErrorDialog(
+            ErrorDialog(
                 isVisible = showDialog,
                 onDismiss = { showDialog = false },
                 message = dialogMessage,
                 navController = navController,
                 titulo = dialogTitle
-            )*/
+            )
         }
-    }
+    }*/
 
 
     //ConfirmationDialog(isVisible = showDialog, onConfirm = { viewModel._evalState.data }, onDismiss = { showDialog = false })
-    SuccessDialog(
+    /*SuccessDialog(
         isVisible = showDialog,
         onDismiss = { showDialog = false },
         message = dialogMessage, navController = navController,
         titulo = dialogTitle,
         id = id
-    )
+    )*/
 }
 
 @Composable

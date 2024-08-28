@@ -8,8 +8,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vistony.app.Entidad.LoginRequest
 import com.vistony.app.Entidad.LoginResponse
-import com.vistony.app.Service.AuthService
-import com.vistony.app.Service.RetrofitConfig
 import com.vistony.app.Service.RetrofitInstance
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch

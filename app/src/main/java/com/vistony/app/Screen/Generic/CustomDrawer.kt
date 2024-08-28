@@ -47,7 +47,7 @@ import androidx.navigation.NavController
 @Composable
 fun CustomDrawer(navController: NavController, id: String) {
     var selectedItem by remember { mutableStateOf<String?>(null) }
-    val id = "70131373"
+    //val id = "70131373"
     ModalDrawerSheet(
         modifier = Modifier.background(Color.White)
     ) {

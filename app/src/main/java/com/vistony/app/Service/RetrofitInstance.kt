@@ -57,6 +57,7 @@ object RetrofitInstance {
     }
 
 }
+/*
 //Configuracion Clase
 class RetrofitConfig {
     private var client2: OkHttpClient? = null
@@ -91,4 +92,4 @@ class RetrofitConfig {
         }
         return retrofit2
     }
-}
+}*/

@@ -70,6 +70,7 @@ import com.vistony.app.Screen.Generic.Detalle
 import com.vistony.app.Screen.Generic.DialogType
 import com.vistony.app.Screen.Generic.TableCell
 import com.vistony.app.Screen.Generic.TableHeaderCell
+import com.vistony.app.Screen.Generic.TableScreen
 import com.vistony.app.Screen.Generic.TopBar
 import com.vistony.app.ViewModel.EstadoParada
 import com.vistony.app.ViewModel.ParadaViewModel
@@ -149,18 +150,19 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
     val expanded = remember { mutableStateOf(false) }
     val options = listOf("Iniciado", "Finalizado")
 
-    val paradas by paradaViewModel.paradas.collectAsState()
+    val paradas by paradaViewModel.listParadas.collectAsState()
+    val estado  by paradaViewModel.estadoParada.collectAsState()
 
     val data = listOf(
         Parada(1, "Maquina 1", "10/10/2024", "10/10/2024", "10:10", ""),
-        Parada(2, "Maquina 2", "12/08/2024", "12/08/2024", "10:10", ""),
+        Parada(2, "Maquina 2", "12/08/2024", "", "10:10", ""),
         Parada(3, "Maquina 3", "03/10/2023", "03/10/2023", "10:10", ""),
         Parada(4, "Maquina 4", "22/05/2023", "22/05/2023", "10:10", ""),
-        Parada(5, "Maquina 5", "09/01/2023", "09/01/2023", "10:10", ""),
-        Parada(6, "Maquina 6", "10/10/2024", "10/10/2024", "10:10", ""),
+        Parada(5, "Maquina 5", "09/01/2023", "", "10:10", ""),
+        Parada(6, "Maquina 6", "10/10/2024", "", "10:10", ""),
         Parada(7, "Maquina 7", "12/08/2024", "12/08/2024", "10:10", ""),
         Parada(8, "Maquina 8", "03/10/2023", "03/10/2023", "10:10", ""),
-        Parada(9, "Maquina 9", "22/05/2023", "22/05/2023", "10:10", ""),
+        Parada(9, "Maquina 9", "22/05/2023", "", "10:10", ""),
 
         )
 
@@ -266,9 +268,9 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
                         TableHeaderCell(text = "Finalizar", modifier = Modifier.weight(1f))
                     }
                 }
-                val listaParadas = paradas.paradaResponse.data
-                if (listaParadas.isNotEmpty()) {
-                    items(listaParadas) { row ->
+                val listaParadas = paradas.data
+                if (data.isNotEmpty()) {
+                    items(data) { row ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -279,7 +281,7 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
                             TableCell(text = row.maquina, modifier = Modifier.weight(1f))
                             TableCell(text = row.fechaInicio, modifier = Modifier.weight(1f))
                             TableCell(
-                                text = if (row.fechaFinal.isNullOrEmpty()) "En curso" else row.fechaFinal.toString(),
+                                text = if (row.fechaFinal.isNullOrEmpty()) "En curso" else row.fechaFinal,
                                 modifier = Modifier.weight(1f)
                             )
                             TableCell(value = 1) {
@@ -313,7 +315,7 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
                                             disabledContentColor = Color.White
                                         )
                                     ) {
-                                        Text("Detener Parada")
+                                        Text("Detener")
                                     }
                                 } else {
                                     Text(
@@ -338,6 +340,7 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
                     }
                 }
             }
+
             Log.d("TAG", "BodyListParada: ${paradas}")
             Detalle(
                 isVisible = showDialogDetalle,
@@ -361,7 +364,7 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
                 }
             )
             if (showDialog){
-                when(paradaViewModel.estadoParada.value){
+                when(estado){
                     EstadoParada.Cargando ->
                         CustomAlertDialog(
                             showDialog = true,

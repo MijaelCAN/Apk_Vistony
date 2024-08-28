@@ -2,6 +2,7 @@ package com.vistony.app.Screen.Parada
 
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -40,6 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,7 +55,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.vistony.app.Entidad.Area
+import com.vistony.app.Entidad.Maquina
+import com.vistony.app.Entidad.Motivo
 import com.vistony.app.Entidad.Parada
+import com.vistony.app.Entidad.ParadaRequest
+import com.vistony.app.Extras.formatoHora
 import com.vistony.app.Extras.formatoServidor
 import com.vistony.app.Extras.formatoUsuario
 import com.vistony.app.R
@@ -128,8 +135,11 @@ fun HomeParada(
 @Composable
 fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, id: String) {
     val areaState by paradaViewModel.areas.collectAsState()
+    var areaId by remember { mutableStateOf("") }
     val maquinaState by paradaViewModel.maquinas.collectAsState()
+    var maquinaId by remember { mutableStateOf("") }
     val motivoState by paradaViewModel.motivos.collectAsState()
+    var motivoId by remember { mutableStateOf(0) }
 
     var fec_Parada_Ini by remember { mutableStateOf(LocalDateTime.now()) }
     var fec_Parada_Fin by remember { mutableStateOf("") }
@@ -233,8 +243,8 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
                         readOnly = true
                     )
                     // suponiendo pase la lista completa y con un campo de area se filtraria las maquinas segun el area
-                    val listFiltAreas = areaState.areaResponse.data.filter { it.nomArea == area.value }
-                    val listAreas = areaState.areaResponse.data.map { it.nomArea }
+                    val listFiltAreas = areaState.areaResponse.data.filter { it.Name == area.value }
+                    val listAreas = areaState.areaResponse.data.map { Area(it.Code, it.Name) }
                     val options = listOf("Área 1", "Área 2", "Área 3")
 
                     ExposedDropdownMenu(
@@ -245,9 +255,11 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
                         onDismissRequest = { expandedArea.value = false }) {
                         listAreas.map { option ->
                             DropdownMenuItem(
-                                text = { Text(option, color = Color.Black) },
+                                text = { Text(option.Name, color = Color.Black) },
                                 onClick = {
-                                    area.value = option
+                                    area.value = option.Name
+                                    areaId = option.Code
+                                    paradaViewModel.obtenerMotivos(areaId.toInt())
                                     expandedArea.value = false
                                 }
                             )
@@ -287,8 +299,10 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
                         readOnly = true
                     )
                     //val options2 = operarioState.operarioResponse?.data?.map { it.Nonbre } ?: emptyList()
-                    val listFiltMaqu = maquinaState.maquinaResponse.data.filter { it.maquina == maquina.value }
-                    val listMaquinas = maquinaState.maquinaResponse.data.map { it.maquina }
+                    val listFiltMaqu =
+                        maquinaState.maquinaResponse.data.filter { it.Name == maquina.value }
+                    val listMaquinas =
+                        maquinaState.maquinaResponse.data.map { Maquina(it.Code, it.Name) }
                     val options = listOf("Maquina 1", "Maquina 2", "Maquina 3")
 
                     ExposedDropdownMenu(
@@ -297,11 +311,12 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
                             .clip(RoundedCornerShape(8.dp)),
                         expanded = expandedMaquina.value,
                         onDismissRequest = { expandedMaquina.value = false }) {
-                        options.forEach { option ->
+                        listMaquinas.forEach { option ->
                             DropdownMenuItem(
-                                text = { Text(option, color = Color.Black) },
+                                text = { Text(option.Name, color = Color.Black) },
                                 onClick = {
-                                    maquina.value = option
+                                    maquina.value = option.Name
+                                    maquinaId = option.Code
                                     expandedMaquina.value = false
                                 }
                             )
@@ -341,9 +356,8 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
                         readOnly = true
                     )
                     //val options2 = operarioState.operarioResponse?.data?.map { it.Nonbre } ?: emptyList()
-                    val listFiltMotiv = motivoState.motivoResponse.data.filter { it.motivo == motivoParada.value }
-                    val listMotivos = motivoState.motivoResponse.data.map { it.motivo }
-                    val options = listOf("Motivo 1", "Motivo 2", "Motivo 3")
+                    val listFiltMotiv = motivoState.motivoResponse.data.filter { it.Name == motivoParada.value }
+                    val listMotivos = motivoState.motivoResponse.data.map { Motivo(it.Code, it.Name) }
 
                     ExposedDropdownMenu(
                         modifier = Modifier
@@ -351,11 +365,12 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
                             .clip(RoundedCornerShape(8.dp)),
                         expanded = expandedParada.value,
                         onDismissRequest = { expandedParada.value = false }) {
-                        options.forEach { option ->
+                        listMotivos.forEach { option ->
                             DropdownMenuItem(
-                                text = { Text(option, color = Color.Black) },
+                                text = { Text(option.Name, color = Color.Black) },
                                 onClick = {
-                                    motivoParada.value = option
+                                    motivoParada.value = option.Name
+                                    motivoId = option.Code
                                     expandedParada.value = false
                                 }
                             )
@@ -405,34 +420,36 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
                 )
 
             }
+            val stateBoton = maquina.value.isNotEmpty() && area.value.isNotEmpty() && motivoParada.value.isNotEmpty() && comentarios.isNotEmpty()
             BotonParada(
-                formatoServidor(fec_Parada_Ini),
-                maquina.value,
-                area.value,
-                motivoParada.value,
+                maquinaId,
+                areaId,
                 comentarios,
                 navController,
                 id,
-                paradaViewModel
+                paradaViewModel,
+                stateBoton,
+                motivoId
             )
         }
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun BotonParada(
-    fec_Parada_Ini: String,
-    maquina: String,
-    area: String,
-    motivoParada: String,
+    maquinaId: String,
+    areaId: String,
     comentarios: String,
     navController: NavController,
     id: String,
-    paradaViewModel: ParadaViewModel
+    paradaViewModel: ParadaViewModel,
+    stateBoton: Boolean,
+    motivoId: Int,
 ) {
-    var showDialog = false
-    var stateButton =
-        maquina.isNotEmpty() && area.isNotEmpty() && motivoParada.isNotEmpty() && comentarios.isNotEmpty()
+    var showDialog by remember { mutableStateOf(false) }
+    val estado by paradaViewModel.estadoParada.collectAsState()
+    var stateButton = stateBoton
 
     val buttonColors = ButtonDefaults.elevatedButtonColors(
         containerColor = if (stateButton) Color(0xFF0054A3) else Color(0XFF9C9B9B),
@@ -447,17 +464,31 @@ fun BotonParada(
             .height(58.dp),
         enabled = stateButton,
         onClick = {
-            paradaViewModel.registrarParada(Parada(-1, fec_Parada_Ini,maquina, area, motivoParada, comentarios))
+            val newFecha = LocalDateTime.now()
+            paradaViewModel.registrarParada(
+                ParadaRequest(
+                    formatoServidor(newFecha),
+                    maquinaId,
+                    areaId,
+                    comentarios,
+                    "Y",
+                    formatoServidor(newFecha),
+                    "",
+                    formatoHora(newFecha),
+                    "",
+                    id,
+                    motivoId
+                )
+            )
             showDialog = true
-            navController.navigate("listaParada/${id}")
         },
         colors = buttonColors,
         shape = RoundedCornerShape(18.dp)
     ) {
         Text(text = "Guardar", style = TextStyle(fontSize = 20.sp))
     }
-    if(showDialog){
-        when (val estado = paradaViewModel.estadoParada.value) {
+    if (showDialog) {
+        when (estado) {
             EstadoParada.Cargando -> {
                 CustomAlertDialog(
                     showDialog = showDialog,
@@ -469,6 +500,7 @@ fun BotonParada(
                     dialogType = DialogType.LOADING,
                 )
             }
+
             EstadoParada.Exitoso -> {
                 CustomAlertDialog(
                     showDialog = showDialog,
@@ -476,9 +508,12 @@ fun BotonParada(
                     message = "Parada registrada correctamente",
                     confirmButtonText = "OK",
                     dismissButtonText = null,
-                    onConfirm = {paradaViewModel.actualizarEstadoParada(EstadoParada.Idle)},
-                    onDismiss = { showDialog = false
-                        paradaViewModel.actualizarEstadoParada(EstadoParada.Idle)},
+                    onConfirm = { paradaViewModel.actualizarEstadoParada(EstadoParada.Idle) },
+                    onDismiss = {
+                        showDialog = false
+                        paradaViewModel.actualizarEstadoParada(EstadoParada.Idle)
+                        navController.navigate("listaParada/$id")
+                    },
                     dialogType = DialogType.SUCCESS,
                 )
                 /*AlertDialog(
@@ -492,19 +527,23 @@ fun BotonParada(
                     }
                 )*/
             }
+
             is EstadoParada.Error -> {
                 CustomAlertDialog(
                     showDialog = showDialog,
                     title = "Error",
-                    message = estado.mensaje,
+                    message = (estado as EstadoParada.Error).mensaje,
                     confirmButtonText = "OK",
                     dismissButtonText = null,
-                    onConfirm = {paradaViewModel.actualizarEstadoParada(EstadoParada.Idle)},
-                    onDismiss = { showDialog = false
-                        paradaViewModel.actualizarEstadoParada(EstadoParada.Idle)},
+                    onConfirm = { paradaViewModel.actualizarEstadoParada(EstadoParada.Idle) },
+                    onDismiss = {
+                        showDialog = false
+                        paradaViewModel.actualizarEstadoParada(EstadoParada.Idle)
+                    },
                     dialogType = DialogType.ERROR,
                 )
             }
+
             else -> {}
         }
     }

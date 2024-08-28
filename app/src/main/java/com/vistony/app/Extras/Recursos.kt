@@ -26,3 +26,8 @@ fun formatoUsuario(fechaHora: LocalDateTime): String {
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     return fechaHora.format(formatter)
 }
+@RequiresApi(Build.VERSION_CODES.O)
+fun formatoHora(fechaHora: LocalDateTime): String {
+    val formatter = DateTimeFormatter.ofPattern("HH:mm")
+    return fechaHora.format(formatter)
+}

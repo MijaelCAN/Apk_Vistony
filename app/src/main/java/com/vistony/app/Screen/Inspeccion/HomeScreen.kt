@@ -58,6 +58,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
+import com.vistony.app.Entidad.Operario
 import com.vistony.app.R
 import com.vistony.app.ViewModel.OTViewModel
 import com.vistony.app.ViewModel.OperarioViewModel
@@ -192,6 +193,8 @@ fun BodyHome(
 
     var textFieldSize by remember { mutableStateOf(Size.Zero) }
     //operarioState.operarioResponse?.data?.map { it.Nonbre } ?: emptyList()
+    val options = operarioState.operarioResponse?.data?.map { Operario(it.ID, it.Nonbre) } ?: emptyList()
+    var operarioId by remember { mutableStateOf("") }
 
 
     val scanLauncher = rememberLauncherForActivityResult(
@@ -330,7 +333,7 @@ fun BodyHome(
                     .padding(horizontal = 24.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                val options = operarioState.operarioResponse?.data?.map { it.Nonbre } ?: emptyList()
+                //val options = operarioState.operarioResponse?.data?.map { it.Nonbre } ?: emptyList()
                 val filteredOptions = remember { mutableStateOf(options) }
 
                 LaunchedEffect(operador.value) {
@@ -341,7 +344,7 @@ fun BodyHome(
                         expanded.value = true
                         filteredOptions.value =
                             withContext(Dispatchers.Default) { // En segundo plano
-                                options.filter { it.contains(operador.value, ignoreCase = true) }
+                                options.filter { it.Nonbre.contains(operador.value, ignoreCase = true) }
                             }
                     }
                 }
@@ -369,9 +372,10 @@ fun BodyHome(
                         onDismissRequest = { expanded.value = false }) {
                         filteredOptions.value.forEach { option ->
                             DropdownMenuItem(
-                                text = { Text(option, color = Color.Black) },
+                                text = { Text(option.Nonbre, color = Color.Black) },
                                 onClick = {
-                                    operador.value = option
+                                    operador.value = option.Nonbre
+                                    operarioId = option.ID
                                     expanded.value = false
                                 }
                             )
@@ -460,6 +464,7 @@ fun BodyHome(
                 turno,
                 linea,
                 operador.value,
+                operarioId,
                 newfecha,
                 navController,
                 sharedViewModel,
@@ -516,6 +521,7 @@ fun BotonH(
     turno: String,
     linea: String,
     operador: String,
+    operarioId: String,
     fecha: String,
     navController: NavController,
     sharedViewModel: SharedViewModel,
@@ -524,14 +530,14 @@ fun BotonH(
     //var stateButton by remember { mutableStateOf(false) }
     val stateButton =
         ot.isNotEmpty() && description.isNotEmpty() && um.isNotEmpty() && cantidad.isNotEmpty() && operador.isNotEmpty()
-    LaunchedEffect(ot, description, um, cantidad, turno, fecha, linea, operador,id) {
+    LaunchedEffect(ot, description, um, cantidad, turno, fecha, linea, operador, operarioId,id) {
         sharedViewModel.turno = turno
         sharedViewModel.ot = ot
         sharedViewModel.description = description
         sharedViewModel.um = um
         sharedViewModel.cantidad = cantidad
         sharedViewModel.linea = linea
-        sharedViewModel.operador = operador
+        sharedViewModel.operador = operarioId
         sharedViewModel.fecha = fecha
         sharedViewModel.usuario = id
         //stateButton = ot.isNotEmpty() && description.isNotEmpty() && um.isNotEmpty() && cantidad.isNotEmpty()
