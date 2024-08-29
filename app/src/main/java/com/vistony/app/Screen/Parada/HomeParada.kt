@@ -449,6 +449,7 @@ fun BotonParada(
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val estado by paradaViewModel.estadoParada.collectAsState()
+    val paradaState by paradaViewModel.paradas.collectAsState()
     var stateButton = stateBoton
 
     val buttonColors = ButtonDefaults.elevatedButtonColors(
@@ -473,9 +474,9 @@ fun BotonParada(
                     comentarios,
                     "Y",
                     formatoServidor(newFecha),
-                    "",
+                    //"",
                     formatoHora(newFecha),
-                    "",
+                    //"",
                     id,
                     motivoId
                 )
@@ -505,7 +506,7 @@ fun BotonParada(
                 CustomAlertDialog(
                     showDialog = showDialog,
                     title = "Éxito",
-                    message = "Parada registrada correctamente",
+                    message = paradaState.paradaResponse.data,
                     confirmButtonText = "OK",
                     dismissButtonText = null,
                     onConfirm = { paradaViewModel.actualizarEstadoParada(EstadoParada.Idle) },

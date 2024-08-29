@@ -1,12 +1,15 @@
 package com.vistony.app.ViewModel
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vistony.app.Entidad.Evaluacion
 import com.vistony.app.Entidad.EvaluacionResponse
 import com.vistony.app.Entidad.InspecionRequest
 import com.vistony.app.Entidad.InspecionResponse
+import com.vistony.app.Extras.formatoServidor
 import com.vistony.app.Service.RetrofitInstance
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -15,8 +18,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.time.LocalDateTime
 import javax.inject.Inject
 
+@RequiresApi(Build.VERSION_CODES.O)
 @HiltViewModel
 class EvalViewModel @Inject constructor() : ViewModel() {
 
@@ -34,6 +39,10 @@ class EvalViewModel @Inject constructor() : ViewModel() {
 
     private val _listInspeccionState = MutableStateFlow(ListInspeccionState())
     var listInspeccionState: StateFlow<ListInspeccionState> = _listInspeccionState.asStateFlow()
+
+    init {
+        getListInspeccion(formatoServidor(LocalDateTime.now()),formatoServidor(LocalDateTime.now()))
+    }
 
     fun EnviarEvaluacion(data: Evaluacion) {
         Log.e("PASO1", "Entro a Funcion")

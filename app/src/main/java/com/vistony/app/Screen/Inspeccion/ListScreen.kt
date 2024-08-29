@@ -66,7 +66,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListScreen(
     navController: NavController,
@@ -118,56 +117,23 @@ fun ListScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: String) {
     val listState by listViewModel.listInspeccionState.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
     var item by remember { mutableStateOf(Inspeccion()) }
-    var txt_estado = rememberSaveable { mutableStateOf("") }
-    val expanded = remember { mutableStateOf(false) }
-    val options = listOf("Iniciado", "Finalizado")
 
     var selectedDateIni by remember { mutableStateOf(LocalDate.now()) }
     var showDialogDateIni by remember { mutableStateOf(false) }
     var selectedDateFin by remember { mutableStateOf(LocalDate.now()) }
     var showDialogDateFin by remember { mutableStateOf(false) }
-    var lista_inspecciones by remember { mutableStateOf(emptyList<Inspeccion>()) }
-
-    /*val data2 = listOf(
-        Inspeccion(1, "Inspecion 1", "Aprobado", "10/10/2024", "10:10"),
-        Inspeccion(2, "Inspecion 2", "Desaprobado", "12/08/2024", "10:10"),
-        Inspeccion(3, "Inspecion 3", "Aprobado", "03/10/2023", "10:10"),
-        Inspeccion(4, "Inspecion 4", "Desaprobado", "22/05/2023", "10:10"),
-        Inspeccion(5, "Inspecion 5", "Aprobado", "09/01/2023", "10:10"),
-        Inspeccion(6, "Inspecion 6", "Desaprobado", "10/10/2024", "10:10"),
-        Inspeccion(7, "Inspecion 7", "Aprobado", "12/08/2024", "10:10"),
-        Inspeccion(8, "Inspecion 8", "Desaprobado", "03/10/2023", "10:10"),
-        Inspeccion(9, "Inspecion 9", "Aprobado", "22/05/2023", "10:10"),
-        Inspeccion(10, "Inspecion 10", "Desaprobado", "09/01/2023", "10:10"),
-        Inspeccion(11, "Inspecion 11", "Aprobado", "10/10/2024", "10:10"),
-        Inspeccion(12, "Inspecion 12", "Desaprobado", "12/08/2024", "10:10"),
-        Inspeccion(13, "Inspecion 13", "Aprobado", "03/10/2023", "10:10"),
-        Inspeccion(14, "Inspecion 14", "Desaprobado", "22/05/2023", "10:10"),
-        Inspeccion(15, "Inspecion 15", "Aprobado", "09/01/2023", "10:10"),
-        Inspeccion(16, "Inspecion 16", "Desaprobado", "10/10/2024", "10:10"),
-    )*/
-    LaunchedEffect(Unit) { // Or any key that changes on every recomposition
-        val newfechaIni = selectedDateIni.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
-        val newfechaFin = selectedDateFin.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
-        Log.d("selectedDateIni", selectedDateIni.toString())
-        listViewModel.getListInspeccion(newfechaIni, newfechaFin)
-        lista_inspecciones = listState.listInspeccion.data
-    }
-    lista_inspecciones = listState.listInspeccion.data
 
     LaunchedEffect(selectedDateIni, selectedDateFin) {
         val newfechaIni = selectedDateIni.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
         val newfechaFin = selectedDateFin.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
         Log.d("selectedDateIni", selectedDateIni.toString())
         listViewModel.getListInspeccion(newfechaIni, newfechaFin)
-        lista_inspecciones = listState.listInspeccion.data
     }
     Box(
         modifier = Modifier
@@ -188,39 +154,7 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
-                /*
-                ExposedDropdownMenuBox(
-                    modifier = Modifier.width(200.dp),
-                    expanded = expanded.value,
-                    onExpandedChange = {
-                        expanded.value = !expanded.value
-                        txt_estado.value = ""
-                    }) {
-                    CustomOutlinedTextField(
-                        modifier = Modifier.menuAnchor(),
-                        value = txt_estado.value,
-                        onValueChange = { },
-                        label = "Estado",
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded.value) },
-                        readOnly = true
-                    )
-                    ExposedDropdownMenu(
-                        modifier = Modifier
-                            .background(Color.White)
-                            .clip(RoundedCornerShape(8.dp)),
-                        expanded = expanded.value,
-                        onDismissRequest = { expanded.value = false }) {
-                        options.forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(option, color = Color.Black) },
-                                onClick = {
-                                    txt_estado.value = option
-                                    expanded.value = false
-                                }
-                            )
-                        }
-                    }
-                }*/
+
                 Spacer(modifier = Modifier.width(430.dp))
                 CustomButton(
                     "Registro Nuevo",
@@ -271,9 +205,9 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
                         TableHeaderCell(text = "", modifier = Modifier.weight(1f))
                     }
                 }
-
-                if (lista_inspecciones.isNotEmpty()) {
-                    items(lista_inspecciones) { row ->
+                val nuevalista = listState.listInspeccion.data.asReversed()
+                if (nuevalista.isNotEmpty()) {
+                    items(nuevalista) { row ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()

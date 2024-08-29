@@ -2,6 +2,7 @@ package com.vistony.app.Service
 
 import com.vistony.app.Entidad.Area
 import com.vistony.app.Entidad.AreaResponse
+import com.vistony.app.Entidad.ListaRequest
 import com.vistony.app.Entidad.Maquina
 import com.vistony.app.Entidad.MaquinaResponse
 import com.vistony.app.Entidad.Motivo
@@ -22,8 +23,8 @@ interface ParadaService {
     @POST("ParadaMaquina")
     suspend fun registrarParada(@Body request: ParadaRequest): Response<PostParada>
 
-    /*@GET("paradas")
-    suspend fun obtenerParadas(): ParadaResponse*/
+    @POST("ParadaMaquina/ListaParadaMaquina")
+    suspend fun obtenerParadas(@Body request: ListaRequest): Response<ParadaResponse>
 
     @PUT("paradas/detener")
     suspend fun detenerParada(@Body parada: Parada): Response<PostParada>

@@ -1,26 +1,32 @@
 package com.vistony.app.ViewModel
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vistony.app.Entidad.Area
 import com.vistony.app.Entidad.AreaResponse
+import com.vistony.app.Entidad.ListaRequest
 import com.vistony.app.Entidad.MaquinaResponse
 import com.vistony.app.Entidad.MotivoResponse
 import com.vistony.app.Entidad.Parada
 import com.vistony.app.Entidad.ParadaRequest
 import com.vistony.app.Entidad.ParadaResponse
 import com.vistony.app.Entidad.PostParada
+import com.vistony.app.Extras.formatoServidor
 import com.vistony.app.Repository.ParadaRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 import javax.inject.Inject
 
+@RequiresApi(Build.VERSION_CODES.O)
 class ParadaViewModel @Inject constructor() : ViewModel() {
     private val paradaRepository = ParadaRepository()
 
@@ -95,14 +101,33 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
                 Log.e("Error", e.toString())
             }
         }
+        obtenerParadas(ListaRequest(formatoServidor(LocalDateTime.now()), formatoServidor(LocalDateTime.now()), "T"))
     }
+    fun obtenerParadas(request: ListaRequest) {
+        viewModelScope.launch {
+            try {
+                val response = paradaRepository.obtenerParadas(request)
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body?.statusCode == 200) {
+                        _listParadas.value = ParadaResponse(200, body.data)
+                    }else{
+                        _listParadas.value = ParadaResponse(500, emptyList())
+                    }
+                }
+            }catch (e: Exception) {
+                Log.e("Error GETpA", e.toString())
+            }
+        }
+    }
+
 
     // Funcion para registrar una parada
     fun registrarParada(parada: ParadaRequest) {
         viewModelScope.launch {
             _estadoParada.value = EstadoParada.Cargando
             try {
-                /*val response = paradaRepository.registrarParada(parada)
+                val response = paradaRepository.registrarParada(parada)
                 if (response.isSuccessful) {
                     val body = response.body()
                     if (body?.statusCode == 201){
@@ -119,11 +144,11 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
                         message = "Error al registrar la parada"
                     )
                     _estadoParada.value = EstadoParada.Error("Error al registrar la parada")
-                }*/
-                delay(4000)
+                }
+                /*delay(4000)
                 _paradas.value =
                     ParadaResponseState(state = true, paradaResponse = PostParada(200, "Registro Exitoso"), message = "OK")
-                _estadoParada.value = EstadoParada.Exitoso
+                _estadoParada.value = EstadoParada.Exitoso*/
                 Log.d("Envío", parada.toString())
             } catch (e: Exception) {
                 _paradas.value =

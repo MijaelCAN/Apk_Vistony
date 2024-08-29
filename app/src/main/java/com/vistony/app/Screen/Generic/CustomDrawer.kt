@@ -87,7 +87,7 @@ fun CustomDrawer(navController: NavController, id: String) {
                     .fillMaxWidth()
                     .fillMaxHeight()
                     .padding(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF0054A3).copy(alpha = 0.2f))
+                colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 DrawerMenuItem(
                     icon = Icons.Filled.Checklist,

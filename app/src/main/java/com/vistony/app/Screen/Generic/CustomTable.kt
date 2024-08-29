@@ -48,10 +48,10 @@ fun TableScreen(data: List<Parada>, onClickAction: () -> Unit) {
         items(data) {it->
             //val (id, text) = it
             Row(Modifier.fillMaxWidth()) {
-                TableCell(text = it.id.toString(), weight = column1Weight)
-                TableCell(text = it.maquina, weight = column2Weight)
-                TableCell(text = it.fechaInicio, weight = column2Weight)
-                TableCell(text = it.fechaFinal, weight = column2Weight)
+                TableCell(text = it.DocEntry.toString(), weight = column1Weight)
+                TableCell(text = it.Maquina, weight = column2Weight)
+                TableCell(text = it.FechaHoraInicio, weight = column2Weight)
+                TableCell(text = it.FechaHoraFin, weight = column2Weight)
                 TableCell(weight = column2Weight){
                     TextButton(
                         modifier = Modifier.width(100.dp),
