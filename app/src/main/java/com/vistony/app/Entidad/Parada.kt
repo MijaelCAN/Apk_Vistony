@@ -7,6 +7,9 @@ data class Parada(
     var Maquina: String = "",
     var FechaHoraInicio: String = "",
     var FechaHoraFin: String = null.toString(),
+    var Area: String = "",
+    var Comentario: String ="",
+    var Motivo: String =""
 )
 data class ParadaRequest(
     @SerializedName("U_Fecha")val U_Fecha: String,
@@ -37,9 +40,9 @@ data class PostParada(
     val data: String = "Cargando..."
 )
 
-data class ParadaStopRequest(
-    var id: Int = 0,
-    var fechaFinal: String = ""
+data class ParadaStopResponse(
+    var statusCode: Int = 0,
+    var data: String = ""
 )
 data class Area(
     val Code: String,

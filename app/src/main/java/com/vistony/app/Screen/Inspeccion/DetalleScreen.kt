@@ -1,6 +1,8 @@
 package com.vistony.app.Screen.Inspeccion
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -736,6 +738,7 @@ fun BodyDetalle(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun BotonD(
     navController: NavController,

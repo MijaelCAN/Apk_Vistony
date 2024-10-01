@@ -158,16 +158,16 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
     }
 
     // Funcion para detener una parada
-    fun detenerParada(parada: Parada) {
+    fun detenerParada(idParada: Int) {
         viewModelScope.launch {
             _estadoParada.value = EstadoParada.Cargando
             try {
-                val response = paradaRepository.detenerParada(parada)
+                val response = paradaRepository.detenerParada(idParada)
                 if (response.isSuccessful) {
                     val body = response.body()
                     if(body?.statusCode == 200){
                         _paradas.value =
-                            ParadaResponseState(state = true, paradaResponse = body, message = "OK")
+                            ParadaResponseState(state = true, paradaResponse = body, message = "Se detuvo con Exito")
                         _estadoParada.value = EstadoParada.Exitoso
                     }
                 } else {

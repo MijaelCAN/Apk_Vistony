@@ -16,18 +16,24 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -77,7 +83,7 @@ fun ListScreen(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        drawerContent = { CustomDrawer(navController = navController,id) }
+        drawerContent = { CustomDrawer(navController = navController, id) }
     ) {
         Scaffold(
             topBar = {
@@ -110,7 +116,7 @@ fun ListScreen(
                         )
                     }
                     Spacer(modifier = Modifier.height(15.dp))
-                    BodyList(navController, listViewModel,id)
+                    BodyList(navController, listViewModel, id)
                 }
             }
         )
@@ -181,7 +187,7 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
                     selectedDate = selectedDateIni,
                     onDateChange = { selectedDateIni = it },
                     showDialog = showDialogDateIni,
-                    onShowDialogChange = { showDialogDateIni= it }
+                    onShowDialogChange = { showDialogDateIni = it }
                 )
                 Spacer(modifier = Modifier.width(130.dp))
                 DateOutlinedTextField(
@@ -190,7 +196,7 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
                     selectedDate = selectedDateFin,
                     onDateChange = { selectedDateFin = it },
                     showDialog = showDialogDateFin,
-                    onShowDialogChange = { showDialogDateFin= it }
+                    onShowDialogChange = { showDialogDateFin = it }
                 )
             }
 
@@ -215,19 +221,14 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             TableCell(text = row.OT, modifier = Modifier.weight(1f))
-                            TableCell(text = row.Fecha, modifier = Modifier.weight(1f))
-                            TableCell(text = row.Turno, modifier = Modifier.weight(1f))
-                            TableCell(text = row.Usuario, modifier = Modifier.weight(1f))
+                            TableCell(text = row.U_Fecha, modifier = Modifier.weight(1f))
+                            TableCell(text = row.U_Turno, modifier = Modifier.weight(1f))
+                            TableCell(text = row.U_Usuario, modifier = Modifier.weight(1f))
                             TableCell(value = 1) {
                                 IconButton(
                                     onClick = {
                                         showDialog = true
-                                        item = Inspeccion(
-                                            row.OT,
-                                            row.Fecha,
-                                            row.Turno,
-                                            row.Usuario
-                                        )
+                                        item = row
                                     },
                                     modifier = Modifier.width(100.dp),
                                     colors = IconButtonDefaults.iconButtonColors(
@@ -259,19 +260,127 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
                     }
                 }
             }
-                Detalle(
+            Detalle(
                 isVisible = showDialog,
+                titulo = "Detalle de Inspección",
                 onDismiss = { showDialog = false },
                 data = item,
                 content = {
-                    Column() {
+                    // REEMPLAZAR AQUI CON EL CONTENIDO DE LA PANTALLA
+                    /*Column() {
                         Text(
                             text = "Inspeccion de: ${item.OT}",
                             fontWeight = FontWeight.Bold
                         )
-                        Text(text = "Fecha: ${item.Fecha}")
-                        Text(text = "Turno: ${item.Turno}")
-                        Text(text = "Usuario: ${item.Usuario}")
+                        Text(text = "Fecha: ${item.U_Fecha}")
+                        Text(text = "Turno: ${item.U_Turno}")
+                        Text(text = "Usuario: ${item.U_Usuario}")
+                    }*/
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Número de OT
+                        Text(
+                            text = "OT: ${item.OT}",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        // Fecha y Turno
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Fecha: ${item.U_Fecha}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                text = "Turno: ${item.U_Turno}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+
+                        // Peso, Etiqueta, Lote, Limpieza, Sellado, Encogimiento, Rótulo, Pallet
+                        DetalleCheckList(
+                            "Peso",
+                            item.U_Peso_Check,
+                            item.U_Peso_Comment
+                        )
+                        DetalleCheckList(
+                            "Etiqueta",
+                            item.U_Etiq_Check,
+                            item.U_Etiq_Comment
+                        )
+                        DetalleCheckList(
+                            "Lote",
+                            item.U_Lot_Check,
+                            item.U_Lot_Comment
+                        )
+                        DetalleCheckList(
+                            "Limpieza",
+                            item.U_Limp_Check,
+                            item.U_Limp_Comment
+                        )
+                        DetalleCheckList(
+                            "Sellado",
+                            item.U_Sell_Check,
+                            item.U_Sell_Comment
+                        )
+                        DetalleCheckList(
+                            "Encogimiento",
+                            item.U_Enc_Check,
+                            item.U_Enc_Comment
+                        )
+                        DetalleCheckList(
+                            "Rótulo",
+                            item.U_Rotulo_Check,
+                            item.U_Rotulo_Comment
+                        )
+                        DetalleCheckList(
+                            "Pallet",
+                            item.U_Palet_Check,
+                            item.U_Palet_Comment
+                        )
+
+                        // Conformidad y Usuario
+                        Text(
+                            text = "Conformidad: ${if (item.U_Conformidad == "Y") "CONFORME" else "NO CONFORME"}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            text = "Usuario: ${item.U_Usuario}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+
+                        // Cantidad y Maquinista
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Cantidad: ${item.U_Cantidad}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                text = "Maquinista: ${item.U_Maquinista}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        // Separador
+                        Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+                        // Botón para cerrar o regresar
+                        Button(
+                            onClick = { showDialog = false },
+                            modifier = Modifier.align(Alignment.End)
+                        ) {
+                            Text(text = "Cerrar")
+                        }
                     }
                 }
             )
@@ -279,4 +388,52 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
     }
 }
 
+@Composable
+fun DetalleCheckList(
+    label: String,
+    check: String,
+    comment: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            modifier = Modifier.weight(0.5f),
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold
+        )
+        /*Text(
+            modifier = Modifier.width(40.dp),
+            text = check,
+            style = MaterialTheme.typography.bodySmall,
+            color = when (check) {
+                "Y" -> Color.Green
+                "N" -> Color.Red
+                else -> Color.Gray
+            }
+        )*/
+        if (check == "Y") {
+            Icon(
+                imageVector = Icons.Filled.Check,
+                contentDescription = "Check",
+                tint = Color.Green,modifier = Modifier.width(40.dp)
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Filled.Close,
+                contentDescription = "Close",
+                tint = Color.Gray,
+                modifier = Modifier.width(40.dp)
+            )
+        }
+        Text(
+            modifier = Modifier.weight(0.5f),
+            text = comment,
+            style = MaterialTheme.typography.bodySmall
+        )
+    }
+}
 

@@ -18,10 +18,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircleOutline
@@ -153,19 +155,11 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
     var showDialogDateFin by remember { mutableStateOf(false) }
 
     val expanded = remember { mutableStateOf(false) }
-    val options = listOf("Iniciado", "Finalizado")
+    val options = listOf("Iniciado", "Finalizado", "Todos")
 
     val paradas by paradaViewModel.listParadas.collectAsState()
     val estado by paradaViewModel.estadoParada.collectAsState()
 
-    val data = listOf(
-        Parada("1", "MAQUINA ENLAINADORA", "29-08-2024   11:20", ""),
-        Parada("1", "MAQUINA ENLAINADORA", "28-08-2024 08:20", ""),
-        Parada("2", "CUB-003 - MANUAL", "29-08-2024 10:18", ""),
-        Parada("3", "OTROS", "11-08-2024 05:18", "11-08-2024 12:00"),
-        Parada("4", "HOMBRES-SERVICIO COLOREADO", "08-12-2023 05:18", "08-12-2023 05:18"),
-        Parada("5", "OTROS-AGUA BATERIA", "30-05-2023 05:18", "30-05-2023 06:18"),
-    )
     LaunchedEffect(selectedDateIni, selectedDateFin) {
         val newfechaIni = selectedDateIni.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
         val newfechaFin = selectedDateFin.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
@@ -257,6 +251,7 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
                                             when (txt_estado.value) {
                                                 "Iniciado" -> "I"
                                                 "Finalizado" -> "F"
+                                                "Todos"-> "T"
                                                 else -> "T"
                                             }
                                         )
@@ -344,7 +339,12 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
                                     ) // Mostrar texto si está finalizada
                                 }
                             }*/
-                            TarjetaParada(parada = row) { showDialogDetalle = true; item = row }
+                            TarjetaParada(
+                                parada = row,
+                                paradaViewModel,
+                                navController,
+                                id
+                            ) { showDialogDetalle = true; item = row }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                     }
@@ -366,9 +366,10 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
             Detalle(
                 isVisible = showDialogDetalle,
                 onDismiss = { showDialogDetalle = false },
+                titulo = "Detalle de Parada de Máquina",
                 data = item,
                 content = {
-                    Column() {
+                    /*Column() {
                         Text(
                             text = "Inspeccion de: ${item.Maquina}",
                             fontWeight = FontWeight.Bold,
@@ -381,6 +382,64 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
                         Text(text = "Fecha: ${item.FechaHoraInicio}", fontWeight = FontWeight.Bold)
                         Text(text = "Fecha: ${item.FechaHoraFin}", fontWeight = FontWeight.Bold)
                         Text(text = "Hora: ")
+                    }*/
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Título de la máquina
+                        Text(
+                            text = item.Maquina,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        // Hora de inicio y fin
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Inicio: ${item.FechaHoraInicio}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                text = "Fin: ${item.FechaHoraFin.ifEmpty { "En curso" }}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+
+                        // Área
+                        Text(
+                            text = "Área: ${item.Area}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+
+                        // Comentario
+                        Text(
+                            text = "Comentario: ${item.Comentario}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+
+                        // Motivo
+                        Text(
+                            text = "Motivo: ${item.Motivo}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+
+                        // Separador
+                        Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+                        // Botón para cerrar o regresar
+                        Button(
+                            onClick = { showDialogDetalle = false },
+                            modifier = Modifier.align(Alignment.End)
+                        ) {
+                            Text(text = "Cerrar")
+                        }
                     }
                 }
             )
@@ -507,7 +566,16 @@ fun DialogEspera(onDismiss: () -> Unit = {}) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun TarjetaParada(parada: Parada, function: () -> Unit) {
+fun TarjetaParada(
+    parada: Parada,
+    paradaViewModel: ParadaViewModel,
+    navController: NavController,
+    id: String,
+    function: () -> Unit
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    val estado by paradaViewModel.estadoParada.collectAsState()
+    val paradaState by paradaViewModel.paradas.collectAsState()
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -598,7 +666,7 @@ fun TarjetaParada(parada: Parada, function: () -> Unit) {
             ) {
                 if (parada.FechaHoraFin.isNullOrEmpty()) {
                     Text(
-                        text = "En Curso",
+                        text = "Iniciado",
                         fontSize = 16.sp,
                         color = Color(0xFF0037FF)
                     )
@@ -609,13 +677,76 @@ fun TarjetaParada(parada: Parada, function: () -> Unit) {
                 }
                 if (parada.FechaHoraFin.isNullOrEmpty()) {
                     Button(
-                        onClick = {},
+                        onClick = {
+                            paradaViewModel.detenerParada(Integer.parseInt(parada.DocEntry))
+                            showDialog = true
+                        },
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
                     ) {
                         Text("Detener parada")
                     }
                 }
             }
+        }
+    }
+    if (showDialog) {
+        when (estado) {
+            EstadoParada.Cargando -> {
+                CustomAlertDialog(
+                    showDialog = showDialog,
+                    title = "Cargando",
+                    message = "Espere por favor...",
+                    confirmButtonText = "",
+                    dismissButtonText = null,
+                    onDismiss = { showDialog = false },
+                    dialogType = DialogType.LOADING,
+                )
+            }
+
+            EstadoParada.Exitoso -> {
+                CustomAlertDialog(
+                    showDialog = showDialog,
+                    title = "Éxito",
+                    message = paradaState.paradaResponse.data,
+                    confirmButtonText = "OK",
+                    dismissButtonText = null,
+                    onConfirm = { paradaViewModel.actualizarEstadoParada(EstadoParada.Idle) },
+                    onDismiss = {
+                        showDialog = false
+                        paradaViewModel.actualizarEstadoParada(EstadoParada.Idle)
+                        navController.navigate("listaParada/$id")
+                    },
+                    dialogType = DialogType.SUCCESS,
+                )
+                /*AlertDialog(
+                    onDismissRequest = { paradaViewModel.actualizarEstadoParada(EstadoParada.Idle) },
+                    title = { Text("Éxito") },
+                    text = { Text("Parada registrada correctamente") },
+                    confirmButton = {
+                        Button(onClick = { paradaViewModel.actualizarEstadoParada(EstadoParada.Idle) }) {
+                            Text("OK")
+                        }
+                    }
+                )*/
+            }
+
+            is EstadoParada.Error -> {
+                CustomAlertDialog(
+                    showDialog = showDialog,
+                    title = "Error",
+                    message = (estado as EstadoParada.Error).mensaje,
+                    confirmButtonText = "OK",
+                    dismissButtonText = null,
+                    onConfirm = { paradaViewModel.actualizarEstadoParada(EstadoParada.Idle) },
+                    onDismiss = {
+                        showDialog = false
+                        paradaViewModel.actualizarEstadoParada(EstadoParada.Idle)
+                    },
+                    dialogType = DialogType.ERROR,
+                )
+            }
+
+            else -> {}
         }
     }
 }

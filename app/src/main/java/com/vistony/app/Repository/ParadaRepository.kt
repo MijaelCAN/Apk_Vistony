@@ -19,7 +19,7 @@ class ParadaRepository @Inject constructor() {
 
     suspend fun registrarParada(request: ParadaRequest): Response<PostParada> = paradaService.registrarParada(request)
     suspend fun obtenerParadas(request: ListaRequest): Response<ParadaResponse> = paradaService.obtenerParadas(request)
-    suspend fun detenerParada(parada: Parada) = paradaService.detenerParada(parada)
+    suspend fun detenerParada(DocEntry: Int):Response<PostParada> = paradaService.detenerParada(DocEntry)
     suspend fun getAreas(): Response<AreaResponse> = paradaService.getAreas()
     suspend fun getMaquinas(): Response<MaquinaResponse> = paradaService.getMaquinas()
     suspend fun getMotivoParada(areaId: Int): Response<MotivoResponse> = paradaService.getMotivoParada(areaId)
