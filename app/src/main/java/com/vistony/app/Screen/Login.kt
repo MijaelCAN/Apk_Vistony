@@ -1,8 +1,10 @@
 package com.vistony.app.Screen
 
+import android.app.Activity
 import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,11 +22,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,9 +37,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +57,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -59,7 +68,12 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.vistony.app.R
+import com.vistony.app.Screen.Generic.CustomAlertDialog
+import com.vistony.app.Screen.Generic.DialogType
+import com.vistony.app.ViewModel.EstadoLogin
+import com.vistony.app.ViewModel.EstadoParada
 import com.vistony.app.ViewModel.LoginViewModel
+import com.vistony.app.ui.theme.theme.Dimensions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -107,8 +121,11 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .height(containerSize * 1.1f)// Tamaño del círculo
                     .background(
-                        Color.White,
-                        shape = RoundedCornerShape(bottomStart = cournerZise, bottomEnd = cournerZise)
+                        Color(0xFFE6E9F1),
+                        shape = RoundedCornerShape(
+                            bottomStart = cournerZise,
+                            bottomEnd = cournerZise
+                        )
                     )
             )
             Body(navController, viewModel,containerSize)
@@ -143,14 +160,26 @@ fun Titulo(titleSize: Dp) {
     )
 }
 
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @ExperimentalMaterial3Api
 @Composable
 fun Body(navController: NavHostController, viewModel: LoginViewModel, containerSize: Dp) {
 
-    val imageSize = containerSize * 0.4f
+    /*val imageSize = containerSize * 0.4f
     val titleSize = containerSize * 0.1f
     val fieldSize = containerSize * 0.13f
-    val buttonSize = containerSize * 0.13f
+    val buttonSize = containerSize * 0.13f*/
+    val context = LocalContext.current
+    val activity = context as Activity
+    val windowSize = calculateWindowSizeClass(context)
+
+    val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
+    val buttonHeight = Dimensions.getButtonHeight(windowSize.widthSizeClass)
+    val buttonWidth = Dimensions.getButtonWidth(windowSize.widthSizeClass)
+    val textFieldHeight = Dimensions.getTextFieldHeight(windowSize.widthSizeClass)
+    val titleFontSize = Dimensions.getTitleFontSize(windowSize.widthSizeClass)
+    val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
+    val imageSize = Dimensions.getImageSize(windowSize.widthSizeClass)
 
     var user by rememberSaveable { mutableStateOf("") }
     var pass by rememberSaveable { mutableStateOf("") }
@@ -160,19 +189,28 @@ fun Body(navController: NavHostController, viewModel: LoginViewModel, containerS
     Column(
         modifier = Modifier
             .fillMaxHeight()
-            .padding(horizontal = containerSize * 0.13f, vertical = containerSize * 0.1f),
+            .padding(horizontal = containerSize * 0.13f, vertical = containerSize * 0.1f)
+            .clip(RoundedCornerShape(24.dp))
+            .background(Color.White.copy(alpha = 0.44f)),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Image(
+        /*Image(
             modifier = Modifier.size(width = imageSize, height = imageSize * 0.4f),
             painter = painterResource(id = R.drawable.vistony),
             contentDescription = "Logo"
+        )*/
+        Image(
+            modifier = Modifier
+                .size(imageSize)
+                .padding(bottom = 16.dp),
+            painter = painterResource(id = R.mipmap.logo),
+            contentDescription = ""
         )
-        Titulo(titleSize)
+        Titulo(titleFontSize.dp)
         Spacer(modifier = Modifier.height(containerSize * 0.05f))
-        OutlinedTextField(
-            modifier = Modifier.height(fieldSize).fillMaxWidth(),
+        /*OutlinedTextField(
+            modifier = Modifier.height(textFieldHeight).fillMaxWidth(),
             value = user,
             onValueChange = {
                 user = it.filter { char -> char.isLetterOrDigit() }
@@ -191,10 +229,40 @@ fun Body(navController: NavHostController, viewModel: LoginViewModel, containerS
                 Icon(Icons.Filled.Person, contentDescription = "User", tint = MaterialTheme.colorScheme.onSurface)
             },
             singleLine = true
+        )*/
+        TextField(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(textFieldHeight)
+                .padding(horizontal = padding_res)
+                .clip(RoundedCornerShape(12.dp))
+                .border(1.dp, Color.White, RoundedCornerShape(12.dp)),
+            value = user,
+            placeholder = {
+                Text(
+                    text = "Enter username",
+                    color = Color.LightGray,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = bodyFontSize.sp
+                )
+            },
+            onValueChange = { user = it.filter { char -> char.isLetterOrDigit() } },
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                focusedTextColor = Color.Gray,
+                unfocusedTextColor = Color.Gray,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                cursorColor = Color.Gray
+            ),
+            leadingIcon = {
+                Icon(Icons.Filled.Person, contentDescription = "User", tint = Color.Gray)
+            },
         )
         Spacer(modifier = Modifier.height(containerSize * 0.05f))
-        OutlinedTextField(
-            modifier = Modifier.height(fieldSize).fillMaxWidth(),
+        /*OutlinedTextField(
+            modifier = Modifier.height(textFieldHeight).fillMaxWidth(),
             value = pass,
             onValueChange = { pass = it },
             label = { Text(text = "Contraseña", style = MaterialTheme.typography.labelMedium) },
@@ -220,12 +288,53 @@ fun Body(navController: NavHostController, viewModel: LoginViewModel, containerS
                 }
             },
             visualTransformation = if (passVisible) VisualTransformation.None else PasswordVisualTransformation()
+        )*/
+        TextField(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(textFieldHeight)
+                .padding(horizontal = padding_res)
+                .clip(RoundedCornerShape(12.dp)),
+            value = pass,
+            placeholder = {
+                Text(
+                    text = "password",
+                    color = Color.LightGray,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = bodyFontSize.sp
+                )
+            },
+            onValueChange = { pass = it },
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                focusedTextColor = Color.Gray,
+                unfocusedTextColor = Color.Gray,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                cursorColor = Color.Gray
+            ),
+            leadingIcon = {
+                Icon(Icons.Filled.Lock, contentDescription = "User", tint = Color.Gray)
+            },
+            trailingIcon = {
+                val image = if (passVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                IconButton(onClick = { passVisible = !passVisible }) {
+                    Icon(
+                        imageVector = image,
+                        contentDescription = "Contraseña",
+                        tint = Color.Gray
+                    )
+                }
+            },
+            visualTransformation = if (passVisible) VisualTransformation.None else PasswordVisualTransformation()
         )
         Spacer(modifier = Modifier.height(containerSize * 0.05f))
-        Boton(user, pass, navController, viewModel,buttonSize)
+        Boton(user, pass, navController, viewModel,buttonHeight)
     }
 }
 
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun Boton(
     user: String,
@@ -237,6 +346,8 @@ fun Boton(
     var stateButton by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     val loginState = viewModel._loginstate
+    var showDialog by remember { mutableStateOf(false) }
+    val isLoading by viewModel.isLoading.collectAsState()
 
     LaunchedEffect(user, pass) {
         stateButton = user.isNotEmpty() && pass.isNotEmpty()
@@ -249,6 +360,13 @@ fun Boton(
             errorMessage = loginState.message ?: ""
         }
     }
+    val context = LocalContext.current
+    val activity = context as Activity
+    val windowSize = calculateWindowSizeClass(context)
+
+    val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
+    val buttonHeight = Dimensions.getButtonHeight(windowSize.widthSizeClass)
+    val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
 
     val buttonColors = ButtonDefaults.elevatedButtonColors(
         containerColor = if (stateButton) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
@@ -257,7 +375,7 @@ fun Boton(
         disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     )
 
-    ElevatedButton(
+    /*ElevatedButton(
         modifier = Modifier
             .height(buttonSize)
             .fillMaxWidth(),
@@ -274,14 +392,84 @@ fun Boton(
         Icon(Icons.Filled.Login, contentDescription = "Login", tint = MaterialTheme.colorScheme.onPrimary)
         Spacer(modifier = Modifier.width(15.dp))
         Text(text = "INICIAR SESIÓN", style = MaterialTheme.typography.bodyMedium)
+    }*/
+    Button(
+        enabled = stateButton,
+        onClick = {
+        /*TODO*/
+            viewModel.validar(user, pass)
+            showDialog = true
+            if (viewModel._loginstate.state) {
+                navController.navigate("home/$user")
+            }
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(buttonHeight)
+            .padding(horizontal = padding_res)
+            .clip(RoundedCornerShape(0.dp)),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.Red,//Color(0xFFFC6A68),
+            contentColor = Color.White
+        )
+    ) {
+        Icon(Icons.Filled.Login, contentDescription = "Login", tint = Color.White)
+        Spacer(modifier = Modifier.width(15.dp))
+        Text(text = "INICIAR SESIÓN", fontSize = bodyFontSize.sp )
     }
 
-    if (errorMessage.isNotEmpty()) {
+    /*if (errorMessage.isNotEmpty()) {
         Text(
             text = errorMessage,
             color = MaterialTheme.colorScheme.error,
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(top = 8.dp)
         )
+    }*/
+    when(isLoading){
+        EstadoLogin.Cargando-> {
+            CustomAlertDialog(
+                showDialog = showDialog,
+                title = "Cargando",
+                message = "Validando...",
+                confirmButtonText = "",
+                dismissButtonText = null,
+                onDismiss = {showDialog = false}
+            )
+        }
+        EstadoLogin.Exitoso -> {
+            /*CustomAlertDialog(
+                showDialog = showDialog,
+                title = "Envio Exitoso",
+                message = loginState.loginResponse.data,
+                icon = Icons.Default.Check,
+                confirmButtonText = "OK",
+                dismissButtonText = null,
+                onConfirm = { viewModel.actualizarEstadoLogin(EstadoLogin.Idle) },
+                onDismiss = {
+                    showDialog = false
+                    viewModel.actualizarEstadoLogin(EstadoLogin.Idle)
+                    navController.navigate("listaInsp/$id")
+                },
+                dialogType = DialogType.SUCCESS,
+            )*/
+        }
+        is EstadoLogin.Error -> {
+            CustomAlertDialog(
+                showDialog = showDialog,
+                title = "Error",
+                message = (isLoading as EstadoLogin.Error).mensaje,
+                confirmButtonText = "OK",
+                dismissButtonText = null,
+                //onConfirm = { viewModel.actualizarEstadoLogin(EstadoLogin.Idle) },
+                onDismiss = {
+                    showDialog = false
+                    //viewModel.actualizarEstadoLogin(EstadoLogin.Idle)
+                },
+                dialogType = DialogType.ERROR,
+            )
+        }
+        else -> {}
     }
 }

@@ -1,4 +1,4 @@
-package com.vistony.app.ui.theme
+package com.vistony.app.ui.theme.theme
 import androidx.compose.ui.graphics.Color
 
 val primaryLight = Color(0xFF3c608f)

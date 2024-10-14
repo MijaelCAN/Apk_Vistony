@@ -298,7 +298,7 @@ fun BodyMessage(icon: ImageVector? = null, message: String) {
             Icon(
                 icon, contentDescription = null, tint = colorResource(id = R.color.black)
             )
-        } else if (message == "Espere por favor..." || message == "Cargando..." || message == "Enviando...") {
+        } else if (message == "Espere por favor..." || message == "Cargando..." || message == "Enviando..." || message == "Validando...") {
             CircularProgressIndicator(
                 color = Color(0xFF0054A3),
             )

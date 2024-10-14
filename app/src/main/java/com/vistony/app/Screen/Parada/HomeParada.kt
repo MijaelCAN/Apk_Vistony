@@ -245,7 +245,11 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
                     // suponiendo pase la lista completa y con un campo de area se filtraria las maquinas segun el area
                     val listFiltAreas = areaState.areaResponse.data.filter { it.Name == area.value }
                     val listAreas = areaState.areaResponse.data.map { Area(it.Code, it.Name) }
-                    val options = listOf("Área 1", "Área 2", "Área 3")
+                    if (listAreas.any { it.Name == "Producción" }) {
+                        area.value = "Producción"
+                        areaId = listAreas.first { it.Name == "Producción" }.Code
+                        paradaViewModel.obtenerMotivos(areaId.toInt())
+                    }
 
                     ExposedDropdownMenu(
                         modifier = Modifier
@@ -259,7 +263,7 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
                                 onClick = {
                                     area.value = option.Name
                                     areaId = option.Code
-                                    paradaViewModel.obtenerMotivos(areaId.toInt())
+                                    //paradaViewModel.obtenerMotivos(areaId.toInt())
                                     expandedArea.value = false
                                 }
                             )
@@ -420,7 +424,7 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
                 )
 
             }
-            val stateBoton = maquina.value.isNotEmpty() && area.value.isNotEmpty() && motivoParada.value.isNotEmpty() && comentarios.isNotEmpty()
+            val stateBoton = maquina.value.isNotEmpty() && area.value.isNotEmpty() && motivoParada.value.isNotEmpty()
             BotonParada(
                 maquinaId,
                 areaId,
