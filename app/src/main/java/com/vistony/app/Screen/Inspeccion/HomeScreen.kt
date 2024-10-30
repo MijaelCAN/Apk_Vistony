@@ -537,7 +537,7 @@ fun BotonH(
         sharedViewModel.um = um
         sharedViewModel.cantidad = cantidad
         sharedViewModel.linea = linea
-        sharedViewModel.operador = operarioId
+        sharedViewModel.operador = operador
         sharedViewModel.fecha = fecha
         sharedViewModel.usuario = id
         //stateButton = ot.isNotEmpty() && description.isNotEmpty() && um.isNotEmpty() && cantidad.isNotEmpty()
@@ -563,6 +563,7 @@ fun BotonH(
     ) {
         Text(text = "Inspección")
     }
+
 }
 /*
 Dosimetría

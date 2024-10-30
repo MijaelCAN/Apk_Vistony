@@ -76,6 +76,9 @@ class MainActivity : ComponentActivity() {
                             ) { it ->
                                 ListScreen(navController, id = it.arguments?.getString("user") ?: "")
                             }
+                            composable("reporte",) {
+                                Login2()
+                            }
                             composable(
                                 "homeParada/{user}",
                                 arguments = listOf(navArgument("user") { type = NavType.StringType })

@@ -1,7 +1,6 @@
 package com.vistony.app.Service
 
 import android.util.Log
-import com.google.firebase.BuildConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -19,7 +18,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object RetrofitInstance {
 
-    //private const val BASE_URL = "http://190.12.79.135:9004/api/"
+    //private const val BASE_URL = "http://190.12.79.135:9004/api/" // free
     private const val BASE_URL = "http://192.168.254.26:9004/api/"
     private val client = OkHttpClient.Builder()
         .connectTimeout(60,TimeUnit.SECONDS)

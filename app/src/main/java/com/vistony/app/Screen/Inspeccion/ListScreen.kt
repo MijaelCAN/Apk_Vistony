@@ -118,6 +118,22 @@ fun ListScreen(
                     Spacer(modifier = Modifier.height(15.dp))
                     BodyList(navController, listViewModel, id)
                 }
+            },
+            floatingActionButton = {
+                IconButton(
+                    modifier = Modifier.size(60.dp),
+                    onClick = {
+                        navController.navigate("home/${id}")
+                    },
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = Color.Red,
+                        contentColor = Color.White
+                    )
+                ){
+                    Icon(Icons.Filled.Add, contentDescription = "")
+
+                }
+
             }
         )
     }
@@ -163,7 +179,7 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
 
                 Spacer(modifier = Modifier.width(430.dp))
                 CustomButton(
-                    "Registro Nuevo",
+                    "Ver Reporte",
                     modifier = Modifier.width(200.dp),
                     Icons.Filled.Add,
                     onClick = { navController.navigate("home/${id}") },
