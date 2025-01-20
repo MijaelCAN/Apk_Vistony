@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="Vistony">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2024-10-12T18:12:02.901316700Z">
+        <DropdownSelection timestamp="2025-01-09T20:01:25.282498900Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=HA1VWP0E" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\mcano\.android\avd\Nuevo_Pixel_7.avd" />
             </handle>
           </Target>
         </DropdownSelection>
