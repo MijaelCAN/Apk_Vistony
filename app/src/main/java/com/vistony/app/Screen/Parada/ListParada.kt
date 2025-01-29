@@ -272,16 +272,6 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
             }
             Spacer(modifier = Modifier.height(32.dp))
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                /*item {
-                    Row {
-                        TableHeaderCell(text = "ID", modifier = Modifier.weight(0.5f))
-                        TableHeaderCell(text = "Maquina", modifier = Modifier.weight(1f))
-                        TableHeaderCell(text = "Fecha Inicio", modifier = Modifier.weight(1f))
-                        TableHeaderCell(text = "Fecha Final", modifier = Modifier.weight(1f))
-                        TableHeaderCell(text = "Detalle", modifier = Modifier.weight(1f))
-                        TableHeaderCell(text = "Finalizar", modifier = Modifier.weight(1f))
-                    }
-                }*/
                 val listaParadas = paradas.data.asReversed()
                 if (listaParadas.isNotEmpty()) {
                     items(listaParadas) { row ->
@@ -291,54 +281,7 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
                                 .padding(0.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            /*
-                            TableCell(text = row.DocEntry, modifier = Modifier.weight(0.5f))
-                            TableCell(text = row.Maquina, modifier = Modifier.weight(1f))
-                            TableCell(text = row.FechaHoraInicio, modifier = Modifier.weight(1f))
-                            TableCell(
-                                text = if (row.FechaHoraFin.isNullOrEmpty()) "En curso" else row.FechaHoraFin,
-                                modifier = Modifier.weight(1f)
-                            )
-                            TableCell(value = 1) {
-                                Button(
-                                    modifier = Modifier.width(100.dp),
-                                    onClick = { showDialogDetalle = true; item = row },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF0B4FAF),
-                                        contentColor = Color.White,
-                                        disabledContainerColor = Color.Gray,
-                                        disabledContentColor = Color.White
-                                    )
-                                ) {
-                                    Text("Ver")
-                                }
-                            }
-                            TableCell(value = 1) {
-                                if (row.FechaHoraFin.isNullOrEmpty()) { // Verificar si la parada está iniciada
-                                    Button(
-                                        modifier = Modifier.width(100.dp),
-                                        onClick = {
-                                            fechaFinal = LocalDateTime.now()
-                                            row.FechaHoraFin = formatoServidor(fechaFinal!!)
-                                            paradaViewModel.detenerParada(row)
-                                            showDialog = true
-                                        },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color.Red,
-                                            contentColor = Color.White,
-                                            disabledContainerColor = Color.Gray,
-                                            disabledContentColor = Color.White
-                                        )
-                                    ) {
-                                        Text("Detener")
-                                    }
-                                } else {
-                                    Text(
-                                        "Finalizado",
-                                        color = Color.Gray
-                                    ) // Mostrar texto si está finalizada
-                                }
-                            }*/
+
                             TarjetaParada(
                                 parada = row,
                                 paradaViewModel,
@@ -369,20 +312,6 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
                 titulo = "Detalle de Parada de Máquina",
                 data = item,
                 content = {
-                    /*Column() {
-                        Text(
-                            text = "Inspeccion de: ${item.Maquina}",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp
-                        )
-                        Text(
-                            text = "Descripcion: ${item.Maquina}",
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(text = "Fecha: ${item.FechaHoraInicio}", fontWeight = FontWeight.Bold)
-                        Text(text = "Fecha: ${item.FechaHoraFin}", fontWeight = FontWeight.Bold)
-                        Text(text = "Hora: ")
-                    }*/
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -476,45 +405,6 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
     }
 }
 
-/*
-@Composable
-fun CustomButtonRed(
-    text: String,
-    estado: Boolean,
-    row: Parada,
-    color: Color,
-    onClick: @Composable () -> Unit = {}
-) {
-    //var detenerState by remember { mutableStateOf(estado) }
-
-    var isVisibilidad by remember { mutableStateOf(false) }
-    Button(
-        onClick = {
-            if (color == Color.Red) {
-                row.estado = false
-            } else {
-                isVisibilidad = true
-            }
-        },
-        modifier = Modifier.width(100.dp),
-        enabled = row.estado,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = color,
-            contentColor = Color.White,
-            disabledContainerColor = Color.Gray,
-            disabledContentColor = Color.White
-        )
-    ) {
-        Text(text)
-    }
-    if (isVisibilidad) {
-        DialogEspera(onDismiss = { isVisibilidad = false })
-    }else{
-
-    }
-
-}
-*/
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -718,16 +608,6 @@ fun TarjetaParada(
                     },
                     dialogType = DialogType.SUCCESS,
                 )
-                /*AlertDialog(
-                    onDismissRequest = { paradaViewModel.actualizarEstadoParada(EstadoParada.Idle) },
-                    title = { Text("Éxito") },
-                    text = { Text("Parada registrada correctamente") },
-                    confirmButton = {
-                        Button(onClick = { paradaViewModel.actualizarEstadoParada(EstadoParada.Idle) }) {
-                            Text("OK")
-                        }
-                    }
-                )*/
             }
 
             is EstadoParada.Error -> {
