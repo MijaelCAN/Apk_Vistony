@@ -1,5 +1,6 @@
 package com.vistony.app.Screen.Inspeccion
 
+import android.app.Activity
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -7,7 +8,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,6 +42,8 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -51,6 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -67,10 +74,12 @@ import com.vistony.app.Screen.Generic.Detalle
 import com.vistony.app.Screen.Generic.TableCell
 import com.vistony.app.Screen.Generic.TableHeaderCell
 import com.vistony.app.Screen.Generic.TopBar
+import com.vistony.app.ui.theme.theme.Dimensions
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ListScreen(
@@ -78,6 +87,10 @@ fun ListScreen(
     listViewModel: EvalViewModel = hiltViewModel(),
     id: String = "prueba"
 ) {
+    val context = LocalContext.current
+    val activity = context as Activity
+    val windowSize = calculateWindowSizeClass(context)
+    val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -94,29 +107,39 @@ fun ListScreen(
                 })
             },
             content = { paddingValues ->
-                Column(
+                BoxWithConstraints(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(paddingValues)
-                        .background(color = Color(0xFF0B4FAF)),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Top
+                        .background(Color(0xFFE6E9F1))
+
                 ) {
-                    Box(
+                    val screenWidth = maxWidth
+                    Column(
                         modifier = Modifier
-                            .width(610.dp)
-                            .height(210.dp)
-                            .clip(RoundedCornerShape(25.dp))
-                            .background(Color.White)
+                            .fillMaxSize()
+                            .padding(padding_res)
+                            //.border(2.dp, Color.White, RoundedCornerShape(24.dp))
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(Color.White.copy(alpha = 0.44f)),
+                        //.graphicsLayer { alpha = 0.44f },
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Image(
-                            modifier = Modifier.size(width = 600.dp, height = 200.dp),
-                            painter = painterResource(id = R.drawable.vistony),
-                            contentDescription = "Logo"
-                        )
+                        /*Box(
+                            modifier = Modifier
+                                .width(610.dp)
+                                .height(210.dp)
+                                .clip(RoundedCornerShape(25.dp))
+                                .background(Color.White)
+                        ) {
+                            Image(
+                                modifier = Modifier.size(width = 600.dp, height = 200.dp),
+                                painter = painterResource(id = R.drawable.vistony),
+                                contentDescription = "Logo"
+                            )
+                        }*/
+                        BodyList(navController, listViewModel, id)
                     }
-                    Spacer(modifier = Modifier.height(15.dp))
-                    BodyList(navController, listViewModel, id)
                 }
             },
             floatingActionButton = {
@@ -139,6 +162,7 @@ fun ListScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: String) {
@@ -157,14 +181,14 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
         Log.d("selectedDateIni", selectedDateIni.toString())
         listViewModel.getListInspeccion(newfechaIni, newfechaFin)
     }
-    Box(
+    /*Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 32.dp)
             .wrapContentSize()
             .clip(RoundedCornerShape(25.dp))
             .background(color = Color(0xFFFFFFFF))
-    ) {
+    ) {*/
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -172,7 +196,7 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
                 .padding(vertical = 16.dp, horizontal = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(
+            /*Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
@@ -191,9 +215,9 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
                 modifier = Modifier.padding(end = 8.dp, top = 16.dp),
                 color = Color.Black,
                 fontWeight = FontWeight.Bold
-            )
+            )*/
             Spacer(modifier = Modifier.height(32.dp))
-            Row(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -205,7 +229,7 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
                     showDialog = showDialogDateIni,
                     onShowDialogChange = { showDialogDateIni = it }
                 )
-                Spacer(modifier = Modifier.width(130.dp))
+                Spacer(modifier = Modifier.width(30.dp))
                 DateOutlinedTextField(
                     modifier = Modifier.weight(1f),
                     "Fecha Final",
@@ -401,7 +425,7 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
                 }
             )
         }
-    }
+    //}
 }
 
 @Composable

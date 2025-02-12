@@ -1,13 +1,16 @@
 package com.vistony.app.Screen.Parada
 
 
+import android.app.Activity
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,7 +36,11 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
@@ -47,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -70,8 +78,10 @@ import com.vistony.app.Screen.Generic.CustomOutlinedTextField
 import com.vistony.app.Screen.Generic.CustomOutlinedTextField2
 import com.vistony.app.Screen.Generic.DialogType
 import com.vistony.app.Screen.Generic.TopBar
+import com.vistony.app.Screen.Inspeccion.BodyList
 import com.vistony.app.ViewModel.EstadoParada
 import com.vistony.app.ViewModel.ParadaViewModel
+import com.vistony.app.ui.theme.theme.Dimensions
 import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -79,13 +89,17 @@ import java.time.LocalDateTime
 import java.util.Date
 
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun HomeParada(
     navController: NavController,
     id: String,
     paradaViewModel: ParadaViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
+    val activity = context as Activity
+    val windowSize = calculateWindowSizeClass(context)
+    val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
@@ -99,39 +113,36 @@ fun HomeParada(
                 TopBar("Parada de Máquina", navController = navController, onMenuClick = {
                     scope.launch { drawerState.open() }
                 })
-            }
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(it)
-                    .background(color = Color(0xFF0B4FAF))
-                    .verticalScroll(scrollState),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
-            ) {
-                Box(
+            },
+            content = { paddingValues ->
+                BoxWithConstraints(
                     modifier = Modifier
-                        .width(610.dp)
-                        .height(210.dp)
-                        .clip(RoundedCornerShape(25.dp))
-                        .background(Color.White)
+                        .fillMaxSize()
+                        .background(Color(0xFFE6E9F1))
+
                 ) {
-                    Image(
-                        modifier = Modifier.size(width = 600.dp, height = 200.dp),
-                        painter = painterResource(id = R.drawable.vistony),
-                        contentDescription = "Logo"
-                    )
+                    val screenWidth = maxWidth
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding_res)
+                            //.border(2.dp, Color.White, RoundedCornerShape(24.dp))
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(Color.White.copy(alpha = 0.44f)),
+                        //.graphicsLayer { alpha = 0.44f },
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        BodyParada(navController, paradaViewModel, id)
+                    }
                 }
-                Spacer(modifier = Modifier.height(15.dp))
-                BodyParada(navController, paradaViewModel, id)
             }
-        }
+        )
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, id: String) {
     val areaState by paradaViewModel.areas.collectAsState()
@@ -154,15 +165,26 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
     var listArea = listOf<String>("Maquina 1", "Maquina 2", "Maquina 3")
     var textFieldSize by remember { mutableStateOf(Size.Zero) }
 
+    val context = LocalContext.current
+    val activity = context as Activity
+    val windowSize = calculateWindowSizeClass(context)
 
-    Box(
+    val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
+    val buttonHeight = Dimensions.getButtonHeight(windowSize.widthSizeClass)
+    val textFieldHeight = Dimensions.getTextFieldHeight(windowSize.widthSizeClass)
+    val titleFontSize = Dimensions.getTitleFontSize(windowSize.widthSizeClass)
+    val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
+    val imageSize = Dimensions.getImageSize(windowSize.widthSizeClass)
+
+
+    /*Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 32.dp)
             .wrapContentSize()
             .clip(RoundedCornerShape(25.dp))
             .background(color = Color(0xFFFFFFFF))
-    ) {
+    ) {*/
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -212,6 +234,8 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
                 )
 
             }
+
+
             //----------- FILA 2 -----------
             Row(
                 modifier = Modifier
@@ -413,7 +437,7 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
                         focusedIndicatorColor = Color.Transparent
                     )
                 )*/
-                CustomOutlinedTextField2(
+                CustomOutlinedTextField(
                     modifier = Modifier
                         .weight(1f)
                         .padding(0.dp),
@@ -436,7 +460,7 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
                 motivoId
             )
         }
-    }
+    //}
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

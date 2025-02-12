@@ -1,31 +1,44 @@
 package com.vistony.app.Screen.Generic
 
+import android.app.Activity
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.vistony.app.ui.theme.theme.Dimensions
 
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @ExperimentalMaterial3Api
 @Composable
 fun CustomOutlinedTextField(
@@ -37,14 +50,25 @@ fun CustomOutlinedTextField(
     readOnly: Boolean = false,
     keyboardOption: KeyboardOptions = KeyboardOptions.Default
 ) {
-    OutlinedTextField(
+    val context = LocalContext.current
+    val activity = context as Activity
+    val windowSize = calculateWindowSizeClass(context)
+
+    val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
+    val buttonHeight = Dimensions.getButtonHeight(windowSize.widthSizeClass)
+    val textFieldHeight = Dimensions.getTextFieldHeight(windowSize.widthSizeClass)
+    val titleFontSize = Dimensions.getTitleFontSize(windowSize.widthSizeClass)
+    val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
+    val imageSize = Dimensions.getImageSize(windowSize.widthSizeClass)
+
+    /*OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier
             .fillMaxWidth()
             .padding(top = 16.dp),
         label = {
-            Text(
+            Te
                 label,
                 overflow = TextOverflow.Ellipsis
             )
@@ -63,6 +87,37 @@ fun CustomOutlinedTextField(
         keyboardOptions = keyboardOption,
         readOnly = readOnly
 
+    )*/
+    TextField(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(textFieldHeight)
+            .padding(horizontal = padding_res)
+            .clip(RoundedCornerShape(12.dp))
+            .border(1.dp, Color.White, RoundedCornerShape(12.dp)),
+        value = value,
+        placeholder = {
+            Text(
+                text = label,
+                color = Color.LightGray,
+                fontWeight = FontWeight.Bold,
+                fontSize = bodyFontSize.sp,
+                overflow = TextOverflow.Ellipsis
+            )
+        },
+        onValueChange = onValueChange,
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = Color.White,
+            unfocusedContainerColor = Color.White,
+            focusedTextColor = Color.Gray,
+            unfocusedTextColor = Color.Gray,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            cursorColor = Color.Gray
+        ),
+        trailingIcon = trailingIcon,
+        keyboardOptions = keyboardOption,
+        readOnly = readOnly
     )
 }
 

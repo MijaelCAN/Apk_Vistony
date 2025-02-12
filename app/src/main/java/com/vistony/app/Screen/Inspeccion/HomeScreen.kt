@@ -1,5 +1,6 @@
 package com.vistony.app.Screen.Inspeccion
 
+import android.app.Activity
 import android.os.Build
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -8,6 +9,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -37,6 +39,8 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -51,6 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -66,6 +71,8 @@ import com.vistony.app.ViewModel.SharedViewModel
 import com.vistony.app.Screen.Generic.CustomDrawer
 import com.vistony.app.Screen.Generic.CustomOutlinedTextField
 import com.vistony.app.Screen.Generic.TopBar
+import com.vistony.app.Screen.Parada.BodyParada
+import com.vistony.app.ui.theme.theme.Dimensions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -74,7 +81,7 @@ import java.time.LocalTime
 import java.util.Date
 
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun HomeScreen(
     navController: NavController,
@@ -84,36 +91,10 @@ fun HomeScreen(
     id: String = "20304050"
 ) {
 
-    /*val scrollState = rememberScrollState()
-    Scaffold(
-        topBar = { TopBar(navController = navController) },
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(it)
-                .background(color = Color(0xFF0B4FAF))
-                .verticalScroll(scrollState),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(610.dp)
-                    .height(210.dp)
-                    .clip(RoundedCornerShape(25.dp))
-                    .background(Color.White)
-            ) {
-                Image(
-                    modifier = Modifier.size(width = 600.dp, height = 200.dp),
-                    painter = painterResource(id = R.drawable.vistony),
-                    contentDescription = "Logo"
-                )
-            }
-            Spacer(modifier = Modifier.height(15.dp))
-            BodyHome(navController, viewModel, otViewModel, sharedViewModel)
-        }
-    }*/
+    val context = LocalContext.current
+    val activity = context as Activity
+    val windowSize = calculateWindowSizeClass(context)
+    val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     Log.e("id", id)
@@ -131,7 +112,28 @@ fun HomeScreen(
                 })
             },
             content = { paddingValues ->
-                Column(
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFFE6E9F1))
+
+                ) {
+                    val screenWidth = maxWidth
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding_res)
+                            //.border(2.dp, Color.White, RoundedCornerShape(24.dp))
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(Color.White.copy(alpha = 0.44f)),
+                        //.graphicsLayer { alpha = 0.44f },
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        BodyHome(navController, viewModel, otViewModel, sharedViewModel,id)
+                    }
+                }
+                /*Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
@@ -155,7 +157,7 @@ fun HomeScreen(
                     }
                     Spacer(modifier = Modifier.height(15.dp))
                     BodyHome(navController, viewModel, otViewModel, sharedViewModel,id)
-                }
+                }*/
             }
         )
     }
@@ -239,14 +241,14 @@ fun BodyHome(
         lineaState.lineaResponse?.data?.find { it.ID == linea }?.Descripcion ?: newLinea.value
 
 
-    Box(
+    /*Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 32.dp)
             .wrapContentSize()
             .clip(RoundedCornerShape(25.dp))
             .background(color = Color(0xFFFFFFFF))
-    ) {
+    ) {*/
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -287,6 +289,7 @@ fun BodyHome(
                     readOnly = true
                 )
             }
+            Spacer(modifier = Modifier.height(16.dp))
             CustomOutlinedTextField( // ---- OT ----
                 value = ot,
                 onValueChange = { ot = it },
@@ -300,12 +303,14 @@ fun BodyHome(
                 keyboardOption = KeyboardOptions().copy(keyboardType = KeyboardType.Number),
                 readOnly = false
             )
+            Spacer(modifier = Modifier.height(16.dp))
             CustomOutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
                 label = "Descripción",
                 readOnly = true
             )
+            Spacer(modifier = Modifier.height(16.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -327,6 +332,7 @@ fun BodyHome(
                     keyboardOption = KeyboardOptions().copy(keyboardType = KeyboardType.Number),
                 )
             }
+            Spacer(modifier = Modifier.height(16.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -509,7 +515,7 @@ fun BodyHome(
                 })*/
 
         }
-    }
+    //}
 }
 
 @Composable

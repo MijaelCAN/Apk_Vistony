@@ -55,8 +55,8 @@ class MainActivity : ComponentActivity() {
                     if (status == ConnectivityObserver.Status.Available) {
                         NavHost(startDestination = "login", navController = navController) {
                             composable("login") {
-                                //Login2()
-                                LoginScreen(navController)
+                                Login2(navController)
+                                //LoginScreen(navController)
                             }
                             composable(
                                 route = "home/{user}",
@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
                                 ListScreen(navController, id = it.arguments?.getString("user") ?: "")
                             }
                             composable("reporte",) {
-                                Login2()
+                                LoginScreen(navController)
                             }
                             composable(
                                 "homeParada/{user}",

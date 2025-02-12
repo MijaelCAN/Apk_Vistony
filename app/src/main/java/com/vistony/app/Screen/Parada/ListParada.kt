@@ -1,5 +1,6 @@
 package com.vistony.app.Screen.Parada
 
+import android.app.Activity
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -9,7 +10,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,11 +43,15 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -57,6 +65,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -77,8 +86,10 @@ import com.vistony.app.Screen.Generic.DateOutlinedTextField
 import com.vistony.app.Screen.Generic.Detalle
 import com.vistony.app.Screen.Generic.DialogType
 import com.vistony.app.Screen.Generic.TopBar
+import com.vistony.app.Screen.Inspeccion.BodyList
 import com.vistony.app.ViewModel.EstadoParada
 import com.vistony.app.ViewModel.ParadaViewModel
+import com.vistony.app.ui.theme.theme.Dimensions
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Duration
@@ -86,6 +97,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ListParada(
@@ -93,6 +105,10 @@ fun ListParada(
     paradaViewModel: ParadaViewModel = hiltViewModel(),
     id: String
 ) {
+    val context = LocalContext.current
+    val activity = context as Activity
+    val windowSize = calculateWindowSizeClass(context)
+    val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -108,8 +124,42 @@ fun ListParada(
                     }
                 })
             },
+            floatingActionButton = {
+                IconButton(
+                    modifier = Modifier.size(60.dp),
+                    onClick = { navController.navigate("homeParada/${id}") },
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = Color.Red,
+                        contentColor = Color.White
+                    )
+                ){
+                    Icon(Icons.Filled.Add, contentDescription = "")
+
+                }
+            },
             content = { paddingValues ->
-                Column(
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFFE6E9F1))
+
+                ) {
+                    val screenWidth = maxWidth
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding_res)
+                            //.border(2.dp, Color.White, RoundedCornerShape(24.dp))
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(Color.White.copy(alpha = 0.44f)),
+                        //.graphicsLayer { alpha = 0.44f },
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        BodyListParada(navController, id, paradaViewModel)
+                    }
+                }
+                /*Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
@@ -132,14 +182,14 @@ fun ListParada(
                     }
                     Spacer(modifier = Modifier.height(15.dp))
                     BodyListParada(navController, id, paradaViewModel)
-                }
+                }*/
             }
         )
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun BodyListParada(navController: NavController, id: String, paradaViewModel: ParadaViewModel) {
 
@@ -149,7 +199,7 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
     var item by remember { mutableStateOf(Parada()) }
     var txt_estado = rememberSaveable { mutableStateOf("") }
 
-    var selectedDateIni by remember { mutableStateOf(LocalDate.now()) }
+    var selectedDateIni by remember { mutableStateOf(LocalDate.now().minusDays(1)) }
     var showDialogDateIni by remember { mutableStateOf(false) }
     var selectedDateFin by remember { mutableStateOf(LocalDate.now()) }
     var showDialogDateFin by remember { mutableStateOf(false) }
@@ -170,14 +220,13 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
         )
     }
 
-    Box(
+    /*Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 32.dp)
             .wrapContentSize()
-            .clip(RoundedCornerShape(25.dp))
+            .clip(RoundedCornerShape(topStart = 25.dp, topEnd = 25.dp))
             .background(color = Color(0xFFFFFFFF))
-    ) {
+    ) {*/
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -185,12 +234,8 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
                 .padding(vertical = 16.dp, horizontal = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "LISTA DE PARADAS",
-                modifier = Modifier.padding(end = 8.dp, top = 16.dp),
-                color = Color.Black
-            )
-            Row(
+            Spacer(modifier = Modifier.height(32.dp))
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -202,7 +247,7 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
                     showDialog = showDialogDateIni,
                     onShowDialogChange = { showDialogDateIni = it }
                 )
-                Spacer(modifier = Modifier.width(130.dp))
+                Spacer(modifier = Modifier.width(30.dp))
                 DateOutlinedTextField(
                     modifier = Modifier.weight(1f),
                     "Fecha Final",
@@ -212,20 +257,21 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
                     onShowDialogChange = { showDialogDateFin = it }
                 )
             }
-            Row(
+            Spacer(modifier = Modifier.height(8.dp))
+            FlowRow(
                 modifier = Modifier
                     .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.Center
             ) {
                 ExposedDropdownMenuBox(
-                    modifier = Modifier.width(200.dp),
+                    modifier = Modifier.width(300.dp),
                     expanded = expanded.value,
                     onExpandedChange = {
                         expanded.value = !expanded.value
                         txt_estado.value = ""
                     }) {
                     CustomOutlinedTextField(
-                        modifier = Modifier.menuAnchor(),
+                        modifier = Modifier.menuAnchor().padding(end = 0.dp),
                         value = txt_estado.value,
                         onValueChange = { },
                         label = "Estado",
@@ -261,14 +307,14 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
                         }
                     }
                 }
-                Spacer(modifier = Modifier.width(60.dp))
-                CustomButton(
+                //Spacer(modifier = Modifier.width(60.dp))
+                /*CustomButton(
                     "Registro Nuevo",
                     modifier = Modifier.weight(1f),
                     Icons.Filled.Add,
                     onClick = { navController.navigate("homeParada/${id}") },
                     Color(0xFF299203)
-                )
+                )*/
             }
             Spacer(modifier = Modifier.height(32.dp))
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
@@ -402,7 +448,7 @@ fun BodyListParada(navController: NavController, id: String, paradaViewModel: Pa
                 }
             }
         }
-    }
+    //}
 }
 
 
@@ -454,6 +500,7 @@ fun DialogEspera(onDismiss: () -> Unit = {}) {
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TarjetaParada(
@@ -471,7 +518,7 @@ fun TarjetaParada(
             .fillMaxWidth()
             .clickable { /* Acción al hacer clic en la tarjeta */ },
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, Color.Gray),
+        border = BorderStroke(0.dp, Color.Gray),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(
             if (parada.FechaHoraFin.isNullOrEmpty()) Color.White else Color(
@@ -485,7 +532,7 @@ fun TarjetaParada(
                 style = MaterialTheme.typography.titleLarge
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Row(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
