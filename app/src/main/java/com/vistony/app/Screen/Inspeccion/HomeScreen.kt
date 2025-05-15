@@ -5,10 +5,8 @@ import android.os.Build
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,13 +15,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.ButtonDefaults
@@ -56,7 +51,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -64,14 +58,12 @@ import androidx.navigation.NavController
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import com.vistony.app.Entidad.Operario
-import com.vistony.app.R
 import com.vistony.app.ViewModel.OTViewModel
 import com.vistony.app.ViewModel.OperarioViewModel
 import com.vistony.app.ViewModel.SharedViewModel
-import com.vistony.app.Screen.Generic.CustomDrawer
+import com.vistony.app.Screen.Generic.Drawers.CustomDrawer
 import com.vistony.app.Screen.Generic.CustomOutlinedTextField
 import com.vistony.app.Screen.Generic.TopBar
-import com.vistony.app.Screen.Parada.BodyParada
 import com.vistony.app.ui.theme.theme.Dimensions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -335,8 +327,8 @@ fun BodyHome(
             Spacer(modifier = Modifier.height(16.dp))
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
+                    .fillMaxWidth(),
+                    //.padding(horizontal = 24.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 //val options = operarioState.operarioResponse?.data?.map { it.Nonbre } ?: emptyList()

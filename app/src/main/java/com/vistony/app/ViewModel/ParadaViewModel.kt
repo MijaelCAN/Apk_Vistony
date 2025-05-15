@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -47,9 +48,19 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
     private val _estadoParada = MutableStateFlow<EstadoParada>(EstadoParada.Idle)
     val estadoParada: StateFlow<EstadoParada> = _estadoParada.asStateFlow()
 
+
+    private val _fechaIni = mutableStateOf(LocalDateTime.now().minusDays(1))
+    val fechaIni: State<LocalDateTime> = _fechaIni
+
+    private val _fechaFin = mutableStateOf(LocalDateTime.now())
+    val fechaFin: State<LocalDateTime> = _fechaFin
+
+
     fun actualizarEstadoParada(nuevoEstado: EstadoParada) {
         _estadoParada.value = nuevoEstado
     }
+    fun setFechaIni(fecha: LocalDate) { _fechaIni.value = fecha.atTime(0,0) }
+    fun setFechaFin(fecha: LocalDate) { _fechaFin.value = fecha.atTime(0,0) }
 
     init {
         viewModelScope.launch {
@@ -101,9 +112,10 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
                 Log.e("Error", e.toString())
             }
         }
-        obtenerParadas(ListaRequest(formatoServidor(LocalDateTime.now()), formatoServidor(LocalDateTime.now()), "T"))
+        obtenerParadas(ListaRequest(formatoServidor(fechaIni.value), formatoServidor(fechaFin.value), "T"))
     }
     fun obtenerParadas(request: ListaRequest) {
+        Log.e("MDCR", request.toString())
         viewModelScope.launch {
             try {
                 val response = paradaRepository.obtenerParadas(request)
@@ -111,6 +123,7 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
                     val body = response.body()
                     if (body?.statusCode == 200) {
                         _listParadas.value = ParadaResponse(200, body.data)
+                        Log.e("MDCR", "LISTA PARADAS: ${body.data}")
                     }else{
                         _listParadas.value = ParadaResponse(500, emptyList())
                     }

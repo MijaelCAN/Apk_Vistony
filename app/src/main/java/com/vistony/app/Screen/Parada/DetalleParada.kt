@@ -1,0 +1,342 @@
+package com.vistony.app.Screen.Parada
+
+import android.app.Activity
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Card
+import androidx.compose.material.Divider
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.vistony.app.Entidad.ListaRequest
+import com.vistony.app.Entidad.Parada
+import com.vistony.app.R
+import com.vistony.app.Screen.Generic.CustomAlertDialog
+import com.vistony.app.Screen.Generic.DialogType
+import com.vistony.app.ViewModel.EstadoParada
+import com.vistony.app.ViewModel.ParadaViewModel
+import com.vistony.app.ui.theme.theme.Dimensions
+import kotlinx.coroutines.delay
+import java.time.Duration
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun DetalleParada(
+    parada: Parada?,
+    paradaViewModel: ParadaViewModel,
+    onClose: () -> Unit,
+){
+    val context = LocalContext.current
+    val activity = context as Activity
+    val windowSize = calculateWindowSizeClass(context)
+    val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
+    val buttonHeight = Dimensions.getButtonHeight(windowSize.widthSizeClass)
+    val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
+
+    var showDialog by remember { mutableStateOf(false) }
+    val estado by paradaViewModel.estadoParada.collectAsState()
+
+
+    var selectedDateIni = paradaViewModel.fechaIni.value.toLocalDate().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+    var selectedDateFin = paradaViewModel.fechaFin.value.toLocalDate().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+
+    Column(
+        modifier = Modifier
+            .fillMaxHeight()
+            .fillMaxWidth()
+    ) {
+        Text(
+            modifier = Modifier.padding(top = 16.dp),
+            text = "Detalle de Parada",
+            fontWeight = FontWeight.Bold,
+            fontSize = 25.sp,
+        )
+        Text(
+            text = "Se detuvo la máquina por ${parada?.Motivo}",
+            fontSize = 12.sp,
+        )
+        Spacer(Modifier.height(25.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(4.dp)
+        ) {
+            LiveIndicator(
+                isActive = parada?.FechaHoraFin.isNullOrEmpty(),
+                inactiveColor = if(parada?.FechaHoraFin.isNullOrEmpty()) Color(0xFF4CAF50).copy(alpha = 0.3f) else Color(0xFFB00020),
+            )
+            Spacer(modifier = Modifier.width(8.dp)) // espacio entre punto y texto
+            Text(
+                text = if (parada?.FechaHoraFin.isNullOrEmpty()) "En curso" else "Finalizado",
+                color = if (parada?.FechaHoraFin.isNullOrEmpty()) Color(0xFF4CAF50) else Color(0xFF1B2733),
+                fontWeight = FontWeight.Medium,
+                fontSize = 16.sp
+            )
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        if (parada == null) return
+        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy   HH:mm")
+
+        Box(modifier = Modifier.clip(RoundedCornerShape(20.dp))){
+            Image(
+                painter = painterResource(id = R.drawable.not_connection2),
+                contentDescription = "background",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .matchParentSize()
+                    //.height(250.dp)
+                    .blur(7.dp),
+                contentScale = ContentScale.Crop,
+            )
+            Card(
+                modifier = Modifier.padding(4.dp),
+                shape = RoundedCornerShape(20.dp),
+                backgroundColor = Color(0x7DFFFFFF),
+                border = BorderStroke(1.dp, color = Color(0x25FFFFFF)),
+                elevation = 0.dp,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .alpha(1f)
+                        .blur(radius = 28.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                        .background(
+                            Brush.radialGradient(
+                                listOf(
+                                    Color(0x12FFFFFF),
+                                    Color(0xDFFFFFF),
+                                    Color(0x9FFFFFFF)
+
+                                ),
+                                radius = 2200f,
+                                center = Offset.Infinite
+                            )
+                        )
+                )
+                Column(
+                    modifier = Modifier.padding(24.dp)
+                ) {
+                    TiempoTranscurrido(
+                        fechaInicio = LocalDateTime.parse(parada.FechaHoraInicio, formatter),
+                        fechaFin = if (parada.FechaHoraFin.isNullOrBlank()) null else LocalDateTime.parse(
+                            parada.FechaHoraFin,
+                            formatter
+                        )
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(text = parada.Maquina ?: "-")
+                    }
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(25.dp))
+        Divider(
+            color = Color(0xFFE0E0E0),
+            thickness = 1.dp,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        InfoRow("Área:", parada.Area ?: "-")
+        InfoRow("Coment.:", parada.Comentario ?: "-")
+        InfoRow("Inicio:", parada.FechaHoraInicio ?: "-")
+        InfoRow("Fin:", parada.FechaHoraFin?.takeIf { it.isNotBlank() } ?: "En curso")
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        if(parada?.FechaHoraFin.isNullOrEmpty()){
+            Button(
+                onClick = {
+                    paradaViewModel.detenerParada(Integer.parseInt(parada.DocEntry))
+                    showDialog = true
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(buttonHeight)
+                    .padding(horizontal = padding_res)
+                    .clip(RoundedCornerShape(0.dp)),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFC6A68),
+                    contentColor = Color.White
+                )
+            ) {
+                Text(text = "Detener", fontSize = bodyFontSize.sp )
+            }
+        }
+        Spacer(modifier = Modifier.height(32.dp))
+    }
+
+    if (showDialog) {
+        when (estado) {
+            EstadoParada.Cargando ->
+                CustomAlertDialog(
+                    showDialog = true,
+                    title = "Cargando",
+                    message = "Espere por favor...",
+                    confirmButtonText = "",
+                    dismissButtonText = null,
+                    onDismiss = { showDialog = false },
+                    dialogType = DialogType.LOADING
+                )
+
+            is EstadoParada.Error -> TODO()
+            EstadoParada.Exitoso -> {
+                CustomAlertDialog(
+                    showDialog = true,
+                    title = "Exitoso",
+                    message = "Parada finalizada",
+                    confirmButtonText = "Aceptar",
+                    dismissButtonText = null,
+                    onDismiss = {
+                        showDialog = false
+                        paradaViewModel.obtenerParadas(ListaRequest(selectedDateIni, selectedDateFin, "T"))
+                        onClose()
+                    },
+                    dialogType = DialogType.SUCCESS
+                )
+            }
+
+            EstadoParada.Idle -> TODO()
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun TiempoTranscurrido(fechaInicio: LocalDateTime, fechaFin: LocalDateTime?) {
+    var tiempo by remember { mutableStateOf(Duration.ZERO) }
+
+    // Actualizar cada segundo si no hay fechaFin
+    LaunchedEffect(fechaFin, fechaInicio) {
+        while (true) {
+            val fin = fechaFin ?: LocalDateTime.now()
+            tiempo = Duration.between(fechaInicio, fin)
+            if (fechaFin != null) break
+            delay(1000L)
+        }
+    }
+
+    val dias = tiempo.toDays()
+    val horas = tiempo.toHours() % 24
+    val minutos = tiempo.toMinutes() % 60
+
+    val texto = when {
+        dias > 0 -> "$dias días, $horas horas, $minutos minutos"
+        horas > 0 -> "$horas horas, $minutos minutos"
+        else -> "$minutos minutos"
+    }
+
+    Text(
+        text = texto,
+        fontSize = 32.sp,
+        color = Color.Black,
+        fontWeight = FontWeight.Bold,
+    )
+}
+
+@Composable
+fun LiveIndicator(
+    isActive: Boolean,
+    activeColor: Color = Color(0xFF4CAF50),
+    inactiveColor: Color = activeColor.copy(alpha = 0.3f),
+    size: Dp = 12.dp,
+    blinkDurationMs: Long = 500L
+) {
+    var isOn by remember { mutableStateOf(true) }
+
+    if (isActive) {
+        LaunchedEffect(Unit) {
+            while (true) {
+                isOn = !isOn
+                delay(blinkDurationMs)
+            }
+        }
+    } else {
+        isOn = false
+    }
+
+    Box(
+        modifier = Modifier
+            .size(size)
+            .background(
+                color = if (isActive && isOn) activeColor else inactiveColor,
+                shape = CircleShape
+            )
+    )
+}
+
+@Composable
+fun InfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            color = Color.Black
+        )
+        Text(
+            text = value,
+            fontWeight = FontWeight.Light,
+            fontSize = 14.sp,
+            color = if(value == "En curso") Color(0xFF4CAF50).copy(alpha = 0.3f) else Color.Gray
+        )
+    }
+    Spacer(modifier = Modifier.height(8.dp))
+    Divider(
+        color = Color(0xFFE0E0E0),
+        thickness = 1.dp,
+        modifier = Modifier.fillMaxWidth()
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+}

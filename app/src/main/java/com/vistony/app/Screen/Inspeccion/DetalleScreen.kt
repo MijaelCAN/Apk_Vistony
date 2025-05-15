@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenuItem
@@ -74,12 +73,11 @@ import com.vistony.app.R
 import com.vistony.app.Screen.Generic.CustomAlertDialog
 import com.vistony.app.ViewModel.EvalViewModel
 import com.vistony.app.ViewModel.SharedViewModel
-import com.vistony.app.Screen.Generic.CustomDrawer
+import com.vistony.app.Screen.Generic.Drawers.CustomDrawer
 import com.vistony.app.Screen.Generic.CustomOutlinedTextField
 import com.vistony.app.Screen.Generic.CustomOutlinedTextField2
 import com.vistony.app.Screen.Generic.CustomText
 import com.vistony.app.Screen.Generic.DialogType
-import com.vistony.app.Screen.Generic.SuccessDialog
 import com.vistony.app.Screen.Generic.TopBar
 import com.vistony.app.ViewModel.EstadoInspeccion
 import com.vistony.app.ViewModel.EstadoParada

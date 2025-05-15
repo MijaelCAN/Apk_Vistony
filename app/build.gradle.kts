@@ -111,4 +111,7 @@ dependencies {
     implementation("com.google.zxing:core:3.5.1")
     implementation(kotlin("script-runtime"))
 
+    // Accompanist
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.36.0")
+
 }

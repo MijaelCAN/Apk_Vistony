@@ -3,6 +3,7 @@ package com.vistony.app
 import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
@@ -28,9 +29,7 @@ import com.vistony.app.Screen.Inspeccion.ListScreen
 import com.vistony.app.Screen.Login2
 import com.vistony.app.Screen.LoginScreen
 import com.vistony.app.Screen.NoInternetScreen
-import com.vistony.app.Screen.Parada.HomeParada
 import com.vistony.app.Screen.Parada.ListParada
-import com.vistony.app.ui.theme.theme.AppTypography
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -79,12 +78,12 @@ class MainActivity : ComponentActivity() {
                             composable("reporte",) {
                                 LoginScreen(navController)
                             }
-                            composable(
+                            /*composable(
                                 "homeParada/{user}",
                                 arguments = listOf(navArgument("user") { type = NavType.StringType })
                             ) {
                                 HomeParada(navController = navController, id = it.arguments?.getString("user") ?: "")
-                            }
+                            }*/
                             composable(
                                 "listaParada/{user}",
                                 arguments = listOf(navArgument("user") { type = NavType.StringType })

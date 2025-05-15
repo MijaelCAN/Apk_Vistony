@@ -4,6 +4,7 @@ import android.app.Activity
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -34,8 +35,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.vistony.app.Extras.formatoUsuario
 import com.vistony.app.ui.theme.theme.Dimensions
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
@@ -48,60 +51,31 @@ fun CustomOutlinedTextField(
     modifier: Modifier = Modifier,
     trailingIcon: (@Composable () -> Unit)? = null,
     readOnly: Boolean = false,
+    minLines: Int = 1,
+    maxLines: Int = Int.MAX_VALUE,
     keyboardOption: KeyboardOptions = KeyboardOptions.Default
 ) {
     val context = LocalContext.current
     val activity = context as Activity
     val windowSize = calculateWindowSizeClass(context)
-
-    val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
-    val buttonHeight = Dimensions.getButtonHeight(windowSize.widthSizeClass)
-    val textFieldHeight = Dimensions.getTextFieldHeight(windowSize.widthSizeClass)
-    val titleFontSize = Dimensions.getTitleFontSize(windowSize.widthSizeClass)
     val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
-    val imageSize = Dimensions.getImageSize(windowSize.widthSizeClass)
 
-    /*OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(top = 16.dp),
-        label = {
-            Te
-                label,
-                overflow = TextOverflow.Ellipsis
-            )
-        },
-        colors = TextFieldDefaults.outlinedTextFieldColors(
-            focusedBorderColor = Color(0xFF0054A3),
-            unfocusedBorderColor = Color(0xFFA2A2A2),
-            cursorColor = Color(0xFF0054A3),
-            focusedTextColor = Color.Black,
-            unfocusedTextColor = Color.Black,
-            unfocusedPlaceholderColor = Color.LightGray,
-            //textColor = Color.Black,
-            focusedLabelColor = Color(0xFF0054A3)
-        ),
-        trailingIcon = trailingIcon,
-        keyboardOptions = keyboardOption,
-        readOnly = readOnly
-
-    )*/
     TextField(
         modifier = modifier
             .fillMaxWidth()
-            .height(textFieldHeight)
-            .padding(horizontal = padding_res)
+            //.height(textFieldHeight)
+            //.padding(horizontal = padding_res)
             .clip(RoundedCornerShape(12.dp))
             .border(1.dp, Color.White, RoundedCornerShape(12.dp)),
         value = value,
-        placeholder = {
+        minLines = minLines,
+        maxLines = maxLines,
+        label = {
             Text(
                 text = label,
-                color = Color.LightGray,
+                color = if( value.isNotEmpty())Color.Gray else Color.LightGray,
                 fontWeight = FontWeight.Bold,
-                fontSize = bodyFontSize.sp,
+                fontSize = if( value.isNotEmpty()) 12.sp else bodyFontSize.sp,
                 overflow = TextOverflow.Ellipsis
             )
         },
