@@ -26,6 +26,9 @@ class LoginViewModel @Inject constructor() : ViewModel() {
     private val _isLoading = MutableStateFlow<EstadoLogin>(EstadoLogin.Idle)
     val isLoading: StateFlow<EstadoLogin> = _isLoading.asStateFlow()
 
+    private val _userRole = MutableStateFlow<String?>(null)
+    val userRole: StateFlow<String?> = _userRole.asStateFlow()
+
     fun validar(user: String, pass: String) {
 
         viewModelScope.launch {
@@ -41,6 +44,9 @@ class LoginViewModel @Inject constructor() : ViewModel() {
                             message = "Autorizado"
                         )
                         _isLoading.value = EstadoLogin.Exitoso
+                        //_userRole.value = body.userRole
+                        //_userRole.value = "mantenimiento"
+                        _userRole.value = "operador"
                         Log.e("rurta", "entro aui")
                     } else {
                         _loginstate = ResponseState(

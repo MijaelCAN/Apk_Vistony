@@ -22,13 +22,18 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.vistony.app.Entidad.ListaRequest
 import com.vistony.app.Screen.Generic.DateOutlinedTextField
+import com.vistony.app.ViewModel.InspectionViewModel
 import com.vistony.app.ViewModel.ParadaViewModel
 import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun BottomBar(paradaViewModel: ParadaViewModel = hiltViewModel(),) {
+fun BottomBar(
+    type : String,
+    paradaViewModel: ParadaViewModel = hiltViewModel(),
+    inspViewModel: InspectionViewModel = hiltViewModel()
+) {
 
     var selectedDateIni = paradaViewModel.fechaIni.value.toLocalDate()
     var selectedDateFin = paradaViewModel.fechaFin.value.toLocalDate()
@@ -39,11 +44,11 @@ fun BottomBar(paradaViewModel: ParadaViewModel = hiltViewModel(),) {
     LaunchedEffect(selectedDateIni, selectedDateFin) {
         val newfechaIni = selectedDateIni.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
         val newfechaFin = selectedDateFin.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
-        paradaViewModel.obtenerParadas(
-            ListaRequest(
-                newfechaIni, newfechaFin, "T"
-            )
-        )
+        when(type){
+            "inspection" -> { inspViewModel.getListInspeccion(newfechaIni, newfechaFin) }
+            "parada"->{ paradaViewModel.obtenerParadas(ListaRequest(newfechaIni, newfechaFin, "T")) }
+        }
+
     }
 
 

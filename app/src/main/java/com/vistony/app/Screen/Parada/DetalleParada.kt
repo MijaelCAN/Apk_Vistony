@@ -6,6 +6,9 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,13 +20,23 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.Divider
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.rounded.AddCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
@@ -46,14 +59,19 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.vistony.app.Entidad.Actividad
 import com.vistony.app.Entidad.ListaRequest
 import com.vistony.app.Entidad.Parada
 import com.vistony.app.R
 import com.vistony.app.Screen.Generic.CustomAlertDialog
 import com.vistony.app.Screen.Generic.DialogType
+import com.vistony.app.Screen.ParadaMantenimiento.TarjetaActividad
+import com.vistony.app.ViewModel.ActividadViewModel
 import com.vistony.app.ViewModel.EstadoParada
 import com.vistony.app.ViewModel.ParadaViewModel
 import com.vistony.app.ui.theme.theme.Dimensions
@@ -66,9 +84,14 @@ import java.time.format.DateTimeFormatter
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DetalleParada(
+    id: String,
+    role: String?,
     parada: Parada?,
     paradaViewModel: ParadaViewModel,
-    onClose: () -> Unit,
+    actividadViewModel: ActividadViewModel,
+    actividades : List<Actividad>,
+    onClose: (String) -> Unit,
+    onOpenActivity: () -> Unit
 ){
     val context = LocalContext.current
     val activity = context as Activity
@@ -79,10 +102,12 @@ fun DetalleParada(
 
     var showDialog by remember { mutableStateOf(false) }
     val estado by paradaViewModel.estadoParada.collectAsState()
+    var statusButton by remember { mutableStateOf(false) }
 
 
     var selectedDateIni = paradaViewModel.fechaIni.value.toLocalDate().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
     var selectedDateFin = paradaViewModel.fechaFin.value.toLocalDate().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+
 
     Column(
         modifier = Modifier
@@ -188,13 +213,118 @@ fun DetalleParada(
         InfoRow("Inicio:", parada.FechaHoraInicio ?: "-")
         InfoRow("Fin:", parada.FechaHoraFin?.takeIf { it.isNotBlank() } ?: "En curso")
 
+        val listaFiltrada = actividades.filter { it.paradaDocEntry == parada.DocEntry }
+        if (role == "mantenimiento") {
+
+            val actividadesPares = listaFiltrada.chunked(2) // Divide la lista en grupos de 2
+            statusButton = listaFiltrada.all { it.statusActividad }
+
+            if(actividadesPares.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 2.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                //modifier = Modifier.padding(top = 16.dp),
+                                text = "${listaFiltrada.size} Actividades",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp,
+                                lineHeight = 14.sp,
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            IconButton(onClick = { onOpenActivity() }) {
+                                Icon(
+                                    imageVector = Icons.Rounded.AddCircle,
+                                    contentDescription = null,
+                                    tint = Color.LightGray
+                                )
+                            }
+                        }
+                    }
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 16.dp)
+                            .clickable(
+                                onClick = { },
+                                indication = null, // Sin ripple
+                                interactionSource = remember { MutableInteractionSource() } // Para quitar ripple
+                            )
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Ver Todo",
+                                fontSize = 12.sp,
+                                lineHeight = 14.sp,
+                                color = Color.Unspecified // o el color que quieras
+                            )
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = Color.LightGray
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(actividadesPares) { par ->
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.width(350.dp) // Ajusta el ancho según tu diseño
+                    ) {
+                        par.forEach { actividad ->
+                            TarjetaActividad(
+                                actividad = actividad,
+                                actividadViewModel = actividadViewModel,
+                                id = id,
+                                function = {
+                                    // función para actividad
+                                }
+                            )
+                        }
+                        if (par.size == 1) {
+                            Spacer(modifier = Modifier.height( /* altura aproximada de TarjetaActividad */ 100.dp))
+                        }
+                    }
+                }
+            }
+        }
+
+
         Spacer(modifier = Modifier.weight(1f))
 
         if(parada?.FechaHoraFin.isNullOrEmpty()){
             Button(
+                enabled = statusButton ,
                 onClick = {
-                    paradaViewModel.detenerParada(Integer.parseInt(parada.DocEntry))
-                    showDialog = true
+                    if(role == "mantenimiento") {
+                        if(listaFiltrada.isEmpty()){
+                            parada.UserMantemiento = "Carlos Andres"
+                            onClose("Asignados")
+                        }else{
+                            // AQUI DEBE LLAMAR A LA API DE CERRAR ACTIVIDAD, ASIMISMO CREAR UN PDF EXPORTABLE
+                        }
+                    }
+                    if(role == "operador") {
+                        paradaViewModel.detenerParada(Integer.parseInt(parada.DocEntry))
+                        showDialog = true
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -207,7 +337,10 @@ fun DetalleParada(
                     contentColor = Color.White
                 )
             ) {
-                Text(text = "Detener", fontSize = bodyFontSize.sp )
+                Text(
+                    text = if(role == "mantenimiento") if(listaFiltrada.isEmpty())"Asignarme" else "Cerrar actividad y genear PDF" else "Detener",
+                    fontSize = bodyFontSize.sp
+                )
             }
         }
         Spacer(modifier = Modifier.height(32.dp))
@@ -237,12 +370,11 @@ fun DetalleParada(
                     onDismiss = {
                         showDialog = false
                         paradaViewModel.obtenerParadas(ListaRequest(selectedDateIni, selectedDateFin, "T"))
-                        onClose()
+                        onClose("Todos")
                     },
                     dialogType = DialogType.SUCCESS
                 )
             }
-
             EstadoParada.Idle -> TODO()
         }
     }

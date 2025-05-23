@@ -12,18 +12,16 @@ import com.vistony.app.Entidad.InspecionResponse
 import com.vistony.app.Extras.formatoServidor
 import com.vistony.app.Service.RetrofitInstance
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import javax.inject.Inject
 
 @RequiresApi(Build.VERSION_CODES.O)
 @HiltViewModel
-class EvalViewModel @Inject constructor() : ViewModel() {
+class InspectionViewModel @Inject constructor() : ViewModel() {
 
     private val evalService = RetrofitInstance.evalService
 

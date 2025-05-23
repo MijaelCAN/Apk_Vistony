@@ -9,7 +9,8 @@ data class Parada(
     var FechaHoraFin: String = null.toString(),
     var Area: String = "",
     var Comentario: String ="",
-    var Motivo: String =""
+    var Motivo: String ="",
+    var UserMantemiento: String = "",
 )
 data class ParadaRequest(
     @SerializedName("U_Fecha")val U_Fecha: String,
@@ -22,7 +23,7 @@ data class ParadaRequest(
     @SerializedName("U_HoraIni")val U_HoraIni: String,
     //@SerializedName("U_HoraFin")val U_HoraFin: String,
     @SerializedName("U_Usuario")val U_Usuario: String,
-    @SerializedName("U_MotivoParaMaq")val U_MotivoParaMaq: Int
+    @SerializedName("U_MotivoParaMaq")val U_MotivoParaMaq: String
 )
 
 data class ListaRequest(
@@ -63,7 +64,7 @@ data class MaquinaResponse(
 )
 
 data class Motivo(
-    val Code: Int,
+    val Code: String,
     val Name: String
 )
 data class MotivoResponse(

@@ -46,6 +46,7 @@ import com.vistony.app.Extras.formatoUsuario
 import com.vistony.app.Screen.Generic.CustomAlertDialog
 import com.vistony.app.Screen.Generic.CustomOutlinedTextField
 import com.vistony.app.Screen.Generic.DialogType
+import com.vistony.app.Screen.Generic.GenericDropdownMenu
 import com.vistony.app.ViewModel.EstadoParada
 import com.vistony.app.ViewModel.ParadaViewModel
 import com.vistony.app.ui.theme.theme.Dimensions
@@ -60,7 +61,7 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
     val maquinaState by paradaViewModel.maquinas.collectAsState()
     var maquinaId by remember { mutableStateOf("") }
     val motivoState by paradaViewModel.motivos.collectAsState()
-    var motivoId by remember { mutableStateOf(0) }
+    var motivoId by remember { mutableStateOf("") }
 
     var fec_Parada_Ini by remember { mutableStateOf(LocalDateTime.now()) }
     var maquina = remember { mutableStateOf("") }
@@ -79,6 +80,10 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
     val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
     val buttonHeight = Dimensions.getButtonHeight(windowSize.widthSizeClass)
     val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
+
+    val listAreas = areaState.areaResponse.data.map { it.Code to it.Name }
+    val listMaquinas = maquinaState.maquinaResponse.data.map { it.Code to it.Name }
+    val listMotivos = motivoState.motivoResponse.data.map { it.Code to it.Name }
 
 
 
@@ -107,7 +112,21 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
         )
         Spacer(Modifier.height(8.dp))
         //----------- FILA 2 -----------
-        ExposedDropdownMenuBox(
+        GenericDropdownMenu(
+            label = "Área",
+            options = listAreas,
+            selectedValue = area.value,
+            onValueChange = {
+                area.value = it
+                if (areaId.isNotEmpty()){
+                    paradaViewModel.obtenerMotivos(areaId.toInt())
+                }
+            },
+            onCodeChange = { areaId = it },
+            expanded = expandedArea.value,
+            onExpandedChange = { expandedArea.value = it }
+        )
+        /*ExposedDropdownMenuBox(
             expanded = expandedArea.value,
             onExpandedChange = { expandedArea.value = !expandedArea.value }) {
             CustomOutlinedTextField(
@@ -145,10 +164,20 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
                     )
                 }
             }
-        }
+        }*/
         Spacer(Modifier.height(8.dp))
         //----------- FILA 3 -----------
-        ExposedDropdownMenuBox(
+        GenericDropdownMenu(
+            label = "Máquina",
+            options = listMaquinas,
+            selectedValue = maquina.value,
+            onValueChange = { maquina.value = it },
+            onCodeChange = { maquinaId = it },
+            expanded = expandedMaquina.value,
+            onExpandedChange = { expandedMaquina.value = it }
+        )
+
+        /*ExposedDropdownMenuBox(
             expanded = expandedMaquina.value,
             onExpandedChange = { expandedMaquina.value = !expandedMaquina.value }) {
             CustomOutlinedTextField(
@@ -183,10 +212,20 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
                     )
                 }
             }
-        }
+        }*/
         Spacer(Modifier.height(8.dp))
         //----------- FILA 4 -----------
-        ExposedDropdownMenuBox(
+        GenericDropdownMenu(
+            label = "Motivo Parada",
+            options = listMotivos,
+            selectedValue = motivoParada.value,
+            onValueChange = { motivoParada.value = it },
+            onCodeChange = { motivoId = it },
+            expanded = expandedParada.value,
+            onExpandedChange = { expandedParada.value = it }
+        )
+
+        /*ExposedDropdownMenuBox(
             expanded = expandedParada.value,
             onExpandedChange = { expandedParada.value = !expandedParada.value }) {
             CustomOutlinedTextField(
@@ -218,7 +257,7 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
                     )
                 }
             }
-        }
+        }*/
         Spacer(Modifier.height(8.dp))
         //----------- FILA 5 -----------
         CustomOutlinedTextField(
@@ -258,7 +297,7 @@ fun BotonParada(
     id: String,
     paradaViewModel: ParadaViewModel,
     stateBoton: Boolean,
-    motivoId: Int,
+    motivoId: String,
     buttonHeight: Dp,
     padding_res: Dp,
     bodyFontSize: Float,

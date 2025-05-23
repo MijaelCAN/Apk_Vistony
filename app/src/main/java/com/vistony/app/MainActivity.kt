@@ -17,6 +17,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.vistony.app.Service.ConnectivityObserver
@@ -24,12 +25,12 @@ import com.vistony.app.ViewModel.NetworkStatusViewModel
 import com.vistony.app.ViewModel.SharedViewModel
 import com.vistony.app.ui.theme.theme.AppTheme
 import com.vistony.app.Screen.Inspeccion.DetalleScreen
-import com.vistony.app.Screen.Inspeccion.HomeScreen
 import com.vistony.app.Screen.Inspeccion.ListScreen
 import com.vistony.app.Screen.Login2
 import com.vistony.app.Screen.LoginScreen
 import com.vistony.app.Screen.NoInternetScreen
 import com.vistony.app.Screen.Parada.ListParada
+import com.vistony.app.ViewModel.LoginViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -45,6 +46,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    val loginViewModel: LoginViewModel = hiltViewModel()
                     var navController = rememberNavController()
                     val sharedViewModel: SharedViewModel = hiltViewModel()
                     val networkStatusViewModel: NetworkStatusViewModel = hiltViewModel()
@@ -54,15 +56,15 @@ class MainActivity : ComponentActivity() {
                     if (status == ConnectivityObserver.Status.Available) {
                         NavHost(startDestination = "login", navController = navController) {
                             composable("login") {
-                                Login2(navController)
+                                Login2(navController,loginViewModel)
                                 //LoginScreen(navController)
                             }
-                            composable(
+                            /*composable(
                                 route = "home/{user}",
                                 arguments = listOf(navArgument("user") { type = NavType.StringType })
                             ) { it ->
                                 HomeScreen(navController, sharedViewModel, id = it.arguments?.getString("user") ?: "")
-                            }
+                            }*/
                             composable(
                                 "detalle/{user}",
                                 arguments = listOf(navArgument("user") { type = NavType.StringType })
@@ -73,7 +75,7 @@ class MainActivity : ComponentActivity() {
                                 route = "listaInsp/{user}",
                                 arguments = listOf(navArgument("user") { type = NavType.StringType })
                             ) { it ->
-                                ListScreen(navController, id = it.arguments?.getString("user") ?: "")
+                                ListScreen(navController, sharedViewModel, id = it.arguments?.getString("user") ?: "")
                             }
                             composable("reporte",) {
                                 LoginScreen(navController)

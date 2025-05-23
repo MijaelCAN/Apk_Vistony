@@ -1,6 +1,8 @@
 package com.vistony.app.Screen.Parada
 
 import android.os.Build
+import android.util.Log
+import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -61,16 +63,22 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.vistony.app.Entidad.Actividad
 import com.vistony.app.Entidad.Parada
-import com.vistony.app.Screen.Generic.Drawers.BottomBar
 import com.vistony.app.Screen.Generic.CustomAlertDialog
-import com.vistony.app.Screen.Generic.Drawers.CustomDrawer
 import com.vistony.app.Screen.Generic.CustomSearchText
 import com.vistony.app.Screen.Generic.DialogType
+import com.vistony.app.Screen.Generic.Drawers.BottomBar
+import com.vistony.app.Screen.Generic.Drawers.BottomCurtainDrawer
 import com.vistony.app.Screen.Generic.FilterButtonsRow
+import com.vistony.app.Screen.Generic.Drawers.CustomDrawer
 import com.vistony.app.Screen.Generic.Drawers.RightCurtainDrawer
 import com.vistony.app.Screen.Generic.TopBar
+import com.vistony.app.Screen.ParadaMantenimiento.BodyActividad
+import com.vistony.app.Screen.ParadaMantenimiento.TarjetaActividad
+import com.vistony.app.ViewModel.ActividadViewModel
 import com.vistony.app.ViewModel.EstadoParada
+import com.vistony.app.ViewModel.LoginViewModel
 import com.vistony.app.ViewModel.ParadaViewModel
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
@@ -82,8 +90,13 @@ import kotlin.math.absoluteValue
 fun ListParada(
     navController: NavController,
     paradaViewModel: ParadaViewModel = hiltViewModel(),
+    actividadViewModel: ActividadViewModel = hiltViewModel(),
     id: String
 ) {
+    val loginViewModel = hiltViewModel<LoginViewModel>(LocalContext.current as ComponentActivity)
+
+    val role by loginViewModel.userRole.collectAsState()
+    Log.e("rol", role.toString())
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -94,6 +107,10 @@ fun ListParada(
     var paradaSeleccionada by remember { mutableStateOf<Parada?>(null) }
     var showDrawerDetalle by remember { mutableStateOf(false) }
     var showDrawerHome by remember { mutableStateOf(false) }
+    var showDrawerActivity by remember { mutableStateOf(false) }
+
+    var selected by remember { mutableStateOf(if(role == "mantenimiento") "Iniciado" else "Todos") }
+    val actividades by actividadViewModel.actividades.collectAsState()
 
     SideEffect {
         systemUiController.setStatusBarColor(
@@ -109,7 +126,7 @@ fun ListParada(
         ModalBottomSheetLayout(
             modifier = Modifier.fillMaxWidth(),
             sheetState = bottomSheetState,
-            sheetContent = { BottomBar() }
+            sheetContent = { BottomBar("parada") }
         ) {
             Scaffold(
                 topBar = {
@@ -133,10 +150,7 @@ fun ListParada(
                 floatingActionButton = {
                     IconButton(
                         modifier = Modifier.size(60.dp),
-                        onClick = {
-                            //navController.navigate("homeParada/${id}")
-                            showDrawerHome = true
-                                  },
+                        onClick = { showDrawerHome = true },
                         colors = IconButtonDefaults.iconButtonColors(
                             containerColor = Color(0xFFFC6A68),
                             contentColor = Color.White
@@ -151,10 +165,22 @@ fun ListParada(
                         navController,
                         id,
                         paradaViewModel,
+                        actividadViewModel,
+                        role = role,
+                        selected = selected,
+                        onSelectedChange = { selected = it },
                         paddingValues,
-                        function = {
+                        function = { it ->
                             paradaSeleccionada = it
-                            showDrawerDetalle = true
+                            if (it.UserMantemiento.isEmpty()) {
+                                showDrawerDetalle = true
+                            }else {
+                                if (actividades.none { it.paradaDocEntry == paradaSeleccionada?.DocEntry }){
+                                    showDrawerActivity = true
+                                } else {
+                                    showDrawerDetalle = true
+                                }
+                            }
                         }
                     )
                 },
@@ -175,9 +201,17 @@ fun ListParada(
         }
         Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 32.dp)) {
             DetalleParada(
+                id = id,
+                role = role,
                 parada = paradaSeleccionada,
                 paradaViewModel = paradaViewModel,
-                onClose = { showDrawerDetalle = false }
+                actividadViewModel = actividadViewModel,
+                actividades = actividades,
+                onClose = {
+                    showDrawerDetalle = false
+                    selected = it
+                          },
+                onOpenActivity = { showDrawerActivity = true }
             )
         }
     }
@@ -192,12 +226,31 @@ fun ListParada(
             Icon(Icons.Default.TurnLeft, contentDescription = "Cerrar")
         }
         Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 32.dp)) {
-            /*DetalleParada(
-                parada = paradaSeleccionada,
-                paradaViewModel = paradaViewModel,
-                onClose = { showDrawerHome = false }
-            )*/
+            // =========== CONTENIDO =============== //
             BodyParada(navController, paradaViewModel, id)
+        }
+    }
+
+    // ========================== FORMULARIO REGISTRO ACTIVIDAD ================================= //
+
+    BottomCurtainDrawer(
+        visible = showDrawerActivity,
+        onClose = { showDrawerActivity = false },
+        animationDuration = 300
+    ) {
+        IconButton(onClick = {showDrawerActivity = false}) {
+            Icon(Icons.Default.TurnLeft, contentDescription = "Cerrar")
+        }
+        Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 32.dp)) {
+            // ======= CONTENIDO ========== //
+            BodyActividad(
+                paradaSeleccionada,
+                navController,
+                paradaViewModel,
+                actividadViewModel,
+                id,
+                onClose = { showDrawerActivity = false },
+            )
         }
     }
 
@@ -210,20 +263,33 @@ fun BodyListParada(
     navController: NavController,
     id: String,
     paradaViewModel: ParadaViewModel,
+    actividadViewModel: ActividadViewModel,
+    role:String?, // listOf("produccion", "mantenimiento")
+    selected: String,
+    onSelectedChange: (String) -> Unit,
     paddingValues: PaddingValues,
     function: (Parada) -> Unit
 ) {
 
     var searchText by remember { mutableStateOf("") }
     val paradas by paradaViewModel.listParadas.collectAsState()
-    var selected by remember { mutableStateOf("Todos") }
-    val options = listOf("Todos", "Iniciado", "Finalizado")
+    val actividades by actividadViewModel.actividades.collectAsState()
+    //var selected by remember { mutableStateOf(if(role == "mantenimiento") "Iniciado" else "Todos" ) }
+    /*val options = listOf("Todos", "Iniciado", "Finalizado")
+    val optionsMantenimiento = listOf("Iniciado", "Actividades")*/
 
-    val listaFiltrada = remember(paradas.data, selected, searchText) {
+    val options = if (role == "mantenimiento") {
+        listOf("Iniciado", "Asignados")
+    } else {
+        listOf("Todos", "Iniciado", "Finalizado")
+    }
+
+
+    val listaFiltradaParadas = remember(paradas.data, selected, searchText) {
         paradas.data.filter { parada ->
             // Filtro por estado
             val estadoFilter = when(selected) {
-                "Iniciado" -> parada.FechaHoraFin.isNullOrBlank()
+                "Iniciado" -> parada.FechaHoraFin.isNullOrBlank() && parada.UserMantemiento.isEmpty()
                 "Finalizado" -> !parada.FechaHoraFin.isNullOrBlank()
                 else -> true
             }
@@ -236,6 +302,34 @@ fun BodyListParada(
             ).any { it.contains(searchText, ignoreCase = true) }
 
             estadoFilter && searchFilter
+        }
+    }
+    val listaFiltradaActividad = remember(paradas.data, searchText){
+        paradas.data.filter { parada ->
+            // Filtro por texto de búsqueda
+            val searchFilter = searchText.isEmpty() || listOf(
+                parada.Maquina,
+                parada.FechaHoraInicio,
+                parada.FechaHoraFin ?: ""
+            ).any { it.contains(searchText, ignoreCase = true) }
+
+            searchFilter
+        }
+
+    }
+    val listaFiltrada: List<ListItem> = remember(paradas.data, actividades, selected, searchText, role) {
+        if (role == "mantenimiento") {
+            when (selected) {
+                "Iniciado" -> listaFiltradaParadas
+                    .filter { parada -> parada.FechaHoraFin.isNullOrBlank() }
+                    .map { ListItem.ParadaItem(it) }
+                "Asignados" -> listaFiltradaActividad
+                    .filter { actividad -> actividad.UserMantemiento.isNotEmpty() }
+                    .map { ListItem.ParadaItem(it) }
+                else -> emptyList()
+            }
+        } else {
+            listaFiltradaParadas.map { ListItem.ParadaItem(it) }
         }
     }
 
@@ -277,10 +371,23 @@ fun BodyListParada(
         )
 
         Spacer(modifier = Modifier.height(8.dp))
+        /*if(role == "mantenimiento"){
+            FilterButtonsRow(
+                options = optionsMantenimiento,
+                selectedOption = selected,
+                onOptionSelected = { selected = it }
+            )
+        }else{
+            FilterButtonsRow(
+                options = options,
+                selectedOption = selected,
+                onOptionSelected = { selected = it }
+            )
+        }*/
         FilterButtonsRow(
             options = options,
             selectedOption = selected,
-            onOptionSelected = { selected = it }
+            onOptionSelected = { onSelectedChange(it) }
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -299,7 +406,7 @@ fun BodyListParada(
                 )
             }
         } else {
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+            /*LazyColumn(modifier = Modifier.fillMaxWidth()) {
                 items(listaFiltrada.asReversed()) { parada ->
                     TarjetaParada(
                         parada = parada,
@@ -308,6 +415,27 @@ fun BodyListParada(
                         id = id,
                         function = { function(parada) }
                     )
+                }
+            }*/
+            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                items(listaFiltrada.asReversed()) { item ->
+                    when (item) {
+                        is ListItem.ParadaItem -> TarjetaParada(
+                            parada = item.parada,
+                            paradaViewModel = paradaViewModel,
+                            navController = navController,
+                            id = id,
+                            function = { function(item.parada) }
+                        )
+                        is ListItem.ActividadItem -> TarjetaActividad(
+                            actividad = item.actividad,
+                            id = id,
+                            actividadViewModel = actividadViewModel,
+                            function = {
+                            /* función para actividad */
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -416,7 +544,7 @@ fun TarjetaParada(
                 )
                 Text(
                     text = "${parada.FechaHoraInicio.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} - ${
-                        parada.FechaHoraFin?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) ?: "En curso"
+                        parada.FechaHoraFin.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) ?: "En curso"
                     }",
                     fontSize = 12.sp,
                     color = Color(0xFF78909C)
@@ -482,4 +610,9 @@ fun TarjetaParada(
             else -> {}
         }
     }
+}
+
+sealed class ListItem {
+    data class ParadaItem(val parada: Parada) : ListItem()
+    data class ActividadItem(val actividad: Actividad) : ListItem()
 }

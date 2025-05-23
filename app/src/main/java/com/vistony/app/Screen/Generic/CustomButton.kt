@@ -1,38 +1,42 @@
 package com.vistony.app.Screen.Generic
 
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,10 +47,14 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 
 @Composable
 fun CustomSearchText(
@@ -116,6 +124,134 @@ fun CustomSearchText(
     }
 }
 
+@Composable
+fun ImagePickerRow(
+    images: List<Uri>, // o List<ImageUri> o List<String> según cómo manejes las imágenes
+    onAddClick: () -> Unit,
+    onRemoveImage: (Uri) -> Unit,
+    modifier: Modifier = Modifier,
+    itemSize: Dp = 64.dp,
+    cornerRadius: Dp = 12.dp,
+    selectedBackgroundColor: Color = Color(0xFFFC6A68),
+    unselectedBackgroundColor: Color = Color.Transparent,
+) {
+    Row(
+        modifier = modifier
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Botón para agregar imagen
+        Box(
+            modifier = Modifier
+                .size(itemSize)
+                .background(unselectedBackgroundColor, RoundedCornerShape(cornerRadius))
+                .border(1.dp, Color.LightGray, RoundedCornerShape(cornerRadius))
+                .clickable { onAddClick() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Agregar imagen",
+                tint = Color.LightGray,
+                modifier = Modifier.size(itemSize * 0.5f)
+            )
+        }
+
+        // Mostrar imágenes agregadas
+        images.forEach { uri ->
+            Box(
+                modifier = Modifier
+                    .size(itemSize)
+                    .clip(RoundedCornerShape(cornerRadius))
+                    .border(1.dp, Color.LightGray, RoundedCornerShape(cornerRadius))
+            ) {
+                AsyncImage(
+                    model = uri,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                // Botón para eliminar imagen
+                Box(
+                    modifier = Modifier
+                        .size(20.dp)
+                        //.offset(x = 10.dp, y = (-10).dp)
+                        //.background(Color(0x66000000), CircleShape)
+                        .background(Color(0x66606060), CircleShape)
+                        .align(Alignment.TopEnd)
+                        .clickable { onRemoveImage(uri) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Eliminar imagen",
+                        tint = Color.White,
+                        modifier = Modifier.size(12.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun IconTextButton(
+    icon: ImageVector,
+    text: String,
+    selected: Boolean = false,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    size: Dp,
+    cornerRadius: Dp,
+    selectedBackgroundColor: Color = Color(0xFFFC6A68),
+    unselectedBackgroundColor: Color = Color.Transparent,
+    selectedContentColor: Color = Color.Black,
+    unselectedContentColor: Color = Color.LightGray
+) {
+    val backgroundColor = if (selected) selectedBackgroundColor else unselectedBackgroundColor
+    val contentColor = if (selected) selectedContentColor else unselectedContentColor
+
+    Column(
+        modifier = modifier
+            .width(size)
+            .clickable(onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .size(size)
+                .background(color = backgroundColor, shape = RoundedCornerShape(cornerRadius))
+                .border(
+                    width = 1.dp,
+                    color = if (selected) selectedBackgroundColor else Color.LightGray,
+                    shape = RoundedCornerShape(cornerRadius)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = text,
+                tint = contentColor,
+                modifier = Modifier.size(size * 0.5f)
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = text,
+            color = contentColor,
+            style = MaterialTheme.typography.bodySmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+
 
 @Composable
 fun ThinOutlinedButton(
@@ -155,13 +291,16 @@ fun ThinOutlinedButton(
 fun FilterButtonsRow(
     options: List<String>,
     selectedOption: String,
-    onOptionSelected: (String) -> Unit
+    onOptionSelected: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(8.dp)
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
+            .fillMaxWidth()
             .horizontalScroll(rememberScrollState())
             .padding(horizontal = 8.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = horizontalArrangement
     ) {
         options.forEach { option ->
             ThinOutlinedButton(
@@ -173,16 +312,46 @@ fun FilterButtonsRow(
     }
 }
 
+@Composable
+fun FilterBoxsRow(
+    options: List<Pair<String, ImageVector>>,
+    selectedOption: String,
+    onOptionSelected: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    size: Dp = 64.dp,
+    cornerRadius: Dp = 12.dp,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(8.dp)
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = horizontalArrangement
+    ) {
+        options.forEach { (label, icon)  ->
+            IconTextButton(
+                icon = icon,
+                text = label,
+                size = size,
+                cornerRadius = cornerRadius,
+                selected = label == selectedOption,
+                onClick = { onOptionSelected(label) }
+            )
+        }
+    }
+}
+
 
 @Composable
 @Preview(showBackground = true)
 fun CustomButton2() {
 
     var selected by remember { mutableStateOf("Todos") }
-    val options = listOf("Todos", "Iniciado", "Finalizado", "Cerrado")
+    //val options = listOf("Todos", "Iniciado", "Finalizado", "Cerrado")
     var searchText by remember { mutableStateOf("") }
 
-    CustomSearchText(
+    /*CustomSearchText(
         text = searchText,
         onTextChange = { searchText = it },
         modifier = Modifier
@@ -190,6 +359,36 @@ fun CustomButton2() {
             .padding(horizontal = 12.dp),
         searchIcon = Icons.Default.Search,
         placeholderText = "Buscar..."
+    )*/
+    /*val options = listOf(
+        "Home" to Icons.Default.Home,
+        "Settings" to Icons.Default.Settings,
+        "Profile" to Icons.Default.Person
     )
+
+    var selectedOption by remember { mutableStateOf("Home") }
+
+    FilterBoxsRow(
+        options = options,
+        selectedOption = selectedOption,
+        onOptionSelected = { selectedOption = it },
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    )*/
+    //var images by remember { mutableStateOf(listOf<Uri>()) }
+    val images = remember { mutableStateListOf<Uri>() }
+
+    ImagePickerRow(
+        images = images,
+        onAddClick = {
+            // Aquí abres galería o cámara y agregas la imagen a la lista
+            // Por ejemplo, simular agregando una imagen dummy:
+            // images = images + someImageBitmap
+        },
+        onRemoveImage = { uri ->
+            images.remove(uri)
+        }
+    )
+
 
 }

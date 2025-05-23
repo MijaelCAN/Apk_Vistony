@@ -78,25 +78,6 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
                 _areas.value = areaResponseState(false, AreaResponse(500, emptyList()), "Error al obtener las áreas")
             }
 
-            // Obtener las paradas desde el repositorio
-            /*val response = paradaRepository.obtenerParadas()
-            if (response.statusCode == 200) {
-                _paradas.value =
-                    ParadaResponseState(state = true, paradaResponse = response, message = "OK")
-            } else {
-                val data = listOf(
-                    Parada(1, "Maquina 1", "10/10/2024", "10/10/2024", "10:12", ""),
-                    Parada(2, "Maquina 2", "12/08/2024", "12/08/2024", "12:09", ""),
-                    Parada(3, "Maquina 3", "03/10/2023", "03/10/2023", "22:34", ""),
-                    Parada(4, "Maquina 4", "22/05/2023", "22/05/2023", "09:47", ""),
-                )
-                _paradas.value = ParadaResponseState(
-                    state = false,
-                    paradaResponse = ParadaResponse(200, data),
-                    message = "Error al obtener las paradas"
-                )
-            }*/
-
             // Obtener las maquinas desde el repositorio
             try {
                 val responseMaqui = paradaRepository.getMaquinas()
