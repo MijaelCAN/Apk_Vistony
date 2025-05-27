@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
 import com.vistony.app.Entidad.Evaluacion
 import com.vistony.app.Entidad.EvaluacionResponse
 import com.vistony.app.Entidad.InspecionRequest
@@ -48,6 +49,7 @@ class InspectionViewModel @Inject constructor() : ViewModel() {
             _isLoading.value = EstadoInspeccion.Cargando
             try {
                 Log.e("PASO 2", "Entro al Try")
+                //Log.e("JSON EVAL", Gson().toJson(data))
                 val response = evalService.postEvaluacion(data)
 
                 if (response.isSuccessful) {

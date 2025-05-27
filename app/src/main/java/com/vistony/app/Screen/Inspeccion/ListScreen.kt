@@ -6,6 +6,10 @@ import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,14 +17,16 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -63,6 +69,7 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
@@ -72,21 +79,29 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.vistony.app.Entidad.Inspeccion
 import com.vistony.app.Screen.Generic.CustomSearchText
 import com.vistony.app.ViewModel.InspectionViewModel
 import com.vistony.app.Screen.Generic.Drawers.CustomDrawer
 import com.vistony.app.Screen.Generic.Drawers.BottomBar
 import com.vistony.app.Screen.Generic.Drawers.RightCurtainDrawer
+import com.vistony.app.Screen.Generic.Recursos.UnsplashImages
 import com.vistony.app.Screen.Generic.TopBar
 import com.vistony.app.ViewModel.LoginViewModel
 import com.vistony.app.ViewModel.OTViewModel
@@ -95,7 +110,18 @@ import com.vistony.app.ViewModel.SharedViewModel
 import com.vistony.app.ui.theme.theme.Dimensions
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
-import kotlin.math.absoluteValue
+
+val redVistony = Color(0xFFD6001C)
+val blueDarkVistony = Color(0xFF253746)
+val blueLightVistony = Color(0xFF0957c3)
+val greenVistony = Color(0xFF98BC3D)
+
+
+val backGroundLigth = Color(0XFFF7F7F7) // 0xFF5c6a83
+val textColorTitle = blueDarkVistony
+val textColorSubTitle = blueDarkVistony
+val contentColor = blueDarkVistony
+
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class, ExperimentalMaterialApi::class,
     ExperimentalMaterial3Api::class
@@ -127,6 +153,17 @@ fun ListScreen(
     var showDrawerHome by remember { mutableStateOf(false) }
     val pagerState = rememberPagerState(pageCount = {2})
 
+    val systemUiController = rememberSystemUiController()
+    val topBarColor = backGroundLigth
+
+    SideEffect {
+        systemUiController.setStatusBarColor(
+            color = topBarColor,
+            darkIcons = true
+        )
+    }
+
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = { CustomDrawer(navController = navController, id) }
@@ -140,8 +177,9 @@ fun ListScreen(
                 topBar = {
                     TopBar(
                         "",
-                        color = Color(0XFFF7F7F7),
-                        colorContent = Color.Black,
+                        //color = Color(0XFFF7F7F7),
+                        color = backGroundLigth,
+                        colorContent = contentColor,
                         navController = navController,
                         onMenuClick = { scope.launch { drawerState.open() } },
                         onBottomMenuClick = {
@@ -175,7 +213,7 @@ fun ListScreen(
                             showDrawerHome = true
                         },
                         colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = Color(0xFFFC6A68),
+                            containerColor = redVistony,
                             contentColor = Color.White
                         )
                     ){
@@ -183,7 +221,9 @@ fun ListScreen(
 
                     }
 
-                }
+                },
+                //containerColor = Color(0XFFF7F7F7)
+                containerColor = backGroundLigth
             )
         }
 
@@ -242,17 +282,34 @@ fun BodyList(
     var searchText by remember { mutableStateOf("") }
     val nuevalista = listState.listInspeccion.data.asReversed()
 
+    val listaFiltrada = remember(nuevalista, searchText) {
+        nuevalista.filter { _inspection ->
+
+            // Filtro por texto de búsqueda
+            val searchFilter = searchText.isEmpty() || listOf(
+                _inspection.OT,
+                _inspection.U_Usuario,
+                _inspection.U_Fecha ?: ""
+            ).any { it.contains(searchText, ignoreCase = true) }
+
+            searchFilter
+        }
+    }
+
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(paddingValues)
             .wrapContentSize()
-            .background(Color(0xFFf7f7f7))
+            //.background(Color(0xFFf7f7f7))
+            .background(backGroundLigth)
     ) {
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             modifier = Modifier.padding(horizontal = 16.dp),
             text = "Inspección de Pallets",
+            color = textColorTitle,
             fontSize = 30.sp,
             fontWeight = FontWeight.Bold
         )
@@ -260,6 +317,7 @@ fun BodyList(
         Text(
             modifier = Modifier.padding(horizontal = 16.dp),
             text = "Evalua tus procedimientos en Producción",
+            color = textColorSubTitle,
             fontSize = 12.sp
         )
 
@@ -279,12 +337,14 @@ fun BodyList(
         Spacer(modifier = Modifier.height(8.dp))
 
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
-            items(nuevalista) { item ->
+            itemsIndexed(listaFiltrada) { index,item ->
+                val imageUrl = UnsplashImages.urls[index % UnsplashImages.urls.size]
                 TarjetaInspeccion(
                     inspection = item,
                     inspectionViewModel = inspViewModel,
                     navController = navController,
                     id = id,
+                    imageUrl = imageUrl,
                     function = { function(item) }
                 )
             }
@@ -306,25 +366,9 @@ fun TarjetaInspeccion(
     inspectionViewModel: InspectionViewModel,
     navController: NavController,
     id: String,
+    imageUrl: String,
     function: (Inspeccion) -> Unit
 ) {
-    var showDialog by remember { mutableStateOf(false) }
-    val estado by inspectionViewModel.isLoading.collectAsState()
-    //val paradaState by paradaViewModel.paradas.collectAsState()
-    val context = LocalContext.current
-
-    val backgroundColor = remember(inspection.OT) {
-        val colors = listOf(
-            Color(0xFFCACACA),
-            Color(0xFFC6C6C6),
-            Color(0xFFB1B1B1),
-            Color(0xFFAEAEAE),
-            Color(0xFFA1A1A1)
-
-        )
-        colors[inspection.OT.hashCode().absoluteValue % colors.size]
-    }
-
 
     Card(
         modifier = Modifier
@@ -340,69 +384,59 @@ fun TarjetaInspeccion(
                 .fillMaxWidth()
                 .fillMaxHeight()
                 .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
         ) {
             // Columna imagen / círculo
             Box(
                 modifier = Modifier
-                    .weight(0.7f)
+                    //.weight(0.7f)
                     .size(75.dp)
                     .clip(CircleShape)
-                    .background(backgroundColor)
                     .clickable {},
                 contentAlignment = Alignment.Center
             ) {
-                // Aquí puedes cargar imagen si tienes url o recurso
-                // Por ejemplo con Coil:
-                /*
-                val painter = rememberAsyncImagePainter(model = parada.imagenUrl)
-                Image(
-                    painter = painter,
+
+                AsyncImage(
+                    model = imageUrl,
                     contentDescription = "Imagen de la máquina",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
-                */
-                // Por ahora dejamos solo el círculo con color
-                val cadena = inspection.U_Usuario.split(" ")[1]
-
-                Text(
-                    text = cadena.take(1).uppercase(),
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp
-                )
             }
 
             Spacer(modifier = Modifier.width(16.dp))
+
+
             Column(
-                modifier = Modifier
-                    .weight(3f),
-                verticalArrangement = Arrangement.Center
+                modifier = Modifier.fillMaxHeight().weight(3f),
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = inspection.OT,
-                    fontSize = 12.sp,
-                    lineHeight = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1B2733)
-                )
-                Text(
-                    text = inspection.U_Usuario,
-                    fontSize = 12.sp,
-                    lineHeight = 14.sp,
-                    color = Color(0xFF455A64),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "${inspection.U_Fecha.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} - ${
-                        inspection.U_Turno
-                    }",
-                    fontSize = 12.sp,
-                    lineHeight = 14.sp,
-                    color = Color(0xFF78909C)
-                )
+                Column(
+                    modifier = Modifier.fillMaxHeight().padding(bottom = 20.dp),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = inspection.OT,
+                        fontSize = 12.sp,
+                        lineHeight = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = blueDarkVistony
+                    )
+                    Text(
+                        text = inspection.U_Usuario,
+                        fontSize = 12.sp,
+                        lineHeight = 14.sp,
+                        color = blueDarkVistony,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "${inspection.U_Fecha.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} - ${inspection.U_Turno}",
+                        fontSize = 12.sp,
+                        lineHeight = 14.sp,
+                        color = Color(0xFF78909C)
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Divider(
@@ -411,59 +445,207 @@ fun TarjetaInspeccion(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+            Icon(
+                imageVector = if (inspection.U_Conformidad == "Y") Icons.Filled.CheckCircle else Icons.Filled.Error,
+                contentDescription = null,
+                tint = if (inspection.U_Conformidad == "Y") greenVistony else redVistony,
+                modifier = Modifier.size(22.dp).weight(1f)
+            )
+
         }
     }
+}
 
-    /*if (showDialog) {
-        when (estado) {
-            EstadoInspeccion.Cargando -> {
-                CustomAlertDialog(
-                    showDialog = showDialog,
-                    title = "Cargando",
-                    message = "Espere por favor...",
-                    confirmButtonText = "",
-                    dismissButtonText = null,
-                    onDismiss = { showDialog = false },
-                    dialogType = DialogType.LOADING,
-                )
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun TarjetaInspeccion2(
+    inspection: Inspeccion,
+    inspectionViewModel: InspectionViewModel,
+    navController: NavController,
+    id: String,
+    imageUrl: String,
+    function: (Inspeccion) -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable { function(inspection) }
+    ) {
+        // Tarjeta principal con diseño diagonal
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp)
+        ) {
+            val width = size.width
+            val height = size.height
+
+            // Fondo blanco (ocupa mayor proporción)
+            drawRect(
+                color = Color.White,
+                size = Size(width, height)
+            )
+
+            // Sección roja diagonal (de abajo hacia arriba)
+            val path = Path().apply {
+                moveTo(width * 0.1f, 0f) // Esquina inferior izquierda
+                lineTo(width * 0.5f, 0f) // Punto superior (30% del ancho)
+                lineTo(0f, 0f) // Esquina superior izquierda
+                close()
             }
 
-            EstadoInspeccion.Exitoso -> {
-                CustomAlertDialog(
-                    showDialog = showDialog,
-                    title = "Éxito",
-                    message = paradaState.paradaResponse.data,
-                    confirmButtonText = "OK",
-                    dismissButtonText = null,
-                    onConfirm = { paradaViewModel.actualizarEstadoParada(EstadoParada.Idle) },
-                    onDismiss = {
-                        showDialog = false
-                        paradaViewModel.actualizarEstadoParada(EstadoParada.Idle)
-                        navController.navigate("listaParada/$id")
-                    },
-                    dialogType = DialogType.SUCCESS,
-                )
-            }
+            drawPath(
+                path = path,
+                color = Color(0xFFD32F2F) // redVistony
+            )
 
-            is EstadoInspeccion.Error -> {
-                CustomAlertDialog(
-                    showDialog = showDialog,
-                    title = "Error",
-                    message = (estado as EstadoParada.Error).mensaje,
-                    confirmButtonText = "OK",
-                    dismissButtonText = null,
-                    onConfirm = { paradaViewModel.actualizarEstadoParada(EstadoParada.Idle) },
-                    onDismiss = {
-                        showDialog = false
-                        paradaViewModel.actualizarEstadoParada(EstadoParada.Idle)
-                    },
-                    dialogType = DialogType.ERROR,
-                )
-            }
-
-            else -> {}
+            // Borde de la tarjeta
+            /*drawRect(
+                color = Color(0xFFBDBDBD),
+                size = Size(width, height),
+                style = Stroke(width = 2.dp.toPx())
+            )*/
         }
-    }*/
+
+        // Contenido de la tarjeta
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Sección roja con imagen circular
+            Box(
+                modifier = Modifier
+                    .width(80.dp)
+                    .fillMaxHeight(),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(CircleShape)
+                        .background(Color.White)
+                        .padding(2.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = "Imagen de la máquina",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Sección blanca con contenido
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Información principal
+                Column {
+                    Text(
+                        text = inspection.OT,
+                        fontSize = 14.sp,
+                        lineHeight = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1976D2) // redVistony
+                    )
+                    Text(
+                        text = inspection.U_Usuario,
+                        fontSize = 12.sp,
+                        color = Color(0xFF1976D2), // blueLightVistony
+                        maxLines = 1,
+                        lineHeight = 14.sp,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "${inspection.U_Fecha.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} - ${inspection.U_Turno}",
+                        fontSize = 11.sp,
+                        lineHeight = 14.sp,
+                        color = Color(0xFF78909C)
+                    )
+                }
+
+                // Línea divisoria y estado
+               /* Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Divider(
+                        color = Color(0xFFD32F2F),
+                        thickness = 1.dp,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Icon(
+                        imageVector = if (inspection.U_Conformidad == "Y") Icons.Filled.CheckCircle else Icons.Filled.Error,
+                        contentDescription = null,
+                        tint = if (inspection.U_Conformidad == "Y") Color(0xFF4CAF50) else Color(0xFFD32F2F), // greenVistony : redVistony
+                        modifier = Modifier.size(20.dp)
+                    )
+                }*/
+            }
+        }
+
+        // Clavos en las esquinas
+        NailCorner(
+            modifier = Modifier.align(Alignment.TopStart),
+            offsetX = 8.dp,
+            offsetY = 8.dp
+        )
+        NailCorner(
+            modifier = Modifier.align(Alignment.TopEnd),
+            offsetX = (-8).dp,
+            offsetY = 8.dp
+        )
+        NailCorner(
+            modifier = Modifier.align(Alignment.BottomStart),
+            offsetX = 8.dp,
+            offsetY = (-8).dp
+        )
+        NailCorner(
+            modifier = Modifier.align(Alignment.BottomEnd),
+            offsetX = (-8).dp,
+            offsetY = (-8).dp
+        )
+    }
+}
+
+@Composable
+fun NailCorner(
+    modifier: Modifier = Modifier,
+    offsetX: Dp = 0.dp,
+    offsetY: Dp = 0.dp
+) {
+    Box(
+        modifier = modifier
+            .offset(x = offsetX, y = offsetY)
+            .size(8.dp)
+            .clip(CircleShape)
+            .background(Color(0xFF424242))
+    ) {
+        // Efecto de brillo del clavo
+        Box(
+            modifier = Modifier
+                .size(3.dp)
+                .offset(x = 1.dp, y = 1.dp)
+                .clip(CircleShape)
+                .background(Color(0xFF757575))
+        )
+    }
 }
 
 @Composable
@@ -583,6 +765,22 @@ fun DetalleInspeccion(
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
+            }
+        }
+
+        if (inspection.U_Conformidad_Comment.isNotBlank()) {
+            //Spacer(Modifier.height(8.dp))
+            Surface(
+                modifier = Modifier.padding(16.dp),
+                color = MaterialTheme.colorScheme.errorContainer,
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = inspection.U_Conformidad_Comment,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
             }
         }
 

@@ -74,6 +74,7 @@ import com.vistony.app.Screen.Generic.FilterButtonsRow
 import com.vistony.app.Screen.Generic.Drawers.CustomDrawer
 import com.vistony.app.Screen.Generic.Drawers.RightCurtainDrawer
 import com.vistony.app.Screen.Generic.TopBar
+import com.vistony.app.Screen.Inspeccion.backGroundLigth
 import com.vistony.app.Screen.ParadaMantenimiento.BodyActividad
 import com.vistony.app.Screen.ParadaMantenimiento.TarjetaActividad
 import com.vistony.app.ViewModel.ActividadViewModel
@@ -103,7 +104,9 @@ fun ListParada(
     val bottomSheetState =
         rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
     val systemUiController = rememberSystemUiController()
-    val topBarColor = Color(0xFFF7F7F7)
+    //val topBarColor = Color(0xFFF7F7F7)
+    val topBarColor = backGroundLigth
+
     var paradaSeleccionada by remember { mutableStateOf<Parada?>(null) }
     var showDrawerDetalle by remember { mutableStateOf(false) }
     var showDrawerHome by remember { mutableStateOf(false) }
@@ -493,7 +496,7 @@ fun TarjetaParada(
             // Columna imagen / círculo
             Box(
                 modifier = Modifier
-                    .weight(0.7f)
+                    //.weight(0.7f)
                     .size(75.dp)
                     .clip(CircleShape)
                     .background(backgroundColor)

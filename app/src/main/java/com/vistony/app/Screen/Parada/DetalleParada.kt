@@ -102,7 +102,7 @@ fun DetalleParada(
 
     var showDialog by remember { mutableStateOf(false) }
     val estado by paradaViewModel.estadoParada.collectAsState()
-    var statusButton by remember { mutableStateOf(false) }
+    var statusButton by remember { mutableStateOf(true) }
 
 
     var selectedDateIni = paradaViewModel.fechaIni.value.toLocalDate().format(DateTimeFormatter.ofPattern("yyyyMMdd"))

@@ -197,7 +197,8 @@ fun Login2(
                     .clip(RoundedCornerShape(0.dp)),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFC6A68),
+                    //containerColor = Color(0xFFFC6A68),
+                    containerColor = Color(0xFFD6001C),
                     contentColor = Color.White
                 )
             ) {

@@ -45,8 +45,8 @@ class LoginViewModel @Inject constructor() : ViewModel() {
                         )
                         _isLoading.value = EstadoLogin.Exitoso
                         //_userRole.value = body.userRole
-                        //_userRole.value = "mantenimiento"
-                        _userRole.value = "operador"
+                        _userRole.value = "mantenimiento"
+                        //_userRole.value = "operador"
                         Log.e("rurta", "entro aui")
                     } else {
                         _loginstate = ResponseState(
