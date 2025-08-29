@@ -15,9 +15,9 @@ fun formatoFecha(fechaHora: LocalDateTime): LocalDateTime{
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-fun formatoServidor(fechaHora: LocalDateTime): String {
+fun formatoServidor(fechaHora: LocalDateTime?): String {
     val formatter = DateTimeFormatter.ofPattern("yyyyMMdd")
-    return fechaHora.format(formatter)
+    return fechaHora?.format(formatter) ?: ""
 }
 @RequiresApi(Build.VERSION_CODES.O)
 fun formatoUsuario(fechaHora: LocalDateTime): String {

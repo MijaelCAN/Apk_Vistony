@@ -96,6 +96,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.vistony.app.Entidad.Inspeccion
+import com.vistony.app.Entidad.UserState
 import com.vistony.app.Screen.Generic.CustomSearchText
 import com.vistony.app.ViewModel.InspectionViewModel
 import com.vistony.app.Screen.Generic.Drawers.CustomDrawer
@@ -134,7 +135,8 @@ fun ListScreen(
     inspViewModel: InspectionViewModel = hiltViewModel(),
     viewModel: OperarioViewModel = hiltViewModel(),
     otViewModel: OTViewModel = hiltViewModel(),
-    id: String = "prueba"
+    id: String = "prueba",
+    userState: UserState
 ) {
     val loginViewModel = hiltViewModel<LoginViewModel>(LocalContext.current as ComponentActivity)
     val role by loginViewModel.userRole.collectAsState()
@@ -166,7 +168,7 @@ fun ListScreen(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        drawerContent = { CustomDrawer(navController = navController, id) }
+        drawerContent = { CustomDrawer(navController = navController, id, userState = userState) }
     ) {
         ModalBottomSheetLayout(
             modifier = Modifier.fillMaxWidth(),

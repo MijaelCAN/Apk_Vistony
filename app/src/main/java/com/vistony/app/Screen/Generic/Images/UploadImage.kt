@@ -1,9 +1,12 @@
 package com.vistony.app.Screen.Generic.Images
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.MediaStore
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -12,9 +15,87 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.vistony.app.Screen.Generic.ImagePickerRow
 import java.io.File
+
+@Composable
+fun ImagePickerExample(images: SnapshotStateList<Uri>) {
+    val context = LocalContext.current
+
+
+    val photoFile = remember {
+        File(context.cacheDir, "temp_image_${System.currentTimeMillis()}.jpg")
+    }
+    val photoUri = remember {
+        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", photoFile)
+    }
+
+    val galleryIntent = remember {
+        Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
+            type = "image/*"
+        }
+    }
+    val cameraIntent = remember {
+        Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+            putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+    }
+
+    val chooserIntent = remember {
+        Intent.createChooser(galleryIntent, "Selecciona imagen o cámara").apply {
+            putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(cameraIntent))
+        }
+    }
+
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val data = result.data
+            val selectedImageUri = data?.data ?: photoUri
+            selectedImageUri?.let { images.add(it) }
+        }
+    }
+
+    // Launcher para solicitar permisos de cámara
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // Permiso concedido, lanzar el chooser
+            launcher.launch(chooserIntent)
+        } else {
+            // Permiso denegado, mostrar mensaje
+            Toast.makeText(context, "Permiso de cámara denegado", Toast.LENGTH_SHORT).show()
+        }
+    }
+    // Función para verificar y solicitar permisos
+    val handleImagePickerClick = {
+        when {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                // Permiso ya concedido, lanzar chooser
+                launcher.launch(chooserIntent)
+            }
+            else -> {
+                // Solicitar permiso
+                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+            }
+        }
+    }
+
+    Column {
+        ImagePickerRow(
+            images = images,
+            itemSize = 90.dp,
+            onAddClick = { handleImagePickerClick() },
+            onRemoveImage = { uri -> images.remove(uri) }
+        )
+    }
+}
 
 /*
 @Composable
@@ -76,47 +157,3 @@ fun ImagePickerExample() {
 
 
  */
-@Composable
-fun ImagePickerExample(images: SnapshotStateList<Uri>) {
-    val context = LocalContext.current
-
-    val photoFile = remember {
-        File(context.cacheDir, "temp_image_${System.currentTimeMillis()}.jpg")
-    }
-    val photoUri = remember {
-        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", photoFile)
-    }
-
-    val galleryIntent = remember {
-        Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
-            type = "image/*"
-        }
-    }
-    val cameraIntent = remember {
-        Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
-            putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
-        }
-    }
-    val chooserIntent = remember {
-        Intent.createChooser(galleryIntent, "Selecciona imagen o cámara").apply {
-            putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(cameraIntent))
-        }
-    }
-
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val data = result.data
-            val selectedImageUri = data?.data ?: photoUri
-            selectedImageUri?.let { images.add(it) }
-        }
-    }
-
-    Column {
-        ImagePickerRow(
-            images = images,
-            itemSize = 90.dp,
-            onAddClick = { launcher.launch(chooserIntent) },
-            onRemoveImage = { uri -> images.remove(uri) }
-        )
-    }
-}

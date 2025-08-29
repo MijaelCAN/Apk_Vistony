@@ -1,6 +1,7 @@
 package com.vistony.app.Screen
 
 import android.app.Activity
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -38,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
@@ -46,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.vistony.app.BuildConfig
+import com.vistony.app.Entidad.UserState
 import com.vistony.app.R
 import com.vistony.app.Screen.Generic.CustomAlertDialog
 import com.vistony.app.Screen.Generic.DialogType
@@ -57,7 +62,8 @@ import com.vistony.app.ui.theme.theme.Dimensions
 @Composable
 fun Login2(
     navController: NavHostController,
-    viewModel: LoginViewModel = hiltViewModel()
+    viewModel: LoginViewModel = hiltViewModel(),
+    userState: UserState
 ) {
     var usuario by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
@@ -80,14 +86,48 @@ fun Login2(
     var showDialog by remember { mutableStateOf(false) }
     val isLoading by viewModel.isLoading.collectAsState()
 
+    val userData by viewModel.userData.collectAsState()
+
     LaunchedEffect(usuario, pass) {
         stateButton = usuario.isNotEmpty() && pass.isNotEmpty()
     }
-    LaunchedEffect(loginState) {
+    /*LaunchedEffect(loginState) {
         if (loginState.state) {
             navController.navigate("listaInsp/$usuario")
         } else {
             errorMessage = loginState.message ?: ""
+        }
+    }*/
+    // Efecto para redireccionar según el rol
+    LaunchedEffect(userData) {
+        Log.d("Login2", "userState: $userState")
+        userData?.let { user ->
+            when (user.role.lowercase()) {
+                "admin", "supervisor" -> {
+                    // Redireccionar a dashboard administrativo
+                    navController.navigate("dashboardAdmin/${user.id}") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
+                "mantenimiento" -> {
+                    // Redireccionar a lista de inspecciones
+                    navController.navigate("paradaMantenimiento") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
+                "operador" -> {
+                    // Redireccionar a lista de paradas
+                    navController.navigate("listaParada/${user.id}") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
+                else -> {
+                    // Rol no reconocido, redireccionar por defecto
+                    navController.navigate("listaInsp/${user.id}") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
+            }
         }
     }
 
@@ -144,7 +184,8 @@ fun Login2(
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                     cursorColor = Color.Gray
-                )
+                ),
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
             )
             Spacer(modifier = Modifier.height(padding_res/2))
             TextField(
@@ -182,7 +223,14 @@ fun Login2(
                         )
                     }
                 },
-                visualTransformation = if (passVisible) VisualTransformation.None else PasswordVisualTransformation()
+                visualTransformation = if (passVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        viewModel.validar(usuario,pass)
+                        showDialog = true
+                    }
+                )
             )
             Spacer(modifier = Modifier.height(padding_res))
             Button(
@@ -202,7 +250,7 @@ fun Login2(
                     contentColor = Color.White
                 )
             ) {
-                Text(text = "Sign in", fontSize = bodyFontSize.sp )
+                Text(text = "Iniciar Sesion", fontSize = bodyFontSize.sp )
             }
             Spacer(modifier = Modifier.height(padding_res))
             Text(text = "v${BuildConfig.VERSION_NAME}", color = Color.Gray, fontSize = bodyFontSize.sp)

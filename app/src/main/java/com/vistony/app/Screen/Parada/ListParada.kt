@@ -65,6 +65,7 @@ import androidx.navigation.NavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.vistony.app.Entidad.Actividad
 import com.vistony.app.Entidad.Parada
+import com.vistony.app.Entidad.UserState
 import com.vistony.app.Screen.Generic.CustomAlertDialog
 import com.vistony.app.Screen.Generic.CustomSearchText
 import com.vistony.app.Screen.Generic.DialogType
@@ -75,7 +76,6 @@ import com.vistony.app.Screen.Generic.Drawers.CustomDrawer
 import com.vistony.app.Screen.Generic.Drawers.RightCurtainDrawer
 import com.vistony.app.Screen.Generic.TopBar
 import com.vistony.app.Screen.Inspeccion.backGroundLigth
-import com.vistony.app.Screen.ParadaMantenimiento.BodyActividad
 import com.vistony.app.Screen.ParadaMantenimiento.TarjetaActividad
 import com.vistony.app.ViewModel.ActividadViewModel
 import com.vistony.app.ViewModel.EstadoParada
@@ -92,7 +92,8 @@ fun ListParada(
     navController: NavController,
     paradaViewModel: ParadaViewModel = hiltViewModel(),
     actividadViewModel: ActividadViewModel = hiltViewModel(),
-    id: String
+    id: String,
+    userState: UserState
 ) {
     val loginViewModel = hiltViewModel<LoginViewModel>(LocalContext.current as ComponentActivity)
 
@@ -124,7 +125,7 @@ fun ListParada(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        drawerContent = { CustomDrawer(navController = navController, id = id) }
+        drawerContent = { CustomDrawer(navController = navController, id = id, userState = userState) }
     ) {
         ModalBottomSheetLayout(
             modifier = Modifier.fillMaxWidth(),
@@ -151,16 +152,18 @@ fun ListParada(
                     )
                 },
                 floatingActionButton = {
-                    IconButton(
-                        modifier = Modifier.size(60.dp),
-                        onClick = { showDrawerHome = true },
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = Color(0xFFFC6A68),
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Icon(Icons.Filled.Add, contentDescription = "")
+                    if(role == "operador"){
+                        IconButton(
+                            modifier = Modifier.size(60.dp),
+                            onClick = { showDrawerHome = true },
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = Color(0xFFFC6A68),
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Icon(Icons.Filled.Add, contentDescription = "")
 
+                        }
                     }
                 },
                 content = { paddingValues ->
@@ -246,14 +249,14 @@ fun ListParada(
         }
         Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 32.dp)) {
             // ======= CONTENIDO ========== //
-            BodyActividad(
-                paradaSeleccionada,
+            /*BodyActividad(
+                //paradaSeleccionada,
                 navController,
                 paradaViewModel,
                 actividadViewModel,
                 id,
                 onClose = { showDrawerActivity = false },
-            )
+            )*/
         }
     }
 

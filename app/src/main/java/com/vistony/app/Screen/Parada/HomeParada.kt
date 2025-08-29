@@ -67,6 +67,7 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
     var maquina = remember { mutableStateOf("") }
     var area = remember { mutableStateOf("") }
     var motivoParada = remember { mutableStateOf("") }
+    var ordenMezcla by remember { mutableStateOf("") }
     var comentarios by remember { mutableStateOf("") }
 
     val expandedMaquina = remember { mutableStateOf(false) }
@@ -126,45 +127,7 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
             expanded = expandedArea.value,
             onExpandedChange = { expandedArea.value = it }
         )
-        /*ExposedDropdownMenuBox(
-            expanded = expandedArea.value,
-            onExpandedChange = { expandedArea.value = !expandedArea.value }) {
-            CustomOutlinedTextField(
-                modifier = Modifier.menuAnchor(),
-                value = area.value,
-                onValueChange = {},
-                label = "Área",
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedArea.value) },
-                readOnly = true
-            )
-            // suponiendo pase la lista completa y con un campo de area se filtraria las maquinas segun el area
-            val listFiltAreas = areaState.areaResponse.data.filter { it.Name == area.value }
-            val listAreas = areaState.areaResponse.data.map { Area(it.Code, it.Name) }
-            if (listAreas.any { it.Name == "Producción" }) {
-                area.value = "Producción"
-                areaId = listAreas.first { it.Name == "Producción" }.Code
-                paradaViewModel.obtenerMotivos(areaId.toInt())
-            }
 
-            ExposedDropdownMenu(
-                modifier = Modifier
-                    .background(Color.White)
-                    .clip(RoundedCornerShape(8.dp)),
-                expanded = expandedArea.value,
-                onDismissRequest = { expandedArea.value = false }) {
-                listAreas.map { option ->
-                    DropdownMenuItem(
-                        text = { Text(option.Name, color = Color.Black) },
-                        onClick = {
-                            area.value = option.Name
-                            areaId = option.Code
-                            //paradaViewModel.obtenerMotivos(areaId.toInt())
-                            expandedArea.value = false
-                        }
-                    )
-                }
-            }
-        }*/
         Spacer(Modifier.height(8.dp))
         //----------- FILA 3 -----------
         GenericDropdownMenu(
@@ -172,47 +135,15 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
             options = listMaquinas,
             selectedValue = maquina.value,
             onValueChange = { maquina.value = it },
-            onCodeChange = { maquinaId = it },
+            onCodeChange = { maquinaId = it
+                paradaViewModel.obtenerMotivos(areaId.toInt())
+                           },
             expanded = expandedMaquina.value,
             onExpandedChange = { expandedMaquina.value = it }
         )
 
-        /*ExposedDropdownMenuBox(
-            expanded = expandedMaquina.value,
-            onExpandedChange = { expandedMaquina.value = !expandedMaquina.value }) {
-            CustomOutlinedTextField(
-                modifier = Modifier.menuAnchor(),
-                value = maquina.value,
-                onValueChange = {},
-                label = "Máquina",
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedMaquina.value) },
-                readOnly = true
-            )
-            //val options2 = operarioState.operarioResponse?.data?.map { it.Nonbre } ?: emptyList()
-            val listFiltMaqu =
-                maquinaState.maquinaResponse.data.filter { it.Name == maquina.value }
-            val listMaquinas =
-                maquinaState.maquinaResponse.data.map { Maquina(it.Code, it.Name) }
-            val options = listOf("Maquina 1", "Maquina 2", "Maquina 3")
 
-            ExposedDropdownMenu(
-                modifier = Modifier
-                    .background(Color.White)
-                    .clip(RoundedCornerShape(8.dp)),
-                expanded = expandedMaquina.value,
-                onDismissRequest = { expandedMaquina.value = false }) {
-                listMaquinas.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(option.Name, color = Color.Black) },
-                        onClick = {
-                            maquina.value = option.Name
-                            maquinaId = option.Code
-                            expandedMaquina.value = false
-                        }
-                    )
-                }
-            }
-        }*/
+
         Spacer(Modifier.height(8.dp))
         //----------- FILA 4 -----------
         GenericDropdownMenu(
@@ -220,46 +151,24 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
             options = listMotivos,
             selectedValue = motivoParada.value,
             onValueChange = { motivoParada.value = it },
-            onCodeChange = { motivoId = it },
+            onCodeChange = {
+                motivoId = it
+                 },
             expanded = expandedParada.value,
             onExpandedChange = { expandedParada.value = it }
         )
 
-        /*ExposedDropdownMenuBox(
-            expanded = expandedParada.value,
-            onExpandedChange = { expandedParada.value = !expandedParada.value }) {
-            CustomOutlinedTextField(
-                modifier = Modifier.menuAnchor(),
-                value = motivoParada.value,
-                onValueChange = {},
-                label = "Motivo Parada",
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedParada.value) },
-                readOnly = true
-            )
-            //val options2 = operarioState.operarioResponse?.data?.map { it.Nonbre } ?: emptyList()
-            val listFiltMotiv = motivoState.motivoResponse.data.filter { it.Name == motivoParada.value }
-            val listMotivos = motivoState.motivoResponse.data.map { Motivo(it.Code, it.Name) }
-
-            ExposedDropdownMenu(
-                modifier = Modifier
-                    .background(Color.White)
-                    .clip(RoundedCornerShape(8.dp)),
-                expanded = expandedParada.value,
-                onDismissRequest = { expandedParada.value = false }) {
-                listMotivos.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(option.Name, color = Color.Black) },
-                        onClick = {
-                            motivoParada.value = option.Name
-                            motivoId = option.Code
-                            expandedParada.value = false
-                        }
-                    )
-                }
-            }
-        }*/
         Spacer(Modifier.height(8.dp))
         //----------- FILA 5 -----------
+        CustomOutlinedTextField(
+            value = ordenMezcla,
+            onValueChange = { ordenMezcla = it },
+            label = "Orden de Mezcla",
+            readOnly = false,
+        )
+
+        Spacer(Modifier.height(8.dp))
+        //----------- FILA 6 -----------
         CustomOutlinedTextField(
             value = comentarios,
             onValueChange = { comentarios = it },
@@ -273,6 +182,7 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
         BotonParada(
             maquinaId,
             areaId,
+            ordenMezcla,
             comentarios,
             navController,
             id,
@@ -292,6 +202,7 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
 fun BotonParada(
     maquinaId: String,
     areaId: String,
+    ordenMezcla: String,
     comentarios: String,
     navController: NavController,
     id: String,
@@ -315,6 +226,7 @@ fun BotonParada(
                 ParadaRequest(
                     formatoServidor(newFecha),
                     maquinaId,
+                    ordenMezcla,
                     areaId,
                     comentarios,
                     "Y",

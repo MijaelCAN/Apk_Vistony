@@ -70,6 +70,7 @@ import com.vistony.app.Entidad.Parada
 import com.vistony.app.R
 import com.vistony.app.Screen.Generic.CustomAlertDialog
 import com.vistony.app.Screen.Generic.DialogType
+import com.vistony.app.Screen.Generic.GenericDropdownMenu
 import com.vistony.app.Screen.ParadaMantenimiento.TarjetaActividad
 import com.vistony.app.ViewModel.ActividadViewModel
 import com.vistony.app.ViewModel.EstadoParada
@@ -105,8 +106,22 @@ fun DetalleParada(
     var statusButton by remember { mutableStateOf(true) }
 
 
-    var selectedDateIni = paradaViewModel.fechaIni.value.toLocalDate().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
-    var selectedDateFin = paradaViewModel.fechaFin.value.toLocalDate().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+    var selectedDateIni = paradaViewModel.fechaIni.value?.toLocalDate()?.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+    var selectedDateFin = paradaViewModel.fechaFin.value?.toLocalDate()?.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+
+    var tecnico by remember { mutableStateOf(parada?.UserMantemiento ?: "") }
+    val expandedTecnico = remember { mutableStateOf(false) }
+    val listTecnicos = listOf(
+        "1" to "Junior A.",
+        "2" to "Jhosep B.",
+        "3" to "Victor L.",
+        "4" to "Hercules H.",
+        "5" to "Julio C.",
+        "6" to "Ruben V.",
+        "7" to "Jose M.",
+        "8" to "Wilmer U.",
+        "9" to "Jesus A.",
+    )
 
 
     Column(
@@ -217,7 +232,7 @@ fun DetalleParada(
         if (role == "mantenimiento") {
 
             val actividadesPares = listaFiltrada.chunked(2) // Divide la lista en grupos de 2
-            statusButton = listaFiltrada.all { it.statusActividad }
+            statusButton = listaFiltrada.all { it.statusActividad } && tecnico.isNotEmpty()
 
             if(actividadesPares.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
@@ -304,18 +319,33 @@ fun DetalleParada(
                     }
                 }
             }
+            Spacer(modifier = Modifier.weight(1f))
+
+            if(actividadesPares.isEmpty()){
+                GenericDropdownMenu(
+                    modifier = Modifier.padding(horizontal = padding_res),
+                    label = "Técnico mantenimiento",
+                    options = listTecnicos,
+                    selectedValue = tecnico,
+                    onValueChange = { tecnico = it },
+                    onCodeChange = { },
+                    expanded = expandedTecnico.value,
+                    onExpandedChange = { expandedTecnico.value = it }
+                )
+                Spacer(Modifier.height(8.dp))
+            }
         }
 
 
-        Spacer(modifier = Modifier.weight(1f))
+        if(role == "operador") Spacer(modifier = Modifier.weight(1f))
 
-        if(parada?.FechaHoraFin.isNullOrEmpty()){
+        if(parada?.FechaHoraFin.isNullOrEmpty() && listaFiltrada.isEmpty()){
             Button(
                 enabled = statusButton ,
                 onClick = {
                     if(role == "mantenimiento") {
                         if(listaFiltrada.isEmpty()){
-                            parada.UserMantemiento = "Carlos Andres"
+                            parada.UserMantemiento = tecnico
                             onClose("Asignados")
                         }else{
                             // AQUI DEBE LLAMAR A LA API DE CERRAR ACTIVIDAD, ASIMISMO CREAR UN PDF EXPORTABLE

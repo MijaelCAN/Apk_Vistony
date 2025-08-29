@@ -1,5 +1,6 @@
 package com.vistony.app.Screen.Generic
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenuItem
@@ -16,6 +17,7 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GenericDropdownMenu(
+    modifier: Modifier = Modifier,
     label: String,
     options: List<Pair<String, String>>, // List<Pair<Code, Name>>
     selectedValue: String,
@@ -29,7 +31,7 @@ fun GenericDropdownMenu(
         onExpandedChange = onExpandedChange
     ) {
         CustomOutlinedTextField(
-            modifier = Modifier.menuAnchor(),
+            modifier = modifier.menuAnchor(),
             value = selectedValue,
             onValueChange = {},
             label = label,
@@ -53,6 +55,50 @@ fun GenericDropdownMenu(
                         onExpandedChange(false)
                     }
                 )
+            }
+        }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun <T> GenericDropdownMenu2(
+    label: String,
+    options: List<T>,
+    selectedOption: T?,
+    onOptionSelected: (T) -> Unit,
+    optionToText: (T) -> String,
+    onExpandedChange: (Boolean) -> Unit,
+    expanded: Boolean,
+    modifier: Modifier = Modifier
+) {
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = onExpandedChange,
+        modifier = modifier
+    ) {
+        CustomOutlinedTextField(
+            modifier = Modifier.menuAnchor(),
+            value = selectedOption?.let { optionToText(it) } ?: "",
+            onValueChange = {},
+            readOnly = true,
+            label = label,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { onExpandedChange(false) }
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(text = optionToText(option))},
+                    onClick = {
+                        onOptionSelected(option)
+                        onExpandedChange(false)
+                    }
+                )
+                Log.e("MDCR", "option: $option")
             }
         }
     }

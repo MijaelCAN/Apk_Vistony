@@ -35,17 +35,23 @@ fun BottomBar(
     inspViewModel: InspectionViewModel = hiltViewModel()
 ) {
 
-    var selectedDateIni = paradaViewModel.fechaIni.value.toLocalDate()
-    var selectedDateFin = paradaViewModel.fechaFin.value.toLocalDate()
+    var selectedDateIni = paradaViewModel.fechaIni.value
+    var selectedDateFin = paradaViewModel.fechaFin.value
 
     var showDialogDateIni by remember { mutableStateOf(false) }
     var showDialogDateFin by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedDateIni, selectedDateFin) {
-        val newfechaIni = selectedDateIni.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
-        val newfechaFin = selectedDateFin.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+        val newfechaIni = selectedDateIni?.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+        val newfechaFin = selectedDateFin?.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
         when(type){
-            "inspection" -> { inspViewModel.getListInspeccion(newfechaIni, newfechaFin) }
+            "inspection" -> {
+                if (newfechaIni != null) {
+                    if (newfechaFin != null) {
+                        inspViewModel.getListInspeccion(newfechaIni, newfechaFin)
+                    }
+                }
+            }
             "parada"->{ paradaViewModel.obtenerParadas(ListaRequest(newfechaIni, newfechaFin, "T")) }
         }
 

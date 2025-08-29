@@ -50,17 +50,17 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
 
 
     private val _fechaIni = mutableStateOf(LocalDateTime.now().minusDays(1))
-    val fechaIni: State<LocalDateTime> = _fechaIni
+    val fechaIni: State<LocalDateTime?> = _fechaIni
 
     private val _fechaFin = mutableStateOf(LocalDateTime.now())
-    val fechaFin: State<LocalDateTime> = _fechaFin
+    val fechaFin: State<LocalDateTime?> = _fechaFin
 
 
     fun actualizarEstadoParada(nuevoEstado: EstadoParada) {
         _estadoParada.value = nuevoEstado
     }
-    fun setFechaIni(fecha: LocalDate) { _fechaIni.value = fecha.atTime(0,0) }
-    fun setFechaFin(fecha: LocalDate) { _fechaFin.value = fecha.atTime(0,0) }
+    fun setFechaIni(fecha: LocalDateTime?) { _fechaIni.value = fecha?.toLocalDate()?.atStartOfDay() }
+    fun setFechaFin(fecha: LocalDateTime?) { _fechaFin.value = fecha?.toLocalDate()?.atStartOfDay() }
 
     init {
         viewModelScope.launch {

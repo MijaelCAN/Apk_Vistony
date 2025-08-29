@@ -16,6 +16,7 @@ data class ParadaRequest(
     @SerializedName("U_Fecha")val U_Fecha: String,
     @SerializedName("U_Maquina")val U_Maquina: String,
     @SerializedName("U_Area")val U_Area: String,
+    @SerializedName("U_OrdenMezcla")val U_OrdenMezcla: String,
     @SerializedName("U_Comentario")val U_Comentario: String,
     @SerializedName("U_Estado")val U_Estado: String,
     @SerializedName("U_FechaIni")val U_FechaIni: String,
@@ -27,8 +28,8 @@ data class ParadaRequest(
 )
 
 data class ListaRequest(
-    @SerializedName("FechaIni")val FechaIni: String,
-    @SerializedName("FechaFin")val FechaFin: String,
+    @SerializedName("FechaIni")val FechaIni: String?,
+    @SerializedName("FechaFin")val FechaFin: String?,
     @SerializedName("Estado")val Estado: String,
 )
 

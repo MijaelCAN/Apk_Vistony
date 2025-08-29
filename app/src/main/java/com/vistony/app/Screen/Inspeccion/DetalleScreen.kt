@@ -76,6 +76,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.vistony.app.Entidad.Evaluacion
+import com.vistony.app.Entidad.UserState
 import com.vistony.app.R
 import com.vistony.app.Screen.Generic.CompactCommentField
 import com.vistony.app.Screen.Generic.CustomAlertDialog
@@ -98,13 +99,14 @@ fun DetalleScreen(
     navController: NavHostController,
     sharedViewModel: SharedViewModel,
     viewModel: InspectionViewModel = hiltViewModel(),
-    id: String
+    id: String,
+    userState: UserState
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     ModalNavigationDrawer(
         drawerState = drawerState,
-        drawerContent = { CustomDrawer(navController = navController, id = id) }) {
+        drawerContent = { CustomDrawer(navController = navController, id = id, userState) }) {
         Scaffold(
             topBar = { TopBar("Detalle de Inspección", navController = navController, onMenuClick = {
                 scope.launch { drawerState.open() }

@@ -4,8 +4,8 @@ import android.app.Activity
 import android.net.Uri
 import android.os.Build
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -15,28 +15,31 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Card
 import androidx.compose.material.Divider
 import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ElectricBolt
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.sharp.PersonalInjury
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
@@ -48,74 +51,109 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 import com.vistony.app.Entidad.Actividad
-import com.vistony.app.Entidad.Parada
+import com.vistony.app.Entidad.UserState
 import com.vistony.app.Extras.randomMutedColor
 import com.vistony.app.Screen.Generic.CustomOutlinedTextField
-import com.vistony.app.Screen.Generic.FilterBoxsRow
-import com.vistony.app.Screen.Generic.Images.ImagePickerExample
+import com.vistony.app.Screen.Generic.DateOutlinedTextField
+import com.vistony.app.Screen.Generic.GenericDropdownMenu2
 import com.vistony.app.ViewModel.ActividadViewModel
-import com.vistony.app.ViewModel.ParadaViewModel
+import com.vistony.app.ViewModel.OTViewModel
 import com.vistony.app.ui.theme.theme.Dimensions
-import java.text.SimpleDateFormat
-import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun BodyActividad(
-    parada: Parada?,
+    userState: UserState,
     navController: NavController,
-    paradaViewModel: ParadaViewModel,
-    actividadViewModel: ActividadViewModel,
-    id: String,
+    viewModel: ActividadViewModel, // = hiltViewModel(),0
+    otViewModel: OTViewModel = hiltViewModel(),
     onClose: () -> Unit,
 ) {
-
+    // ======================= VARIABLES DE CONFIGURATION =======================
     val context = LocalContext.current
     val activity = context as Activity
     val windowSize = calculateWindowSizeClass(context)
-
     val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
     val buttonHeight = Dimensions.getButtonHeight(windowSize.widthSizeClass)
     val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
 
+    // ============================ ESTADO GENERAL DE LA UI ===========================
+    val uiState by viewModel.uiState.collectAsState()
+
+    // ============================ VARIABLES DE SCREEN ============================
     val images = remember { mutableStateListOf<Uri>() }
-    val newfecha by remember { mutableStateOf(SimpleDateFormat("yyyyMMdd").format(Date())) }
+    var new_ot by rememberSaveable { mutableStateOf("") }
+    val otraMaquina = rememberSaveable { mutableStateOf("") }
+    val otroEquipo = rememberSaveable { mutableStateOf("") }
 
-    var maquina = remember { mutableStateOf("") }
-    var maquinaId by remember { mutableStateOf("") }
-    val expandedMaquina = remember { mutableStateOf(false) }
-    val maquinaState by paradaViewModel.maquinas.collectAsState()
-    val listMaquinas = maquinaState.maquinaResponse.data.map { it.Code to it.Name }
-    val options = listOf("Mecanica", "Electrica", "Operativa")
-    val optionsFalla = listOf(
-        "Mecanica" to Icons.Default.Settings,
-        "Electrica" to Icons.Default.ElectricBolt,
-        "Operativa" to Icons.Sharp.PersonalInjury
+    // ============================ LISTAS Y VARIABLES DE CONTROL  ============================
+
+    // ============================ ESTADO DEL BOTON  ============================
+    val stateButton = true
+
+    // ============================ SCANEADO DE OT ============================
+    val scanLauncher = rememberLauncherForActivityResult(
+        contract = ScanContract(),
+        onResult = { reslt ->
+            //ot = reslt.contents ?: "Sin Lectura"
+            val scannedText = reslt.contents ?: "Sin Lectura"
+            val startIndex = scannedText.indexOf("(10)") + 4
+            val endIndex = scannedText.indexOf("(17)")
+            if (startIndex != -1 && endIndex != -1 && startIndex < endIndex) {
+                new_ot = scannedText.substring(startIndex, endIndex)
+                viewModel.onOTChange(new_ot)
+            } else {
+                //ot = "Codigo de barra, no válido"
+                viewModel.onOTChange("Codigo de barra, no válido")
+            }
+
+        }
     )
-    var selected by remember { mutableStateOf("Mecanica") }
-    var descripcionFalla by remember { mutableStateOf("") }
-    var causaFalla by remember { mutableStateOf("") }
+    val currentOt by rememberUpdatedState(uiState.selectedActividad.OT)
+    LaunchedEffect(currentOt) {
+        if (currentOt.isNotEmpty()) {
+            otViewModel.getCodigoBarra(currentOt)
 
-    val stateButton = selected.isNotEmpty() && descripcionFalla.isNotEmpty() && causaFalla.isNotEmpty()
+            //um = otState.productoResponse?.data?.UM.toString()
+            //description = otState.productoResponse?.data?.Producto.toString()
+            //linea = otState.productoResponse?.data?.Linea.toString()
+            //newLinea.value = lineaState.lineaResponse?.data?.find { it.ID == linea }?.Descripcion ?: newLinea.value
+            Log.i("VER", "ENTRO AL NO VACIO")
+        } else {
+            //7um = ""
+            //description = ""
+            //linea = ""
+            Log.i("VER", "ENTRO AL VACIO")
+        }
+    }
+    //(01)1110001100303(10)250008213(17)280601
 
 
     Column(
         modifier = Modifier
-            .fillMaxHeight()
             .fillMaxWidth()
+            .wrapContentSize()
+            .verticalScroll(rememberScrollState())
     ) {
+
         Text(
             modifier = Modifier.padding(top = 16.dp),
             text = "Registro de Actividad",
@@ -129,127 +167,107 @@ fun BodyActividad(
         )
         Spacer(Modifier.height(25.dp))
 
-        /*Text(
+        Row(modifier = Modifier.fillMaxWidth()) {
+            DateOutlinedTextField(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                "Fecha Inicio",
+                readonly = true,
+                selectedDate = uiState.selectedActividad.startTime,
+                onDateChange = viewModel::onStartTimeChange,
+                showDialog = uiState.showDialogDateIni,
+                onShowDialogChange = viewModel::onShowDialogDateIniChange
+            )
+        }
+
+        Spacer(Modifier.height(8.dp))
+        CustomOutlinedTextField( // ---- OT ----
+            value = uiState.selectedActividad.OT,
+            onValueChange = viewModel::onOTChange,
+            label = "OT",
+            trailingIcon = {
+                IconButton(onClick = { scanLauncher.launch(ScanOptions()) }
+                ) {
+                    Icon(Icons.Filled.CameraAlt, contentDescription = "Camera")
+                }
+            },
+            keyboardOption = KeyboardOptions().copy(keyboardType = KeyboardType.Number),
+            readOnly = false
+        )
+        Spacer(Modifier.height(8.dp))
+        GenericDropdownMenu2(
+            label = "Area",
+            options = uiState.listAreas,
+            selectedOption = uiState.selectedActividad.area,
+            onOptionSelected = {
+                viewModel.onAreaChange(it)
+                viewModel.getMachinesByLine(it)
+                viewModel.getEquipmentByLine(it)
+            },
+            optionToText = { it },
+            expanded = uiState.expandedArea,
+            onExpandedChange = viewModel::onExpandedAreaChange
+        )
+        Spacer(Modifier.height(8.dp))
+        GenericDropdownMenu2(
+            label = "Máquina",
+            options = uiState.listMaquinas,
+            selectedOption = uiState.selectedActividad.machine,
+            onOptionSelected = viewModel::onMachineChange,
+            optionToText = { it.name },
+            expanded = uiState.expandedMaquina,
+            onExpandedChange = viewModel::onExpandedMaquinaChange
+        )
+0
+        if(uiState.selectedActividad.machine.name == "Otro"){
+            Spacer(Modifier.height(8.dp))
+            CustomOutlinedTextField(
+                value = otraMaquina.value,
+                onValueChange = {otraMaquina.value = it},
+                label = "Otra máquina",
+                readOnly = false
+            )
+
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
             modifier = Modifier.padding(top = 16.dp),
             text = "Equipo",
             fontWeight = FontWeight.Bold,
             fontSize = 15.sp,
         )
         Spacer(Modifier.height(8.dp))
-
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-                .padding(4.dp),
-            shape = RoundedCornerShape(12.dp),
-            backgroundColor = Color(0XFFF7F7F7),
-            border = BorderStroke(1.dp, color = Color.LightGray),
-            elevation = 0.dp,
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Computer,
-                    contentDescription = "e",
-                    tint = Color.LightGray,
-                )
-                Spacer(Modifier.width(10.dp))
-                if (parada != null) {
-                    Text(text = parada.Maquina ?: "-")
-                }
-            }
-        }*/
-        EquipoCard(
-            maquina = parada?.Maquina,
-            modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
+        GenericDropdownMenu2(
+            label = "Equipo",
+            options = uiState.listEquipos,
+            selectedOption = uiState.selectedActividad.equipment,
+            onOptionSelected = viewModel::onEquipamentChange,
+            optionToText = { it.name },
+            expanded = uiState.expandedEquipo,
+            onExpandedChange = viewModel::onExpandedEquipoChange
         )
+        Spacer(Modifier.height(8.dp))
+        if(uiState.selectedActividad.equipment.name == "Otro"){
+            Spacer(Modifier.height(8.dp))
+            CustomOutlinedTextField(
+                value = otroEquipo.value,
+                onValueChange = {otroEquipo.value = it},
+                label = "Otro equipo",
+                readOnly = false
+            )
+
+        }
+        Spacer(Modifier.height(8.dp))
 
 
-        /*GenericDropdownMenu(
-            label = "Máquina",
-            options = listMaquinas,
-            selectedValue = maquina.value,
-            onValueChange = { maquina.value = it },
-            onCodeChange = { maquinaId = it },
-            expanded = expandedMaquina.value,
-            onExpandedChange = { expandedMaquina.value = it }
-        )*/
-        Spacer(Modifier.height(8.dp))
-        Text(
-            modifier = Modifier.padding(top = 16.dp),
-            text = "Tipo de Falla",
-            fontWeight = FontWeight.Bold,
-            fontSize = 15.sp,
-        )
-        Spacer(Modifier.height(8.dp))
-        FilterBoxsRow(
-            options = optionsFalla,
-            selectedOption = selected,
-            onOptionSelected = { selected = it },
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        )
-        Spacer(Modifier.height(8.dp))
-        CustomOutlinedTextField(
-            value = descripcionFalla,
-            onValueChange = { descripcionFalla = it },
-            label = "Descripción del Problema",
-            readOnly = false,
-            minLines = 3,
-            maxLines = 3
-        )
-        Spacer(Modifier.height(8.dp))
-        CustomOutlinedTextField(
-            value = causaFalla,
-            onValueChange = { causaFalla = it },
-            label = "Causa de la parada",
-            readOnly = false,
-            minLines = 3,
-            maxLines = 3
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            modifier = Modifier.padding(top = 16.dp),
-            text = "Imagenes",
-            fontWeight = FontWeight.Bold,
-            fontSize = 15.sp,
-        )
-        Spacer(Modifier.height(8.dp))
-        /*ImagePickerRow(
-            images = images,
-            itemSize = 90.dp,
-            onAddClick = {
-                // Aquí abres galería o cámara y agregas la imagen a la lista
-                // Por ejemplo, simular agregando una imagen dummy:
-                // images = images + someImageBitmap
-            }
-        )*/
-        ImagePickerExample(images)
-
+        Spacer(modifier = Modifier.height(32.dp)) // En caso d eque no haya espacio suficiente
         Spacer(modifier = Modifier.weight(1f))
         Button(
             enabled = stateButton,
             onClick = {
-                Log.e("MDCR", "CANTIDAD DE FOTOS: ${images.size}")
-                actividadViewModel.crearActividad(
-                    Actividad(
-                        id = "",
-                        maquina = parada?.Maquina ?: "",
-                        tipoFalla = selected,
-                        descripcionActividad = descripcionFalla,
-                        causaParada = causaFalla,
-                        fecha = newfecha,
-                        listaImagenes = images,
-                        statusActividad = false,
-                        usuario = "1",
-                        paradaDocEntry = parada?.DocEntry ?: ""
-                    )
-                )
+                viewModel.onInitialChange(userState.currentUser)
+                viewModel.crearActividad(otraMaquina, otroEquipo)
                 onClose()
             },
             modifier = Modifier
@@ -263,27 +281,36 @@ fun BodyActividad(
                 contentColor = Color.White
             )
         ) {
-            //Text(text = "Cerrar actividad y genear PDF", fontSize = bodyFontSize.sp)
+
             Text(text = "Crear actividad", fontSize = bodyFontSize.sp)
         }
         Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
+/*Actividad(
+                        id = "",
+                        equipo = equipo.value,
+                        tipoFalla = tipoFalla,
+                        descripcionActividad = descripcionFalla,
+                        causaParada = causaFalla,
+                        fechaInicio = activityDate,
+                        listaImagenes = images,
+                        statusActividad = false,
+                        tecnico = "1",
+                        paradaDocEntry = ""
+                    )*/
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TarjetaActividad(
     actividad: Actividad,
     actividadViewModel: ActividadViewModel,
-    //navController: NavController,
     id: String,
     function: () -> Unit,
 ) {
 
-    /*val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val backgroundColor = if (isPressed) Color.Red else Color.Transparent*/
-
+    Log.i("MDCR", "actividad: $actividad")
     val actividades by actividadViewModel.actividades.collectAsState()
     var approved by remember { mutableStateOf(actividad.statusActividad) } // Estado persistente
     val interactionSource = remember { MutableInteractionSource() }
@@ -306,7 +333,7 @@ fun TarjetaActividad(
                 interactionSource = interactionSource,
                 indication = rememberRipple(), // o rememberRipple() si quieres efecto visual
                 onClick = {
-                    //actividadViewModel.setStatusActividad(actividades.indexOf(actividad))
+                    actividadViewModel.setStatusActividad(actividades.indexOf(actividad))
                     //approved = !approved
                 }
             )
@@ -338,7 +365,8 @@ fun TarjetaActividad(
                         modifier = Modifier.size(32.dp)
                     )
                 } else {
-                    val cadena = actividad.maquina.split(" ")[1]
+                    val palabras = actividad.equipo.split(" ")
+                    val cadena = if (palabras.size > 1) palabras[1] else palabras[0]
                     Text(
                         text = cadena.take(1).uppercase(),
                         color = Color.White,
@@ -355,7 +383,7 @@ fun TarjetaActividad(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = actividad.maquina,
+                    text = actividad.equipo,
                     fontSize = 12.sp,
                     lineHeight = 14.sp,
                     fontWeight = FontWeight.Bold,
@@ -388,11 +416,6 @@ fun EquipoCard(
     primaryColor: Color = Color(0xFFFC6A68)
 ) {
     Column {
-        Text(
-            text = "Equipo",
-            fontWeight = FontWeight.Bold,
-            fontSize = 15.sp,
-        )
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -429,3 +452,35 @@ fun EquipoCard(
         }
     }
 }
+
+
+// MODO DE EJEMPLO DE COMO UTLIZAR UN TEXTFIELD CON EL UISTATE
+/*CustomOutlinedTextField(
+    value = uiState.selectedActividad.area,
+    onValueChange = viewModel::onAreaChange,
+    label = "Area",
+    readOnly = false
+)*/
+
+// COMPONENTE DE COMO UTLIZAR LA VERSION ANTERIOR CON PAIR(1 to "Nombre")}
+/*GenericDropdownMenu(
+    label = "Equipo",
+    options = listaEquipos,
+    selectedValue = equipo.value,
+    onValueChange = { equipo.value = it },
+    onCodeChange = { equipoId = it },
+    expanded = expandedEquipo.value,
+    onExpandedChange = { expandedEquipo.value = it }
+)*/
+
+// TIPO DE FALLA OPCIONAL EN UN SPINNER, REEMPLAZANDO A GRAFICO
+/*GenericDropdownMenu2(
+    label = "Motivo de parada",
+    options = uiState.listMotivos,
+    selectedOption = uiState.selectedActividad.reason,
+    onOptionSelected = viewModel::onReasonChange,
+    optionToText = { it.name },
+    expanded = uiState.expandedMotivo,
+    onExpandedChange = viewModel::onExpandedMotivoChange
+)
+Spacer(Modifier.height(8.dp))*/

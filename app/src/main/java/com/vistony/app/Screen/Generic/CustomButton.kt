@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.vistony.app.Entidad.FailureType
 
 @Composable
 fun CustomSearchText(
@@ -314,9 +315,9 @@ fun FilterButtonsRow(
 
 @Composable
 fun FilterBoxsRow(
-    options: List<Pair<String, ImageVector>>,
-    selectedOption: String,
-    onOptionSelected: (String) -> Unit,
+    options: List<Pair<FailureType, ImageVector>>,
+    selectedOption: FailureType,
+    onOptionSelected: (FailureType) -> Unit,
     modifier: Modifier = Modifier,
     size: Dp = 64.dp,
     cornerRadius: Dp = 12.dp,
@@ -329,15 +330,18 @@ fun FilterBoxsRow(
             .padding(horizontal = 8.dp, vertical = 4.dp),
         horizontalArrangement = horizontalArrangement
     ) {
-        options.forEach { (label, icon)  ->
+        options.forEachIndexed { index, (option, icon)  ->
             IconTextButton(
-                icon = icon,
-                text = label,
+                    icon = icon,
+                text = option.name,
                 size = size,
                 cornerRadius = cornerRadius,
-                selected = label == selectedOption,
-                onClick = { onOptionSelected(label) }
+                selected = option == selectedOption,
+                onClick = { onOptionSelected(option) }
             )
+            if (index < options.lastIndex) {
+                Spacer(modifier = Modifier.width(8.dp))
+            }
         }
     }
 }

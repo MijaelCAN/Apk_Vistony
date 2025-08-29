@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Construction
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.HomeRepairService
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.NavigateNext
 import androidx.compose.material.icons.filled.Settings
@@ -45,16 +46,62 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
+import com.vistony.app.Entidad.UserState
 import com.vistony.app.R
 
 @Composable
 fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
     navController: NavController,
     id: String,
+    userState: UserState,
     modifier: Modifier = Modifier
 ) {
     var selectedItem by remember { mutableStateOf<String?>(null) }
     var expandedItems by remember { mutableStateOf(setOf<String>()) }
+
+    val menuItems = remember(userState.currentUser?.role) {
+        listOf(
+            DrawerItem(
+                id = "inspeccion",
+                icon = Icons.Default.Checklist,
+                label = "Inspección",
+                subItems = listOf(
+                    DrawerSubItem("Lista Inspecciones") { navController.navigate("listaInsp/$id") },
+                ),
+                // Solo visible para ciertos roles
+                visibleForRoles = setOf("operador", "admin")
+            ),
+            DrawerItem(
+                id = "parada_maquina",
+                icon = Icons.Default.Construction,
+                label = "Parada Máquina",
+                subItems = listOf(
+                    DrawerSubItem("Lista de Paradas") { navController.navigate("listaParada/$id") },
+                ),
+                visibleForRoles = setOf("operador", "admin")
+            ),
+            DrawerItem(
+                id = "mantenimiento",
+                icon = Icons.Default.HomeRepairService,
+                label = "Mantenimiento",
+                subItems = listOf(
+                    DrawerSubItem("Registro de Paradas") { navController.navigate("paradaMantenimiento") },
+                ),
+                visibleForRoles = setOf("mantenimiento", "admin")
+            ),
+            DrawerItem(
+                id = "configuracion",
+                icon = Icons.Default.Settings,
+                label = "Configuración",
+                subItems = emptyList(),
+                visibleForRoles = setOf("admin", "supervisor")
+            )
+        ).filter { item ->
+            item.visibleForRoles.isEmpty() ||
+                    userState.hasAnyRole(*item.visibleForRoles.toTypedArray())
+        }
+    }
 
     ModalDrawerSheet(
         modifier = modifier
@@ -76,9 +123,11 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val painter = rememberAsyncImagePainter(model = userState.currentUser?.avatar ?: "")
+
                 // Imagen circular (avatar)
                 Image(
-                    painter = painterResource(id = R.drawable.not_connection2),
+                    painter = painter,
                     contentDescription = "Avatar",
                     modifier = Modifier
                         .size(64.dp)
@@ -88,7 +137,7 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(
-                        text = id,
+                        text = userState.currentUser?.name ?: "Anónimo",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
@@ -104,7 +153,7 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "Dirección ejemplo 123", // Cambiar el dato correcto
+                            text = userState.currentUser?.role ?: "Generico",
                             style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray)
                         )
                     }
@@ -120,7 +169,7 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                 .background(Color(0xFFF7F7F7))
                 .padding(horizontal = 8.dp)
         ) {
-            val menuItems = listOf(
+            /*val menuItems = listOf(
                 DrawerItem(
                     id = "inspeccion",
                     icon = Icons.Default.Checklist,
@@ -145,39 +194,41 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                     label = "Configuración",
                     subItems = emptyList()
                 )
-            )
+            )*/
 
             items(menuItems) { item ->
-                DrawerMenuItem(
-                    item = item,
-                    isSelected = selectedItem == item.id,
-                    isExpanded = expandedItems.contains(item.id),
-                    onClick = {
-                        selectedItem = item.id
-                        if (item.subItems.isNotEmpty()) {
-                            expandedItems = if (expandedItems.contains(item.id))
-                                expandedItems - item.id
-                            else
-                                expandedItems + item.id
-                        } else {
-                            expandedItems = expandedItems - item.id
+                if (item.visibleForRoles.isEmpty() || userState.hasAnyRole(*item.visibleForRoles.toTypedArray())) {
+                    DrawerMenuItem(
+                        item = item,
+                        isSelected = selectedItem == item.id,
+                        isExpanded = expandedItems.contains(item.id),
+                        onClick = {
+                            selectedItem = item.id
+                            if (item.subItems.isNotEmpty()) {
+                                expandedItems = if (expandedItems.contains(item.id))
+                                    expandedItems - item.id
+                                else
+                                    expandedItems + item.id
+                            } else {
+                                expandedItems = expandedItems - item.id
+                            }
+                        }
+                    )
+                    if (expandedItems.contains(item.id)) {
+                        item.subItems.forEachIndexed { index, subItem ->
+                            Divider(color = Color.LightGray, thickness = 0.5.dp)
+                            DrawerSubMenuItem(
+                                subItem = subItem,
+                                modifier = Modifier.padding(start = 56.dp),
+                                onClick = {
+                                    selectedItem = item.id
+                                    subItem.onClick()
+                                }
+                            )
                         }
                     }
-                )
-                if (expandedItems.contains(item.id)) {
-                    item.subItems.forEachIndexed { index, subItem ->
-                        Divider(color = Color.LightGray, thickness = 0.5.dp)
-                        DrawerSubMenuItem(
-                            subItem = subItem,
-                            modifier = Modifier.padding(start = 56.dp),
-                            onClick = {
-                                selectedItem = item.id
-                                subItem.onClick()
-                            }
-                        )
-                    }
+                    Divider(color = Color.LightGray, thickness = 0.5.dp)
                 }
-                Divider(color = Color.LightGray, thickness = 0.5.dp)
             }
         }
     }
@@ -187,7 +238,8 @@ data class DrawerItem(
     val id: String,
     val icon: ImageVector,
     val label: String,
-    val subItems: List<DrawerSubItem> = emptyList()
+    val subItems: List<DrawerSubItem> = emptyList(),
+    val visibleForRoles: Set<String> = emptySet()
 )
 
 data class DrawerSubItem(
@@ -218,7 +270,9 @@ fun DrawerMenuItem(
             modifier = Modifier
                 .size(36.dp)
                 .background(
-                    color = if (isSelected) Color(0xFFFC6A68).copy(alpha = 0.3f) else Color(0xFFE0E0E0),
+                    color = if (isSelected) Color(0xFFFC6A68).copy(alpha = 0.3f) else Color(
+                        0xFFE0E0E0
+                    ),
                     shape = RoundedCornerShape(10.dp)
                 ),
             contentAlignment = Alignment.Center
