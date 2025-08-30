@@ -21,14 +21,16 @@ import androidx.navigation.navArgument
 import com.vistony.app.Service.ConnectivityObserver
 import com.vistony.app.ViewModel.NetworkStatusViewModel
 import com.vistony.app.ViewModel.SharedViewModel
-import com.vistony.app.ui.theme.AppTheme
+import com.vistony.app.ui.theme.theme.AppTheme
 import com.vistony.app.Screen.Inspeccion.DetalleScreen
 import com.vistony.app.Screen.Inspeccion.HomeScreen
 import com.vistony.app.Screen.Inspeccion.ListScreen
+import com.vistony.app.Screen.Login2
 import com.vistony.app.Screen.LoginScreen
 import com.vistony.app.Screen.NoInternetScreen
 import com.vistony.app.Screen.Parada.HomeParada
 import com.vistony.app.Screen.Parada.ListParada
+import com.vistony.app.ui.theme.theme.AppTypography
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -38,7 +40,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         setContent {
-            AppTheme {
+            AppTheme() {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -51,8 +53,9 @@ class MainActivity : ComponentActivity() {
                     var usuario = "70131373"
 
                     if (status == ConnectivityObserver.Status.Available) {
-                        NavHost(startDestination = "listaInsp/${usuario}", navController = navController) {
+                        NavHost(startDestination = "login", navController = navController) {
                             composable("login") {
+                                //Login2()
                                 LoginScreen(navController)
                             }
                             composable(
@@ -72,6 +75,9 @@ class MainActivity : ComponentActivity() {
                                 arguments = listOf(navArgument("user") { type = NavType.StringType })
                             ) { it ->
                                 ListScreen(navController, id = it.arguments?.getString("user") ?: "")
+                            }
+                            composable("reporte",) {
+                                Login2()
                             }
                             composable(
                                 "homeParada/{user}",

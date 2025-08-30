@@ -47,7 +47,7 @@ import androidx.navigation.NavController
 @Composable
 fun CustomDrawer(navController: NavController, id: String) {
     var selectedItem by remember { mutableStateOf<String?>(null) }
-    val id = "70131373"
+    //val id = "70131373"
     ModalDrawerSheet(
         modifier = Modifier.background(Color.White)
     ) {
@@ -87,7 +87,7 @@ fun CustomDrawer(navController: NavController, id: String) {
                     .fillMaxWidth()
                     .fillMaxHeight()
                     .padding(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF0054A3).copy(alpha = 0.2f))
+                colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 DrawerMenuItem(
                     icon = Icons.Filled.Checklist,

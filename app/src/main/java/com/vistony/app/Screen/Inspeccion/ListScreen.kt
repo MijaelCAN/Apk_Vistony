@@ -16,18 +16,24 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -66,7 +72,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListScreen(
     navController: NavController,
@@ -78,7 +83,7 @@ fun ListScreen(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        drawerContent = { CustomDrawer(navController = navController,id) }
+        drawerContent = { CustomDrawer(navController = navController, id) }
     ) {
         Scaffold(
             topBar = {
@@ -111,63 +116,46 @@ fun ListScreen(
                         )
                     }
                     Spacer(modifier = Modifier.height(15.dp))
-                    BodyList(navController, listViewModel,id)
+                    BodyList(navController, listViewModel, id)
                 }
+            },
+            floatingActionButton = {
+                IconButton(
+                    modifier = Modifier.size(60.dp),
+                    onClick = {
+                        navController.navigate("home/${id}")
+                    },
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = Color.Red,
+                        contentColor = Color.White
+                    )
+                ){
+                    Icon(Icons.Filled.Add, contentDescription = "")
+
+                }
+
             }
         )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: String) {
     val listState by listViewModel.listInspeccionState.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
     var item by remember { mutableStateOf(Inspeccion()) }
-    var txt_estado = rememberSaveable { mutableStateOf("") }
-    val expanded = remember { mutableStateOf(false) }
-    val options = listOf("Iniciado", "Finalizado")
 
     var selectedDateIni by remember { mutableStateOf(LocalDate.now()) }
     var showDialogDateIni by remember { mutableStateOf(false) }
     var selectedDateFin by remember { mutableStateOf(LocalDate.now()) }
     var showDialogDateFin by remember { mutableStateOf(false) }
-    var lista_inspecciones by remember { mutableStateOf(emptyList<Inspeccion>()) }
-
-    /*val data2 = listOf(
-        Inspeccion(1, "Inspecion 1", "Aprobado", "10/10/2024", "10:10"),
-        Inspeccion(2, "Inspecion 2", "Desaprobado", "12/08/2024", "10:10"),
-        Inspeccion(3, "Inspecion 3", "Aprobado", "03/10/2023", "10:10"),
-        Inspeccion(4, "Inspecion 4", "Desaprobado", "22/05/2023", "10:10"),
-        Inspeccion(5, "Inspecion 5", "Aprobado", "09/01/2023", "10:10"),
-        Inspeccion(6, "Inspecion 6", "Desaprobado", "10/10/2024", "10:10"),
-        Inspeccion(7, "Inspecion 7", "Aprobado", "12/08/2024", "10:10"),
-        Inspeccion(8, "Inspecion 8", "Desaprobado", "03/10/2023", "10:10"),
-        Inspeccion(9, "Inspecion 9", "Aprobado", "22/05/2023", "10:10"),
-        Inspeccion(10, "Inspecion 10", "Desaprobado", "09/01/2023", "10:10"),
-        Inspeccion(11, "Inspecion 11", "Aprobado", "10/10/2024", "10:10"),
-        Inspeccion(12, "Inspecion 12", "Desaprobado", "12/08/2024", "10:10"),
-        Inspeccion(13, "Inspecion 13", "Aprobado", "03/10/2023", "10:10"),
-        Inspeccion(14, "Inspecion 14", "Desaprobado", "22/05/2023", "10:10"),
-        Inspeccion(15, "Inspecion 15", "Aprobado", "09/01/2023", "10:10"),
-        Inspeccion(16, "Inspecion 16", "Desaprobado", "10/10/2024", "10:10"),
-    )*/
-    LaunchedEffect(Unit) { // Or any key that changes on every recomposition
-        val newfechaIni = selectedDateIni.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
-        val newfechaFin = selectedDateFin.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
-        Log.d("selectedDateIni", selectedDateIni.toString())
-        listViewModel.getListInspeccion(newfechaIni, newfechaFin)
-        lista_inspecciones = listState.listInspeccion.data
-    }
-    lista_inspecciones = listState.listInspeccion.data
 
     LaunchedEffect(selectedDateIni, selectedDateFin) {
         val newfechaIni = selectedDateIni.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
         val newfechaFin = selectedDateFin.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
         Log.d("selectedDateIni", selectedDateIni.toString())
         listViewModel.getListInspeccion(newfechaIni, newfechaFin)
-        lista_inspecciones = listState.listInspeccion.data
     }
     Box(
         modifier = Modifier
@@ -188,42 +176,10 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
-                /*
-                ExposedDropdownMenuBox(
-                    modifier = Modifier.width(200.dp),
-                    expanded = expanded.value,
-                    onExpandedChange = {
-                        expanded.value = !expanded.value
-                        txt_estado.value = ""
-                    }) {
-                    CustomOutlinedTextField(
-                        modifier = Modifier.menuAnchor(),
-                        value = txt_estado.value,
-                        onValueChange = { },
-                        label = "Estado",
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded.value) },
-                        readOnly = true
-                    )
-                    ExposedDropdownMenu(
-                        modifier = Modifier
-                            .background(Color.White)
-                            .clip(RoundedCornerShape(8.dp)),
-                        expanded = expanded.value,
-                        onDismissRequest = { expanded.value = false }) {
-                        options.forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(option, color = Color.Black) },
-                                onClick = {
-                                    txt_estado.value = option
-                                    expanded.value = false
-                                }
-                            )
-                        }
-                    }
-                }*/
+
                 Spacer(modifier = Modifier.width(430.dp))
                 CustomButton(
-                    "Registro Nuevo",
+                    "Ver Reporte",
                     modifier = Modifier.width(200.dp),
                     Icons.Filled.Add,
                     onClick = { navController.navigate("home/${id}") },
@@ -247,7 +203,7 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
                     selectedDate = selectedDateIni,
                     onDateChange = { selectedDateIni = it },
                     showDialog = showDialogDateIni,
-                    onShowDialogChange = { showDialogDateIni= it }
+                    onShowDialogChange = { showDialogDateIni = it }
                 )
                 Spacer(modifier = Modifier.width(130.dp))
                 DateOutlinedTextField(
@@ -256,7 +212,7 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
                     selectedDate = selectedDateFin,
                     onDateChange = { selectedDateFin = it },
                     showDialog = showDialogDateFin,
-                    onShowDialogChange = { showDialogDateFin= it }
+                    onShowDialogChange = { showDialogDateFin = it }
                 )
             }
 
@@ -271,9 +227,9 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
                         TableHeaderCell(text = "", modifier = Modifier.weight(1f))
                     }
                 }
-
-                if (lista_inspecciones.isNotEmpty()) {
-                    items(lista_inspecciones) { row ->
+                val nuevalista = listState.listInspeccion.data.asReversed()
+                if (nuevalista.isNotEmpty()) {
+                    items(nuevalista) { row ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -281,19 +237,14 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             TableCell(text = row.OT, modifier = Modifier.weight(1f))
-                            TableCell(text = row.Fecha, modifier = Modifier.weight(1f))
-                            TableCell(text = row.Turno, modifier = Modifier.weight(1f))
-                            TableCell(text = row.Usuario, modifier = Modifier.weight(1f))
+                            TableCell(text = row.U_Fecha, modifier = Modifier.weight(1f))
+                            TableCell(text = row.U_Turno, modifier = Modifier.weight(1f))
+                            TableCell(text = row.U_Usuario, modifier = Modifier.weight(1f))
                             TableCell(value = 1) {
                                 IconButton(
                                     onClick = {
                                         showDialog = true
-                                        item = Inspeccion(
-                                            row.OT,
-                                            row.Fecha,
-                                            row.Turno,
-                                            row.Usuario
-                                        )
+                                        item = row
                                     },
                                     modifier = Modifier.width(100.dp),
                                     colors = IconButtonDefaults.iconButtonColors(
@@ -325,19 +276,127 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
                     }
                 }
             }
-                Detalle(
+            Detalle(
                 isVisible = showDialog,
+                titulo = "Detalle de Inspección",
                 onDismiss = { showDialog = false },
                 data = item,
                 content = {
-                    Column() {
+                    // REEMPLAZAR AQUI CON EL CONTENIDO DE LA PANTALLA
+                    /*Column() {
                         Text(
                             text = "Inspeccion de: ${item.OT}",
                             fontWeight = FontWeight.Bold
                         )
-                        Text(text = "Fecha: ${item.Fecha}")
-                        Text(text = "Turno: ${item.Turno}")
-                        Text(text = "Usuario: ${item.Usuario}")
+                        Text(text = "Fecha: ${item.U_Fecha}")
+                        Text(text = "Turno: ${item.U_Turno}")
+                        Text(text = "Usuario: ${item.U_Usuario}")
+                    }*/
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Número de OT
+                        Text(
+                            text = "OT: ${item.OT}",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        // Fecha y Turno
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Fecha: ${item.U_Fecha}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                text = "Turno: ${item.U_Turno}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+
+                        // Peso, Etiqueta, Lote, Limpieza, Sellado, Encogimiento, Rótulo, Pallet
+                        DetalleCheckList(
+                            "Peso",
+                            item.U_Peso_Check,
+                            item.U_Peso_Comment
+                        )
+                        DetalleCheckList(
+                            "Etiqueta",
+                            item.U_Etiq_Check,
+                            item.U_Etiq_Comment
+                        )
+                        DetalleCheckList(
+                            "Lote",
+                            item.U_Lot_Check,
+                            item.U_Lot_Comment
+                        )
+                        DetalleCheckList(
+                            "Limpieza",
+                            item.U_Limp_Check,
+                            item.U_Limp_Comment
+                        )
+                        DetalleCheckList(
+                            "Sellado",
+                            item.U_Sell_Check,
+                            item.U_Sell_Comment
+                        )
+                        DetalleCheckList(
+                            "Encogimiento",
+                            item.U_Enc_Check,
+                            item.U_Enc_Comment
+                        )
+                        DetalleCheckList(
+                            "Rótulo",
+                            item.U_Rotulo_Check,
+                            item.U_Rotulo_Comment
+                        )
+                        DetalleCheckList(
+                            "Pallet",
+                            item.U_Palet_Check,
+                            item.U_Palet_Comment
+                        )
+
+                        // Conformidad y Usuario
+                        Text(
+                            text = "Conformidad: ${if (item.U_Conformidad == "Y") "CONFORME" else "NO CONFORME"}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            text = "Usuario: ${item.U_Usuario}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+
+                        // Cantidad y Maquinista
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Cantidad: ${item.U_Cantidad}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                text = "Maquinista: ${item.U_Maquinista}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        // Separador
+                        Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+                        // Botón para cerrar o regresar
+                        Button(
+                            onClick = { showDialog = false },
+                            modifier = Modifier.align(Alignment.End)
+                        ) {
+                            Text(text = "Cerrar")
+                        }
                     }
                 }
             )
@@ -345,4 +404,52 @@ fun BodyList(navController: NavController, listViewModel: EvalViewModel, id: Str
     }
 }
 
+@Composable
+fun DetalleCheckList(
+    label: String,
+    check: String,
+    comment: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            modifier = Modifier.weight(0.5f),
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold
+        )
+        /*Text(
+            modifier = Modifier.width(40.dp),
+            text = check,
+            style = MaterialTheme.typography.bodySmall,
+            color = when (check) {
+                "Y" -> Color.Green
+                "N" -> Color.Red
+                else -> Color.Gray
+            }
+        )*/
+        if (check == "Y") {
+            Icon(
+                imageVector = Icons.Filled.Check,
+                contentDescription = "Check",
+                tint = Color.Green,modifier = Modifier.width(40.dp)
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Filled.Close,
+                contentDescription = "Close",
+                tint = Color.Gray,
+                modifier = Modifier.width(40.dp)
+            )
+        }
+        Text(
+            modifier = Modifier.weight(0.5f),
+            text = comment,
+            style = MaterialTheme.typography.bodySmall
+        )
+    }
+}
 

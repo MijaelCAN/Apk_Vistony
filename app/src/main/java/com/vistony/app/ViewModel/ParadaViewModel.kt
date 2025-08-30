@@ -1,27 +1,39 @@
 package com.vistony.app.ViewModel
 
+import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vistony.app.Entidad.Area
 import com.vistony.app.Entidad.AreaResponse
+import com.vistony.app.Entidad.ListaRequest
 import com.vistony.app.Entidad.MaquinaResponse
 import com.vistony.app.Entidad.MotivoResponse
 import com.vistony.app.Entidad.Parada
+import com.vistony.app.Entidad.ParadaRequest
 import com.vistony.app.Entidad.ParadaResponse
+import com.vistony.app.Entidad.PostParada
+import com.vistony.app.Extras.formatoServidor
 import com.vistony.app.Repository.ParadaRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 import javax.inject.Inject
 
+@RequiresApi(Build.VERSION_CODES.O)
 class ParadaViewModel @Inject constructor() : ViewModel() {
     private val paradaRepository = ParadaRepository()
 
     private val _paradas = MutableStateFlow(ParadaResponseState())
     val paradas: StateFlow<ParadaResponseState> = _paradas.asStateFlow()
+    private val _listParadas = MutableStateFlow(ParadaResponse())
+    val listParadas: StateFlow<ParadaResponse> = _listParadas.asStateFlow()
 
     private val _areas = MutableStateFlow(areaResponseState())
     val areas: StateFlow<areaResponseState> = _areas.asStateFlow()
@@ -32,8 +44,8 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
     private val _motivos = MutableStateFlow(motivoResponseState())
     val motivos: StateFlow<motivoResponseState> = _motivos.asStateFlow()
 
-    private val _estadoParada = mutableStateOf<EstadoParada>(EstadoParada.Idle)
-    var estadoParada: State<EstadoParada> = _estadoParada
+    private val _estadoParada = MutableStateFlow<EstadoParada>(EstadoParada.Idle)
+    val estadoParada: StateFlow<EstadoParada> = _estadoParada.asStateFlow()
 
     fun actualizarEstadoParada(nuevoEstado: EstadoParada) {
         _estadoParada.value = nuevoEstado
@@ -44,15 +56,19 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
 
             // Obtener las áreas desde el repositorio
             val responseArea = paradaRepository.getAreas()
-            if (responseArea.isNotEmpty()) {
-                _areas.value = areaResponseState(true, AreaResponse(200, responseArea), "OK")
+            if (responseArea.isSuccessful) {
+                val body = responseArea.body()
+                if(body?.statusCode==200){
+                    _areas.value = areaResponseState(true, body, "OK")
+                }else{
+                    _areas.value = areaResponseState(false, AreaResponse(500, emptyList()), "Error al obtener las áreas")
+                }
             } else {
                 _areas.value = areaResponseState(false, AreaResponse(500, emptyList()), "Error al obtener las áreas")
             }
 
-
             // Obtener las paradas desde el repositorio
-            val response = paradaRepository.obtenerParadas()
+            /*val response = paradaRepository.obtenerParadas()
             if (response.statusCode == 200) {
                 _paradas.value =
                     ParadaResponseState(state = true, paradaResponse = response, message = "OK")
@@ -68,25 +84,60 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
                     paradaResponse = ParadaResponse(200, data),
                     message = "Error al obtener las paradas"
                 )
+            }*/
+
+            // Obtener las maquinas desde el repositorio
+            try {
+                val responseMaqui = paradaRepository.getMaquinas()
+                if (responseMaqui.isSuccessful) {
+                    val body = responseMaqui.body()
+                    if(body?.statusCode == 200){
+                        _maquinas.value = maquinaResponseState(true, body, "OK")
+                    }
+                }else{
+                    _maquinas.value = maquinaResponseState(false, MaquinaResponse(500, emptyList()), "Error al obtener las maquinas")
+                }
+            } catch (e: Exception) {
+                Log.e("Error", e.toString())
+            }
+        }
+        obtenerParadas(ListaRequest(formatoServidor(LocalDateTime.now()), formatoServidor(LocalDateTime.now()), "T"))
+    }
+    fun obtenerParadas(request: ListaRequest) {
+        viewModelScope.launch {
+            try {
+                val response = paradaRepository.obtenerParadas(request)
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body?.statusCode == 200) {
+                        _listParadas.value = ParadaResponse(200, body.data)
+                    }else{
+                        _listParadas.value = ParadaResponse(500, emptyList())
+                    }
+                }
+            }catch (e: Exception) {
+                Log.e("Error GETpA", e.toString())
             }
         }
     }
 
+
     // Funcion para registrar una parada
-    fun registrarParada(parada: Parada) {
+    fun registrarParada(parada: ParadaRequest) {
         viewModelScope.launch {
             _estadoParada.value = EstadoParada.Cargando
             try {
                 val response = paradaRepository.registrarParada(parada)
-                if (response.statusCode == 200) {
-                    _paradas.value = ParadaResponseState(
-                        message = "OK",
-                        paradaResponse = ParadaResponse(
-                            200,
-                            paradaRepository.obtenerParadas().data
-                        ),
-                    )
-                    _estadoParada.value = EstadoParada.Exitoso
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body?.statusCode == 201){
+                        _paradas.value =
+                            ParadaResponseState(state = true, paradaResponse = body, message = "OK")
+                        _estadoParada.value = EstadoParada.Exitoso
+                        Log.d("Parada", body.toString())
+                    }else{
+                        Log.d("ELSE", body.toString());
+                    }
                 } else {
                     _paradas.value = ParadaResponseState(
                         state = false,
@@ -94,6 +145,11 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
                     )
                     _estadoParada.value = EstadoParada.Error("Error al registrar la parada")
                 }
+                /*delay(4000)
+                _paradas.value =
+                    ParadaResponseState(state = true, paradaResponse = PostParada(200, "Registro Exitoso"), message = "OK")
+                _estadoParada.value = EstadoParada.Exitoso*/
+                Log.d("Envío", parada.toString())
             } catch (e: Exception) {
                 _paradas.value =
                     ParadaResponseState(state = false, message = "Error de Comunicacion")
@@ -102,19 +158,21 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
     }
 
     // Funcion para detener una parada
-    fun detenerParada(parada: Parada) {
+    fun detenerParada(idParada: Int) {
         viewModelScope.launch {
             _estadoParada.value = EstadoParada.Cargando
             try {
-                val response = paradaRepository.detenerParada(parada)
-                if (response.statusCode == 200) {
-                    _paradas.value =
-                        ParadaResponseState(state = true, paradaResponse = response, message = "OK")
-                    _estadoParada.value = EstadoParada.Exitoso
+                val response = paradaRepository.detenerParada(idParada)
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if(body?.statusCode == 200){
+                        _paradas.value =
+                            ParadaResponseState(state = true, paradaResponse = body, message = "Se detuvo con Exito")
+                        _estadoParada.value = EstadoParada.Exitoso
+                    }
                 } else {
                     _paradas.value = ParadaResponseState(
                         state = false,
-                        paradaResponse = response,
                         message = "Error al detener la parada"
                     )
                     _estadoParada.value = EstadoParada.Error("Error al detener la parada")
@@ -129,7 +187,7 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
 
 
     // Funcion para obtener las maquinas segun el area
-    fun obtenerMaquinas(area: String) {
+    /*fun obtenerMaquinas(area: String) {
         viewModelScope.launch {
             try {
                 val response = paradaRepository.getMaquinas(area)
@@ -141,15 +199,18 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
             } catch (e: Exception) {
             }
         }
-    }
+    }*/
 
     // funcion para obtener los motivos segun la maquina
-    fun obtenerMotivos(nameMotivo:String) {
+    fun obtenerMotivos(areaId:Int) {
         viewModelScope.launch {
             try {
-                val response = paradaRepository.getMotivos(nameMotivo)
-                if (response.isNotEmpty()) {
-                    _motivos.value = motivoResponseState(true, motivoResponse = MotivoResponse(200, response), "OK")
+                val response = paradaRepository.getMotivoParada(areaId)
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if(body?.statusCode == 200){
+                        _motivos.value = motivoResponseState(true, body, "OK")
+                    }
                 }else{
                     _motivos.value = motivoResponseState(false, motivoResponse = MotivoResponse(500, emptyList()), "Lista vacia")
                 }
@@ -163,7 +224,7 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
 // Clase para la respuesta de las paradas
 data class ParadaResponseState(
     val state: Boolean = false,
-    val paradaResponse: ParadaResponse = ParadaResponse(),
+    val paradaResponse: PostParada = PostParada(),
     val message: String? = null
 )
 

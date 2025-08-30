@@ -1,7 +1,7 @@
-package com.example.compose
+package com.vistony.app.ui.theme.theme
 import androidx.compose.ui.graphics.Color
 
-val primaryLight = Color(0xFF3C608F)
+val primaryLight = Color(0xFF3c608f)
 val onPrimaryLight = Color(0xFFFFFFFF)
 val primaryContainerLight = Color(0xFFD4E3FF)
 val onPrimaryContainerLight = Color(0xFF001C3A)

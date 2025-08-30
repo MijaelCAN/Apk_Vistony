@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -19,6 +20,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -152,7 +154,7 @@ fun SuccessDialog(
 fun <T> Detalle(
     isVisible: Boolean,
     onDismiss: () -> Unit,
-    titulo: String = "DETALLE DE INSPECCIÓN",
+    titulo: String = "Destalles",
     data: T,
     content: @Composable (T) -> Unit,
     navController: NavController = rememberNavController()
@@ -161,7 +163,6 @@ fun <T> Detalle(
         AlertDialog(
             modifier = Modifier
                 .width(700.dp)
-                .height(300.dp)
                 .clip(RoundedCornerShape(30.dp))
                 .background(Color.White),
             onDismissRequest = { onDismiss() },
@@ -179,7 +180,7 @@ fun <T> Detalle(
                 content(data)
             },
             confirmButton = {
-                Button(
+                /*Button(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 100.dp, vertical = 0.dp),
@@ -187,7 +188,7 @@ fun <T> Detalle(
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0054A3))
                 ) {
                     Text(text = "Cerrar", color = Color.White)
-                }
+                }*/
             },
             properties = DialogProperties(
                 dismissOnBackPress = false,
@@ -297,7 +298,7 @@ fun BodyMessage(icon: ImageVector? = null, message: String) {
             Icon(
                 icon, contentDescription = null, tint = colorResource(id = R.color.black)
             )
-        } else if (message == "Espere por favor..." || message == "Cargando..." || message == "Enviando...") {
+        } else if (message == "Espere por favor..." || message == "Cargando..." || message == "Enviando..." || message == "Validando...") {
             CircularProgressIndicator(
                 color = Color(0xFF0054A3),
             )

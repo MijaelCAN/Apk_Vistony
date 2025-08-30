@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "874293092060",
+    "project_id": "inspeccionproduccion",
+    "storage_bucket": "inspeccionproduccion.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:874293092060:android:39878945e86a521cab5e19",
+        "android_client_info": {
+          "package_name": "com.vistony.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBRm5t7JScx1mT4OMDoaUbsXBaJcngtteU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
