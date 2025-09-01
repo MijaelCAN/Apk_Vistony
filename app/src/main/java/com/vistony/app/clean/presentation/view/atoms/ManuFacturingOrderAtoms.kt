@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.android.gms.common.api.Status
@@ -34,13 +35,15 @@ import com.vistony.app.ui.theme.theme.Dimensions
 fun ManuFacturingOrderTextFieldView(
     value: String,
     color: Color = Color.Gray,
+    textAlign: TextAlign = TextAlign.Center
 ) {
     val context = LocalContext.current
     val activity = context as Activity
     val windowSize = calculateWindowSizeClass(activity)
     val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
     val paddingRes = Dimensions.getPadding(windowSize.widthSizeClass)
-    Text(text = value, color = color, fontSize = bodyFontSize.sp, modifier = Modifier.padding(horizontal = paddingRes))
+    Text(text = value, color = color, fontSize = bodyFontSize.sp, modifier = Modifier.padding(horizontal = paddingRes)
+        , fontWeight = FontWeight.Bold, textAlign = textAlign)
 }
 
 

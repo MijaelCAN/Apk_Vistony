@@ -1,9 +1,12 @@
 package com.vistony.app.Screen
 
 import android.app.Activity
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -14,6 +17,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -36,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
@@ -44,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.vistony.app.BuildConfig
+import com.vistony.app.Entidad.UserState
 import com.vistony.app.R
 import com.vistony.app.Screen.Generic.CustomAlertDialog
 import com.vistony.app.Screen.Generic.DialogType
@@ -55,7 +62,8 @@ import com.vistony.app.ui.theme.theme.Dimensions
 @Composable
 fun Login2(
     navController: NavHostController,
-    viewModel: LoginViewModel = hiltViewModel()
+    viewModel: LoginViewModel = hiltViewModel(),
+    userState: UserState
 ) {
     var usuario by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
@@ -78,14 +86,48 @@ fun Login2(
     var showDialog by remember { mutableStateOf(false) }
     val isLoading by viewModel.isLoading.collectAsState()
 
+    val userData by viewModel.userData.collectAsState()
+
     LaunchedEffect(usuario, pass) {
         stateButton = usuario.isNotEmpty() && pass.isNotEmpty()
     }
-    LaunchedEffect(loginState) {
+    /*LaunchedEffect(loginState) {
         if (loginState.state) {
             navController.navigate("listaInsp/$usuario")
         } else {
             errorMessage = loginState.message ?: ""
+        }
+    }*/
+    // Efecto para redireccionar según el rol
+    LaunchedEffect(userData) {
+        Log.d("Login2", "userState: $userState")
+        userData?.let { user ->
+            when (user.role.lowercase()) {
+                "admin", "supervisor" -> {
+                    // Redireccionar a dashboard administrativo
+                    navController.navigate("dashboardAdmin/${user.id}") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
+                "mantenimiento" -> {
+                    // Redireccionar a lista de inspecciones
+                    navController.navigate("paradaMantenimiento") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
+                "operador" -> {
+                    // Redireccionar a lista de paradas
+                    navController.navigate("listaParada/${user.id}") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
+                else -> {
+                    // Rol no reconocido, redireccionar por defecto
+                    navController.navigate("listaInsp/${user.id}") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
+            }
         }
     }
 
@@ -125,12 +167,12 @@ fun Login2(
                     .clip(RoundedCornerShape(12.dp))
                     .border(1.dp, Color.White, RoundedCornerShape(12.dp)),
                 value = usuario,
-                placeholder = {
+                label = {
                     Text(
-                        text = "Enter username",
-                        color = Color.LightGray,
+                        text = "Usuario",
+                        color = if( usuario.isNotEmpty())Color.Gray else Color.LightGray,
                         fontWeight = FontWeight.Bold,
-                        fontSize = bodyFontSize.sp
+                        fontSize = if( usuario.isNotEmpty()) 12.sp else bodyFontSize.sp
                     )
                 },
                 onValueChange = { usuario = it },
@@ -142,7 +184,8 @@ fun Login2(
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                     cursorColor = Color.Gray
-                )
+                ),
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
             )
             Spacer(modifier = Modifier.height(padding_res/2))
             TextField(
@@ -152,12 +195,12 @@ fun Login2(
                     .padding(horizontal = padding_res)
                     .clip(RoundedCornerShape(12.dp)),
                 value = pass,
-                placeholder = {
+                label = {
                     Text(
-                        text = "password",
-                        color = Color.LightGray,
+                        text = "Contraseña",
+                        color = if( pass.isNotEmpty())Color.Gray else Color.LightGray,
                         fontWeight = FontWeight.Bold,
-                        fontSize = bodyFontSize.sp
+                        fontSize = if( pass.isNotEmpty()) 12.sp else bodyFontSize.sp
                     )
                 },
                 onValueChange = { pass = it },
@@ -180,7 +223,14 @@ fun Login2(
                         )
                     }
                 },
-                visualTransformation = if (passVisible) VisualTransformation.None else PasswordVisualTransformation()
+                visualTransformation = if (passVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        viewModel.validar(usuario,pass)
+                        showDialog = true
+                    }
+                )
             )
             Spacer(modifier = Modifier.height(padding_res))
             Button(
@@ -195,14 +245,16 @@ fun Login2(
                     .clip(RoundedCornerShape(0.dp)),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFC6A68),
+                    //containerColor = Color(0xFFFC6A68),
+                    containerColor = Color(0xFFD6001C),
                     contentColor = Color.White
                 )
             ) {
-                Text(text = "Sign in", fontSize = bodyFontSize.sp )
+                Text(text = "Iniciar Sesion", fontSize = bodyFontSize.sp )
             }
             Spacer(modifier = Modifier.height(padding_res))
             Text(text = "v${BuildConfig.VERSION_NAME}", color = Color.Gray, fontSize = bodyFontSize.sp)
+
             when(isLoading){
                 EstadoLogin.Cargando-> {
                     CustomAlertDialog(
@@ -214,23 +266,7 @@ fun Login2(
                         onDismiss = {showDialog = false}
                     )
                 }
-                EstadoLogin.Exitoso -> {
-                    /*CustomAlertDialog(
-                        showDialog = showDialog,
-                        title = "Envio Exitoso",
-                        message = loginState.loginResponse.data,
-                        icon = Icons.Default.Check,
-                        confirmButtonText = "OK",
-                        dismissButtonText = null,
-                        onConfirm = { viewModel.actualizarEstadoLogin(EstadoLogin.Idle) },
-                        onDismiss = {
-                            showDialog = false
-                            viewModel.actualizarEstadoLogin(EstadoLogin.Idle)
-                            navController.navigate("listaInsp/$id")
-                        },
-                        dialogType = DialogType.SUCCESS,
-                    )*/
-                }
+                EstadoLogin.Exitoso -> {}
                 is EstadoLogin.Error -> {
                     CustomAlertDialog(
                         showDialog = showDialog,
@@ -251,11 +287,3 @@ fun Login2(
         }
     }
 }
-
-
-/*
-@Composable
-@Preview
-fun Prueba() {
-    Login2()
-}*/

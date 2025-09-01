@@ -9,12 +9,14 @@ data class Parada(
     var FechaHoraFin: String = null.toString(),
     var Area: String = "",
     var Comentario: String ="",
-    var Motivo: String =""
+    var Motivo: String ="",
+    var UserMantemiento: String = "",
 )
 data class ParadaRequest(
     @SerializedName("U_Fecha")val U_Fecha: String,
     @SerializedName("U_Maquina")val U_Maquina: String,
     @SerializedName("U_Area")val U_Area: String,
+    @SerializedName("U_OrdenMezcla")val U_OrdenMezcla: String,
     @SerializedName("U_Comentario")val U_Comentario: String,
     @SerializedName("U_Estado")val U_Estado: String,
     @SerializedName("U_FechaIni")val U_FechaIni: String,
@@ -22,12 +24,12 @@ data class ParadaRequest(
     @SerializedName("U_HoraIni")val U_HoraIni: String,
     //@SerializedName("U_HoraFin")val U_HoraFin: String,
     @SerializedName("U_Usuario")val U_Usuario: String,
-    @SerializedName("U_MotivoParaMaq")val U_MotivoParaMaq: Int
+    @SerializedName("U_MotivoParaMaq")val U_MotivoParaMaq: String
 )
 
 data class ListaRequest(
-    @SerializedName("FechaIni")val FechaIni: String,
-    @SerializedName("FechaFin")val FechaFin: String,
+    @SerializedName("FechaIni")val FechaIni: String?,
+    @SerializedName("FechaFin")val FechaFin: String?,
     @SerializedName("Estado")val Estado: String,
 )
 
@@ -63,7 +65,7 @@ data class MaquinaResponse(
 )
 
 data class Motivo(
-    val Code: Int,
+    val Code: String,
     val Name: String
 )
 data class MotivoResponse(

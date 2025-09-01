@@ -1,24 +1,38 @@
 package com.vistony.app.clean.presentation.view.moleculs
 
+import android.app.Activity
 import android.util.Log
 import androidx.cardview.widget.CardView
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Factory
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -33,17 +47,23 @@ import com.vistony.app.clean.presentation.view.atoms.ListItemM3
 import com.vistony.app.clean.presentation.view.atoms.ManuFacturingOrderEditTextView
 import com.vistony.app.clean.presentation.view.atoms.ManuFacturingOrderTextFieldView
 import com.vistony.app.clean.presentation.view.atoms.SpinnerM3
+import com.vistony.app.clean.presentation.view.atoms.TextWithDivider
 import com.vistony.app.clean.presentation.viewmodels.ManufacturingOrderViewModel
+import com.vistony.app.ui.theme.theme.Dimensions
+import androidx.compose.material.icons.filled.Factory
+import androidx.compose.material3.Icon
+import androidx.compose.ui.text.style.TextAlign
 
 @Composable
 fun ManuFacturingOrderHead(
     viewModel: ManufacturingOrderViewModel  = hiltViewModel()
 ) {
-    CardM3(
-        contentBody = {
+   // CardM3(
+    //    contentBody = {
             Column {
                 ManuFacturingOrderTextFieldView(
                     value = "Digite el Nro. de Orden de Fabricación a buscar",
+                    color = Color.Black
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 ManuFacturingOrderEditTextView(
@@ -61,9 +81,9 @@ fun ManuFacturingOrderHead(
                     leadingIconStatus = true
                 )
             }
-        },
-        isUsedTextDivider = false
-    )
+     //   },
+      //  isUsedTextDivider = false
+   // )
 }
 
 
@@ -76,16 +96,39 @@ fun ManuFacturingOrderDetail(
 
     when {
         data.value.data.isNotEmpty() -> {
+            TextWithDivider("Lotes Encontrados")
             ManuFacturingOrderDetailBody()
         }
         else -> {
-            ManuFacturingOrderTextFieldView(
-                value = "No se encontraron datos",
+            /*Image(
+                painter = painterResource(id =Icons.Filled.Factory),
+                contentDescription = "No data",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .clickable {
+                        Log.d("ManuFacturingOrderDetail", "Image clicked")
+                    },
+                alignment = Alignment.Center
+            )*/
+            Icon(
+                imageVector = Icons.Filled.Factory,
+                contentDescription = "Fábrica",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp).size(400.dp)
+                ,
+                //alignment = Alignment.Center
             )
+            ManuFacturingOrderTextFieldView(
+                value = "No se encontraron lotes.",
+            )
+
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun ManuFacturingOrderDetailBody(
     viewModel: ManufacturingOrderViewModel  = hiltViewModel()
@@ -93,59 +136,95 @@ fun ManuFacturingOrderDetailBody(
     val listApprobation =  ApprobationDefaults.DEFAULT_APPROBATIONS
     val data = viewModel.manufacturingOrderResponseModel.collectAsState()
     val statusAprobationHeader1 = viewModel.statusAprobationHeader1.collectAsState()
+    val context = LocalContext.current
+    val activity = context as Activity
+    val windowSize = calculateWindowSizeClass(context)
+
+    val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
     data.value.data.forEach {
-        CardM3(
-            contentBody = {
+        /*CardM3(
+            contentBody = {*/
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding_res)
+                //.border(2.dp, Color.White, RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(24.dp))
+                .background(Color.White.copy(alpha = 0.44f)),
+            //.graphicsLayer { alpha = 0.44f },
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(modifier = Modifier.fillMaxWidth()) {
                 ManuFacturingOrderTextFieldView(
                     value = "Nro. Lote: ${it.batchName}",
+                    textAlign = TextAlign.Start,
+                    color = Color.Black
                 )
-                ManuFacturingOrderTextFieldView(
-                    value = "Descripción: ${it.description}",
-                )
-                ManuFacturingOrderEditTextView(
-                    status = true,
-                    text = "",
-                    label = "Nueva Densidad",
-                    onClick = { result ->
-                        viewModel.onDensityChange(result)
-                    },
-                    countMaxCharacter = 254,
-                    keyboardType = KeyboardType.Number,
-                    onClickLeadingIcon = { result ->
-                        //viewModel.getCalculateDensity(it.batchCode, result)
-                    },
-                    trailingIconStatus = true,
-                    onClickTrailingIcon = { result ->
-                        viewModel.getCalculateDensity(it.batchName, result)
-                    },
-                    trailingIconResourceId = R.drawable.outline_send_24
-                )
-                SpinnerM3(
-                    label = "Aprobación 1",
-                    options = listApprobation.map { it.name },
-                    selectedOption = statusAprobationHeader1.value,
-                    onOptionSelected = { result ->
-                        viewModel.onOptimalWeightChange(it.detail.firstOrNull()?.optimumWeight ?: "0")
-                        viewModel.onMaximunWeightChange(it.detail.firstOrNull()?.optimumWeight ?: "0")
-                        viewModel.onStatusAprobationHeader1Change(result,"Linea1",it.batchName)
-                        //activitiesActionViewModel.updateIsErrorSpinnerTypeAction(false)
-                    },
-                    iconColor = MaterialTheme.colorScheme.secondary,
-                    enabled = true,
-                    isError = false,
-                    errorMessage = "Seleccione Aprobación 2",
-                )
-                Spacer(modifier = Modifier.padding(top = 10.dp))
+            }
+            Row(modifier = Modifier.fillMaxWidth()) {
+            ManuFacturingOrderTextFieldView(
+                value = "Descripción: ${it.description}",
+                textAlign = TextAlign.Start,
+                color = Color.Black
+            )
+            }
+            ManuFacturingOrderEditTextView(
+                status = true,
+                text = "",
+                label = "Nueva Densidad",
+                onClick = { result ->
+                    viewModel.onDensityChange(result)
+                },
+                countMaxCharacter = 254,
+                keyboardType = KeyboardType.Number,
+                onClickLeadingIcon = { result ->
+                    //viewModel.getCalculateDensity(it.batchCode, result)
+                },
+                trailingIconStatus = true,
+                onClickTrailingIcon = { result ->
+                    viewModel.getCalculateDensity(it.batchName, result)
+                },
+                trailingIconResourceId = R.drawable.outline_send_24
+            )
+            SpinnerM3(
+                label = "Aprobación 1",
+                options = listApprobation.map { it.name },
+                selectedOption = statusAprobationHeader1.value,
+                onOptionSelected = { result ->
+                    viewModel.onOptimalWeightChange(it.detail.firstOrNull()?.optimumWeight ?: "0")
+                    viewModel.onMaximunWeightChange(it.detail.firstOrNull()?.optimumWeight ?: "0")
+                    viewModel.onStatusAprobationHeader1Change(result, "Linea1", it.batchName)
+                    //activitiesActionViewModel.updateIsErrorSpinnerTypeAction(false)
+                },
+                iconColor = MaterialTheme.colorScheme.secondary,
+                enabled = true,
+                isError = false,
+                errorMessage = "Seleccione Aprobación 2",
+            )
+            Spacer(modifier = Modifier.padding(top = 10.dp))
 
-            },
-            contentActions = {
-                Spacer(modifier = Modifier.padding(top = 10.dp))
-                ManuFacturingOrderDetailBodyPackaging(it.detail)
-                             },
-            textDivider = "Envases"
-        )
+            //},
+            //contentActions = {
+            TextWithDivider("Envases")
+            Spacer(modifier = Modifier.padding(top = 10.dp))
+            ManuFacturingOrderDetailBodyPackaging(it.detail)
+            //},
+            //textDivider = "Envases"
+            //)
+        }
     }
 }
+@Composable
+fun getApprovalColor(status: String): Color {
+    return when (status.lowercase()) {
+        "aprobado" -> Color(0xFF4CAF50) // Verde
+        "rechazado" -> Color(0xFFF44336) // Rojo
+        "pendiente" -> Color(0xFFFFC107) // Amarillo
+        else -> MaterialTheme.colorScheme.onSurface // Color por defecto
+    }
+}
+
 
 @Composable
 fun ManuFacturingOrderDetailBodyPackaging(
@@ -156,7 +235,24 @@ fun ManuFacturingOrderDetailBodyPackaging(
     manufacturingOrderDetailModel.forEach {
         ListItemM3(
             headLineContent = it.optimumWeight + " Kg. (Optimo) / " + it.maximumWeight + " Kg. (Maximo)",
-            suportingContent = it.approbationName1 + " / " + it.approbationName2 + " / " + it.approbationName3,
+            suportingContent = {
+                Row {
+                    Text(
+                        text = it.approbationName1,
+                        color = getApprovalColor(it.approbationName1)
+                    )
+                    Text(text = " / ")
+                    Text(
+                        text = it.approbationName2,
+                        color = getApprovalColor(it.approbationName2)
+                    )
+                    Text(text = " / ")
+                    Text(
+                        text = it.approbationName3,
+                        color = getApprovalColor(it.approbationName3)
+                    )
+                }
+            },
             trailingContentClick = {  },
             modifier = Modifier.padding(horizontal = 8.dp),
             overLineContent = it.batchName+" "+it.description ,

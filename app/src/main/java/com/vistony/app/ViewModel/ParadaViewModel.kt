@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -47,9 +48,19 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
     private val _estadoParada = MutableStateFlow<EstadoParada>(EstadoParada.Idle)
     val estadoParada: StateFlow<EstadoParada> = _estadoParada.asStateFlow()
 
+
+    private val _fechaIni = mutableStateOf(LocalDateTime.now().minusDays(1))
+    val fechaIni: State<LocalDateTime?> = _fechaIni
+
+    private val _fechaFin = mutableStateOf(LocalDateTime.now())
+    val fechaFin: State<LocalDateTime?> = _fechaFin
+
+
     fun actualizarEstadoParada(nuevoEstado: EstadoParada) {
         _estadoParada.value = nuevoEstado
     }
+    fun setFechaIni(fecha: LocalDateTime?) { _fechaIni.value = fecha?.toLocalDate()?.atStartOfDay() }
+    fun setFechaFin(fecha: LocalDateTime?) { _fechaFin.value = fecha?.toLocalDate()?.atStartOfDay() }
 
     init {
         viewModelScope.launch {
@@ -67,25 +78,6 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
                 _areas.value = areaResponseState(false, AreaResponse(500, emptyList()), "Error al obtener las áreas")
             }
 
-            // Obtener las paradas desde el repositorio
-            /*val response = paradaRepository.obtenerParadas()
-            if (response.statusCode == 200) {
-                _paradas.value =
-                    ParadaResponseState(state = true, paradaResponse = response, message = "OK")
-            } else {
-                val data = listOf(
-                    Parada(1, "Maquina 1", "10/10/2024", "10/10/2024", "10:12", ""),
-                    Parada(2, "Maquina 2", "12/08/2024", "12/08/2024", "12:09", ""),
-                    Parada(3, "Maquina 3", "03/10/2023", "03/10/2023", "22:34", ""),
-                    Parada(4, "Maquina 4", "22/05/2023", "22/05/2023", "09:47", ""),
-                )
-                _paradas.value = ParadaResponseState(
-                    state = false,
-                    paradaResponse = ParadaResponse(200, data),
-                    message = "Error al obtener las paradas"
-                )
-            }*/
-
             // Obtener las maquinas desde el repositorio
             try {
                 val responseMaqui = paradaRepository.getMaquinas()
@@ -101,9 +93,10 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
                 Log.e("Error", e.toString())
             }
         }
-        obtenerParadas(ListaRequest(formatoServidor(LocalDateTime.now()), formatoServidor(LocalDateTime.now()), "T"))
+        obtenerParadas(ListaRequest(formatoServidor(fechaIni.value), formatoServidor(fechaFin.value), "T"))
     }
     fun obtenerParadas(request: ListaRequest) {
+        Log.e("MDCR", request.toString())
         viewModelScope.launch {
             try {
                 val response = paradaRepository.obtenerParadas(request)
@@ -111,6 +104,7 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
                     val body = response.body()
                     if (body?.statusCode == 200) {
                         _listParadas.value = ParadaResponse(200, body.data)
+                        Log.e("MDCR", "LISTA PARADAS: ${body.data}")
                     }else{
                         _listParadas.value = ParadaResponse(500, emptyList())
                     }

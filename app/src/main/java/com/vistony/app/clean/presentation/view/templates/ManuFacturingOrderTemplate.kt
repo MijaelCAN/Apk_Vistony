@@ -13,7 +13,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
-import com.vistony.app.Screen.Generic.CustomDrawer
+import com.vistony.app.Entidad.UserState
+import com.vistony.app.Screen.Generic.Drawers.CustomDrawer
 import com.vistony.app.Screen.Generic.TopBar
 import com.vistony.app.clean.presentation.view.organisms.ManuFacturingOrderSectionMain
 import kotlinx.coroutines.launch
@@ -21,8 +22,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun ManuFacturingOrderTemplate(
     navController: NavHostController,
-    id: String
-
+    id: String,
+    userState: UserState
 ) {
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -30,7 +31,7 @@ fun ManuFacturingOrderTemplate(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        drawerContent = { CustomDrawer(navController = navController, id = id) }
+        drawerContent = { CustomDrawer(navController = navController, id = id, userState =  userState) }
     ) {
         Scaffold(
             topBar = {

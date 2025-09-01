@@ -1,6 +1,7 @@
 package com.vistony.app.clean.presentation.view.atoms
 
 import android.app.Activity
+import android.provider.CalendarContract
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -64,14 +65,16 @@ fun ListItemM3(
     val textFieldHeight = Dimensions.getTextFieldHeight(windowSize.widthSizeClass)
     val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
 
-    Card (
+    /*Card (
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = paddingRes)
+            .padding(horizontal = paddingRes).background(Color.Transparent) // evita que tape el fondo del Surface
         ,shape = RoundedCornerShape(8.dp)
         //, border = BorderStroke(1.dp, Color.LightGray) // evita que tape el fondo del Surface
         , elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
-    ){
+        , colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.44f), contentColor = Color.Black)
+
+    ){*/
         if (isUsedLeadingContent&&isUsedTrailingContent) {
             ListItem(
                 overlineContent = {
@@ -81,7 +84,7 @@ fun ListItemM3(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
-                modifier = Modifier.background(Color.Transparent), // evita que tape el fondo del Surface
+                modifier = Modifier.padding(horizontal = paddingRes).background(Color.LightGray),
                 headlineContent = {
                     Text(
                         text = headLineContent,
@@ -102,7 +105,8 @@ fun ListItemM3(
                 },
                 leadingContent = {
                     leadingContent()
-                }
+                },
+
             )
         } else if( !isUsedLeadingContent && isUsedTrailingContent) {
             ListItem(
@@ -113,7 +117,7 @@ fun ListItemM3(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
-                modifier = Modifier.background(Color.Transparent), // evita que tape el fondo del Surface
+                modifier = Modifier.padding(horizontal = paddingRes).background(Color.LightGray), // evita que tape el fondo del Surface // evita que tape el fondo del Surface
                 headlineContent = {
                     Text(
                         text = headLineContent,
@@ -142,7 +146,7 @@ fun ListItemM3(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
-                modifier = Modifier.background(Color.Transparent), // evita que tape el fondo del Surface
+                modifier = Modifier.padding(horizontal = paddingRes).background(Color.LightGray), // evita que tape el fondo del Surface
                 headlineContent = {
                     Text(
                         text = headLineContent,
@@ -160,5 +164,5 @@ fun ListItemM3(
                 },
             )
         }
-    }
+    //}
 }

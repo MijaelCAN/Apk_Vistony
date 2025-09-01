@@ -1,8 +1,10 @@
 package com.vistony.app.clean.presentation.view.atoms
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
@@ -28,8 +30,9 @@ fun CardM3(
     ) {
         Column(
             modifier = Modifier
+                .fillMaxSize()
                 .padding(20.dp)
-            //.verticalScroll(rememberScrollState())
+                .background(Color.White.copy(alpha = 0.44f)),
         ) {
             //CardMenuOptions()
             CardBody(contentBody = contentBody)

@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.vistony.app.Entidad.UserState
 import com.vistony.app.ViewModel.LoginViewModel
 import com.vistony.app.clean.domain.model.ManufacturingOrderModel
 import com.vistony.app.clean.presentation.view.templates.ManuFacturingOrderTemplate
@@ -17,9 +18,10 @@ import com.vistony.app.ui.theme.theme.Dimensions
 @Composable
 fun ManuFacturingOrderPage(
     navController: NavHostController,
-    id: String
+    id: String,
+    userState: UserState
 ) {
 
-    ManuFacturingOrderTemplate(navController,id)
+    ManuFacturingOrderTemplate(navController,id,userState)
 
 }

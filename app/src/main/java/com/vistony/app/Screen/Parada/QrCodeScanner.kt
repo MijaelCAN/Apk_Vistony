@@ -54,7 +54,7 @@ fun QrCodeScanner() {
 }
 
 
-
+@Preview
 @Composable
 fun Prueba(){
     var isChecked by remember { mutableStateOf(false) }
