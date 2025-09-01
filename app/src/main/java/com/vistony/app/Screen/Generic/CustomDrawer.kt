@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Construction
+import androidx.compose.material.icons.filled.Factory
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
@@ -176,6 +177,11 @@ fun CustomDrawer(navController: NavController, id: String) {
                         Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
+                DrawerMenuItem(
+                    icon = Icons.Filled.Factory,
+                    text = "Orden de Fabricación",
+                    onClick = { navController.navigate("manufacturingOrder") }
+                )
                 DrawerMenuItem(
                     icon = Icons.Filled.Settings,
                     text = "Configuración",

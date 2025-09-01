@@ -34,7 +34,7 @@ class LoginViewModel @Inject constructor() : ViewModel() {
                 val response = authService.login(LoginRequest(user, pass))
                 if (response.isSuccessful) {
                     val body = response.body()
-                    if (body != null && body.data.equals("OK")) {
+                    if (body != null && body.data.equals("")) {
                         _loginstate = ResponseState(
                             state = true,
                             loginResponse = body,

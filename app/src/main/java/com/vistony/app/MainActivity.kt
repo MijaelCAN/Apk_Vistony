@@ -30,6 +30,7 @@ import com.vistony.app.Screen.LoginScreen
 import com.vistony.app.Screen.NoInternetScreen
 import com.vistony.app.Screen.Parada.HomeParada
 import com.vistony.app.Screen.Parada.ListParada
+import com.vistony.app.clean.presentation.view.pages.ManuFacturingOrderPage
 import com.vistony.app.ui.theme.theme.AppTypography
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -90,6 +91,9 @@ class MainActivity : ComponentActivity() {
                                 arguments = listOf(navArgument("user") { type = NavType.StringType })
                             ) {
                                 ListParada(navController = navController, id = it.arguments?.getString("user") ?: "")
+                            }
+                            composable("manufacturingOrder",) {
+                                ManuFacturingOrderPage(navController, id = it.arguments?.getString("user") ?: "")
                             }
                         }
                     } else {
