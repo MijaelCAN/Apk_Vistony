@@ -1,5 +1,6 @@
 package com.vistony.app.clean.presentation.view.atoms
 
+import android.app.Activity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +16,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,12 +27,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.vistony.app.ui.theme.theme.Dimensions
 import com.vistony.salesforce.kotlin.view.Atoms.theme.BlueVistony
+import android.content.ContextWrapper
 
-
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class,ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun SpinnerM3(
     label: String,
@@ -43,11 +48,35 @@ fun SpinnerM3(
 
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var textFieldWidth by remember { mutableStateOf(0) }
+    val context = LocalContext.current
+    //val activity = context as Activity
+
+
+// Buscar la Activity de forma segura
+    val activity = remember(context) {
+        var ctx = context
+        while (ctx is ContextWrapper) {
+            if (ctx is Activity) {
+                return@remember ctx
+            }
+            ctx = ctx.baseContext
+        }
+        null
+    }
+
+// Si no se encuentra Activity, usar valores por defecto
+    val windowSize = activity?.let { calculateWindowSizeClass(it) }
+    val paddingRes = windowSize?.let { Dimensions.getPadding(it.widthSizeClass) } ?: 8.dp
+    val textFieldHeight = windowSize?.let { Dimensions.getTextFieldHeight(it.widthSizeClass) } ?: 56.dp
+    val bodyFontSize = windowSize?.let { Dimensions.getBodyFontSize(it.widthSizeClass) } ?: 14.sp
 
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
-            .padding(10.dp)
+            .padding(horizontal = //8.dp
+                paddingRes
+            )
             .fillMaxWidth()
     ) {
         OutlinedTextField(
@@ -67,20 +96,6 @@ fun SpinnerM3(
                 { Text(errorMessage ?: "Campo requerido") }
             } else null,
             trailingIcon = {
-                /*if (isError) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.baseline_warning_24),
-                        contentDescription = "Error",
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                } else {
-                    Icon(
-                        imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                        contentDescription = null,
-                        modifier = Modifier.clickable { if(enabled) {expanded = !expanded} },
-                        tint = if(enabled) iconColor else Color.LightGray
-                    )
-                }*/
                 Icon(
                     imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
                     contentDescription = null,

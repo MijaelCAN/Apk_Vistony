@@ -35,8 +35,9 @@ fun ManuFacturingOrderTextFieldView(
     value: String,
     color: Color = Color.Gray,
 ) {
-    val context = LocalContext.current as Activity
-    val windowSize = calculateWindowSizeClass(context)
+    val context = LocalContext.current
+    val activity = context as Activity
+    val windowSize = calculateWindowSizeClass(activity)
     val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
     val paddingRes = Dimensions.getPadding(windowSize.widthSizeClass)
     Text(text = value, color = color, fontSize = bodyFontSize.sp, modifier = Modifier.padding(horizontal = paddingRes))
@@ -58,11 +59,13 @@ fun ManuFacturingOrderEditTextView(
     onClickTrailingIcon: (String) -> Unit = { _ -> },
     trailingIconResourceId: Int = R.drawable.outline_search_24,
 ) {
-    val context = LocalContext.current as Activity
+    val context = LocalContext.current
+    val activity = context as Activity
     val windowSize = calculateWindowSizeClass(context)
     val paddingRes = Dimensions.getPadding(windowSize.widthSizeClass)
     val textFieldHeight = Dimensions.getTextFieldHeight(windowSize.widthSizeClass)
     val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
+
     EditTextM3(
         id = 0,
         status = status,

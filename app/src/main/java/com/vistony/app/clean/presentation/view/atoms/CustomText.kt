@@ -1,5 +1,6 @@
 package com.vistony.app.clean.presentation.view.atoms
 
+import android.app.Activity
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +18,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -33,6 +36,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.vistony.app.ui.theme.theme.Dimensions
 import com.vistony.salesforce.kotlin.view.Atoms.theme.BlueVistony
 
 
@@ -500,10 +504,18 @@ fun EditTextM3(
     }
 }
 
+
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun TextWithDivider(text: String, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val activity = context as Activity
+    val windowSize = calculateWindowSizeClass(context)
+    val paddingRes = Dimensions.getPadding(windowSize.widthSizeClass)
+    val textFieldHeight = Dimensions.getTextFieldHeight(windowSize.widthSizeClass)
+    val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
     Row(
-        modifier = modifier.padding(vertical = 8.dp),
+        modifier = modifier.padding(horizontal = paddingRes),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Divider(

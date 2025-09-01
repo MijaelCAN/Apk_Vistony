@@ -15,7 +15,8 @@ import androidx.compose.ui.unit.dp
 fun CardM3(
     contentBody: @Composable () -> Unit = {},
     contentActions: @Composable () -> Unit = {},
-    textDivider: String = "Actions"
+    textDivider: String = "Actions",
+    isUsedTextDivider: Boolean = true
 ) {
     Card(
         modifier = Modifier
@@ -32,14 +33,16 @@ fun CardM3(
         ) {
             //CardMenuOptions()
             CardBody(contentBody = contentBody)
-            CardMenuActions(contentActions = contentActions,textDivider)
+            CardMenuActions(contentActions = contentActions,textDivider,isUsedTextDivider)
         }
     }
 }
 
 @Composable
-fun CardMenuActions(contentActions: @Composable () -> Unit, textDivider: String) {
-    TextWithDivider(text = textDivider)
+fun CardMenuActions(contentActions: @Composable () -> Unit, textDivider: String, isUsedTextDivider : Boolean = true) {
+    if(isUsedTextDivider) {
+        TextWithDivider(text = textDivider)
+    }
     contentActions()
 }
 

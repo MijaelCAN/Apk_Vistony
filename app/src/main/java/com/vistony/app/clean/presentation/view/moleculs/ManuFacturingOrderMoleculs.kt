@@ -39,26 +39,31 @@ import com.vistony.app.clean.presentation.viewmodels.ManufacturingOrderViewModel
 fun ManuFacturingOrderHead(
     viewModel: ManufacturingOrderViewModel  = hiltViewModel()
 ) {
-    Column {
-        ManuFacturingOrderTextFieldView(
-            value = "Digite el Nro. de Orden de Fabricación a buscar",
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        ManuFacturingOrderEditTextView(
-            status = true,
-            text = "250010207",
-            label = "Nro. Orden de Fabricación",
-            onClick = {
-                viewModel.onOrderCodeChange(it)
-            },
-            countMaxCharacter = 254,
-            keyboardType = KeyboardType.Number,
-            onClickLeadingIcon = {
-                viewModel.getManufacturingOrder(it)
-            },
-            leadingIconStatus = true
-        )
-    }
+    CardM3(
+        contentBody = {
+            Column {
+                ManuFacturingOrderTextFieldView(
+                    value = "Digite el Nro. de Orden de Fabricación a buscar",
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                ManuFacturingOrderEditTextView(
+                    status = true,
+                    text = "250010207",
+                    label = "Nro. Orden de Fabricación",
+                    onClick = {
+                        viewModel.onOrderCodeChange(it)
+                    },
+                    countMaxCharacter = 254,
+                    keyboardType = KeyboardType.Number,
+                    onClickLeadingIcon = {
+                        viewModel.getManufacturingOrder(it)
+                    },
+                    leadingIconStatus = true
+                )
+            }
+        },
+        isUsedTextDivider = false
+    )
 }
 
 
@@ -130,11 +135,13 @@ fun ManuFacturingOrderDetailBody(
                     isError = false,
                     errorMessage = "Seleccione Aprobación 2",
                 )
+                Spacer(modifier = Modifier.padding(top = 10.dp))
 
             },
             contentActions = {
+                Spacer(modifier = Modifier.padding(top = 10.dp))
                 ManuFacturingOrderDetailBodyPackaging(it.detail)
-            },
+                             },
             textDivider = "Envases"
         )
     }
@@ -191,6 +198,7 @@ fun ManuFacturingOrderDetailBodyPackaging(
                 }
             }
         )
+        Spacer(modifier = Modifier.height(10.dp))
     }
 }
 
