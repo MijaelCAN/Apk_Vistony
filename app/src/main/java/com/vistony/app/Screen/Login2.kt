@@ -282,12 +282,12 @@ fun Login2(
                                 }
                             }
                             "producción" -> {
-                                navController.navigate("listaParada/${user.id}"){
+                                navController.navigate("listaParada/${user.dni}"){
                                     popUpTo("login") { inclusive = true }
                                 }
                             }
                             else -> {
-                                navController.navigate("listaInsp/${user.id}") {
+                                navController.navigate("listaInsp/${user.dni}") {
                                     popUpTo("login") { inclusive = true }
                                 }
                             }
