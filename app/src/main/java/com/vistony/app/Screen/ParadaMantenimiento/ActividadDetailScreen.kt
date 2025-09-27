@@ -3,6 +3,7 @@ package com.vistony.app.Screen.ParadaMantenimiento
 import android.app.Activity
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -27,32 +28,20 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.ElectricBolt
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PrecisionManufacturing
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.TireRepair
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.sharp.Help
-import androidx.compose.material.icons.sharp.Inventory
-import androidx.compose.material.icons.sharp.PersonalInjury
-import androidx.compose.material.icons.sharp.WaterDrop
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -62,17 +51,15 @@ import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSiz
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -80,18 +67,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.vistony.app.Entidad.Activity2
-import com.vistony.app.Entidad.FailureType
 import com.vistony.app.Entidad.UserState
+import com.vistony.app.Extras.convertirFecha
 import com.vistony.app.Screen.Generic.CustomOutlinedTextField
 import com.vistony.app.Screen.Generic.FilterBoxsRow
 import com.vistony.app.Screen.Generic.Images.ImagePickerExample
+import com.vistony.app.Screen.Generic.Recursos.Data
+import com.vistony.app.Screen.Generic.TimeOutlinedTextField
 import com.vistony.app.ViewModel.ActividadViewModel
 import com.vistony.app.ui.theme.theme.Dimensions
 import kotlinx.coroutines.launch
-import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 /*@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
@@ -566,13 +554,15 @@ fun InfoRow(icon: ImageVector, title: String, value: String) {
 @Composable
 fun DetalleActividad(
     viewModel: ActividadViewModel,
-    actividad: Activity2?,
+    //actividad: Activity2?,
     onClose: () -> Unit,
     userState: UserState
 ) {
     // ============================ ESTADO GENERAL DE LA UI ===========================
     val uiState by viewModel.uiState.collectAsState()
-    val images = remember { mutableStateListOf<Uri>() }
+    //val images = remember { mutableStateListOf<Uri>() }
+    val images = remember(uiState.selectedActividad.evidences) { uiState.selectedActividad.evidences }
+    val actividad = uiState.selectedActividad
 
     // ======================= VARIABLES DE CONFIGURATION =======================
     val context = LocalContext.current
@@ -583,15 +573,8 @@ fun DetalleActividad(
     val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
 
     // ============================ LISTAS Y VARIABLES DE CONTROL  ============================
-    val optionsFalla = listOf(
-        FailureType(id = 1, name = "Electrica") to Icons.Default.ElectricBolt,
-        FailureType(id = 2, name = "Mecanica") to Icons.Default.Build,
-        FailureType(id = 3, name = "Neumatico") to Icons.Default.TireRepair,
-        FailureType(id = 4, name = "Operacional") to Icons.Sharp.PersonalInjury,
-        FailureType(id = 5, name = "Hidraulico") to Icons.Sharp.WaterDrop,
-        FailureType(id = 6, name = "Material") to Icons.Sharp.Inventory,
-        FailureType(id = 7, name = "Otro") to Icons.Sharp.Help,
-    )
+    val data = Data()
+    val otherReason = rememberSaveable { mutableStateOf("") }
 
     if (actividad == null) return
 
@@ -679,8 +662,6 @@ fun DetalleActividad(
             }
         )
         Spacer(Modifier.height(8.dp))
-
-        // Máquina (simulando dropdown disabled)
         CustomOutlinedTextField(
             value = actividad.machine?.name ?: "No especificada",
             onValueChange = {},
@@ -694,8 +675,6 @@ fun DetalleActividad(
             }
         )
         Spacer(Modifier.height(8.dp))
-
-        // Equipo (simulando dropdown disabled)
         CustomOutlinedTextField(
             value = actividad.equipment?.name ?: "No especificado",
             onValueChange = {},
@@ -711,77 +690,6 @@ fun DetalleActividad(
         Spacer(Modifier.height(8.dp))
 
         // ======================= TIPO DE FALLA =======================
-        /*Text(
-            modifier = Modifier.padding(top = 16.dp),
-            text = "Tipo de Falla",
-            fontWeight = FontWeight.Bold,
-            fontSize = 15.sp,
-        )
-        Spacer(Modifier.height(8.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = when(actividad.reason?.name) {
-                    "Electrica" -> Color(0xFFFFEB3B).copy(alpha = 0.1f)
-                    "Mecanica" -> Color(0xFF2196F3).copy(alpha = 0.1f)
-                    "Neumatico" -> Color(0xFF9C27B0).copy(alpha = 0.1f)
-                    "Operacional" -> Color(0xFFFF5722).copy(alpha = 0.1f)
-                    "Hidraulico" -> Color(0xFF00BCD4).copy(alpha = 0.1f)
-                    "Material" -> Color(0xFF4CAF50).copy(alpha = 0.1f)
-                    else -> MaterialTheme.colorScheme.surfaceVariant
-                }
-            )
-        ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = when(actividad.reason?.name) {
-                        "Electrica" -> Icons.Default.ElectricBolt
-                        "Mecanica" -> Icons.Default.Build
-                        "Neumatico" -> Icons.Default.TireRepair
-                        "Operacional" -> Icons.Sharp.PersonalInjury
-                        "Hidraulico" -> Icons.Sharp.WaterDrop
-                        "Material" -> Icons.Sharp.Inventory
-                        else -> Icons.Sharp.Help
-                    },
-                    contentDescription = "Tipo de falla",
-                    modifier = Modifier.size(24.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    text = actividad.reason?.name ?: "No especificado",
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 16.sp
-                )
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-
-        // ======================= DESCRIPCIÓN DEL PROBLEMA =======================
-        CustomOutlinedTextField(
-            value = actividad.description,
-            onValueChange = {},
-            label = "Descripción del Problema",
-            readOnly = true,
-            minLines = 3,
-            maxLines = 3
-        )
-        Spacer(Modifier.height(8.dp))
-
-        // ======================= ACCIÓN REALIZADA =======================
-        CustomOutlinedTextField(
-            value = actividad.actionTaken,
-            onValueChange = {},
-            label = "Acción Realizada",
-            readOnly = true,
-            minLines = 3,
-            maxLines = 3
-        )
-        Spacer(Modifier.height(8.dp))*/
         Text(
             modifier = Modifier.padding(top = 16.dp),
             text = "Tipo de Falla",
@@ -790,18 +698,28 @@ fun DetalleActividad(
         )
         Spacer(Modifier.height(8.dp))
         FilterBoxsRow(
-            options = optionsFalla,
+            options = data.optionsFalla,
             selectedOption = uiState.selectedActividad.reason,
             onOptionSelected = viewModel::onReasonChange,
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         )
+        if(uiState.selectedActividad.reason.name == "Otro"){
+            Spacer(Modifier.height(8.dp))
+            CustomOutlinedTextField(
+                value = uiState.selectedActividad.reason.description.ifEmpty { otherReason.value },
+                onValueChange = {otherReason.value = it},
+                label = "Otro tipo de falla",
+                readOnly = if(uiState.selectedActividad.endTime != null) true else false,
+            )
+        }
+
         Spacer(Modifier.height(8.dp))
         CustomOutlinedTextField(
             value = uiState.selectedActividad.description,
             onValueChange = viewModel::onDescriptionChange,
             label = "Descripción del Problema",
-            readOnly = false,
+            readOnly = if(uiState.selectedActividad.endTime != null) true else false,
             minLines = 3,
             maxLines = 3
         )
@@ -810,7 +728,7 @@ fun DetalleActividad(
             value = uiState.selectedActividad.actionTaken,
             onValueChange = viewModel::onActionChange,
             label = "Acción realizada",
-            readOnly = false,
+            readOnly = if(uiState.selectedActividad.endTime != null) true else false,
             minLines = 3,
             maxLines = 3
         )
@@ -822,16 +740,65 @@ fun DetalleActividad(
             fontSize = 15.sp,
         )
         Spacer(Modifier.height(8.dp))
-        ImagePickerExample(images)
+        ImagePickerExample(
+            images = images,
+            onAddImage = {uri ->
+                if(uiState.selectedActividad.endTime != null) return@ImagePickerExample
+                viewModel.addImage(uri)
+            },
+            onRemoveImage = { uri ->
+                if(uiState.selectedActividad.endTime != null) return@ImagePickerExample
+                viewModel.removeImage(uri)
+            },
+            enabled = uiState.selectedActividad.endTime == null
+        )
 
         Spacer(Modifier.height(8.dp))
         CustomOutlinedTextField(
             value = uiState.selectedActividad.observations,
             onValueChange = viewModel::onObservationChange,
             label = "Observaciones",
-            readOnly = false,
+            readOnly = if(uiState.selectedActividad.endTime != null) true else false,
             minLines = 3,
             maxLines = 3
+        )
+        Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+
+            TimeOutlinedTextField(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                texto = "Hora Final",
+                readonly = if(uiState.selectedActividad.endTime != null) true else false,
+                selectedTime = uiState.selectedActividad.finalHour,
+                onTimeChange = { newTime ->
+                    Log.d("TIME", newTime.toString())
+                    // Combinar fecha existente con la nueva hora
+                    val currentDate = uiState.selectedActividad.finalHour
+
+                    Log.e("Current Date", currentDate.toString())
+                    //if (currentDate != null && newTime != null) {
+                    if ( newTime != null) {
+                        val combinedDateTime = LocalDateTime.now()
+                            .withHour(newTime.hour)
+                            .withMinute(newTime.minute)
+                            .truncatedTo(ChronoUnit.SECONDS)
+                        viewModel.onFinalHourChange(combinedDateTime)
+                    }
+                },
+                showDialog = uiState.showDialogTimeFin,
+                onShowDialogChange = {
+                    if(uiState.selectedActividad.endTime != null) return@TimeOutlinedTextField
+                    viewModel.onShowDialogTimeFinChange(it)
+                }
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        CustomOutlinedTextField(
+            value = uiState.selectedActividad.lineTec,
+            onValueChange = viewModel::onLineTecChange,
+            label = "Tecnico de linea",
+            readOnly = if(uiState.selectedActividad.endTime != null) true else false,
         )
 
         // ======================= TIEMPO DE ACTIVIDAD =======================
@@ -842,6 +809,14 @@ fun DetalleActividad(
             fontSize = 15.sp,
         )
         Spacer(Modifier.height(8.dp))
+        val initialHourString = actividad.initialHour?.toString()
+        val horaFormateadaInicio = if (!initialHourString.isNullOrEmpty()) {
+            val fechaHoraInicio = LocalDateTime.parse(initialHourString)
+            val formato = DateTimeFormatter.ofPattern("yy/MM/dd - HH:mm")
+            fechaHoraInicio.format(formato)
+        } else {
+            "Sin fecha"
+        }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -867,7 +842,7 @@ fun DetalleActividad(
                         fontWeight = FontWeight.Medium
                     )
                     Text(
-                        text = formatTime(actividad.startTime),
+                        text = horaFormateadaInicio,//formatTime(actividad.startTime),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -875,6 +850,14 @@ fun DetalleActividad(
             }
 
             Spacer(Modifier.width(8.dp))
+            val finalHourString = actividad.finalHour?.toString()
+            val horaFormateadaFin = if (!finalHourString.isNullOrEmpty()) {
+                val fechaHoraFin = LocalDateTime.parse(finalHourString)
+                val formato = DateTimeFormatter.ofPattern("yy/MM/dd - HH:mm")
+                fechaHoraFin.format(formato)
+            } else {
+                "Sin fecha"
+            }
 
             Card(
                 modifier = Modifier.weight(1f),
@@ -896,7 +879,7 @@ fun DetalleActividad(
                         fontWeight = FontWeight.Medium
                     )
                     Text(
-                        text = formatTime(actividad.endTime),
+                        text = horaFormateadaFin,//formatTime(actividad.finalHour),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -959,8 +942,10 @@ fun DetalleActividad(
 
         // ======================= BOTÓN FINALIZAR =======================
         Button(
-            enabled = true,
-            onClick = onClose,
+            enabled = if(uiState.selectedActividad.endTime != null) false else true,
+            onClick = {
+                viewModel.UpdateActividad(context, actividad.DocEntry, otherReason)
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(buttonHeight)
@@ -968,11 +953,31 @@ fun DetalleActividad(
                 .clip(RoundedCornerShape(0.dp)),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFFC6A68),
+                //containerColor = Color(0xFFFC6A68),
+                containerColor = Color(0xFF01398D),
                 contentColor = Color.White
             )
         ) {
-            Text(text = "Cerrar Detalle", fontSize = bodyFontSize.sp)
+            //Text(text = "Cerrar Detalle", fontSize = bodyFontSize.sp)
+            if (uiState.isCreating) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Finalizando...",fontSize = bodyFontSize.sp)
+            } else {
+                Text(
+                    text = if (uiState.selectedActividad.endTime != null) "Actividad Finalizada" else "Finalizar Actividad",
+                    fontSize = bodyFontSize.sp
+                )
+            }
+            if (uiState.createSuccess) {
+                Log.d("ActividadViewModel", "Actividad finalizada con éxito")
+                onClose()
+                viewModel.resetCreateState()
+            }
         }
         Spacer(modifier = Modifier.height(32.dp))
     }

@@ -70,7 +70,7 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                     DrawerSubItem("Lista Inspecciones") { navController.navigate("listaInsp/$id") },
                 ),
                 // Solo visible para ciertos roles
-                visibleForRoles = setOf("operador", "admin")
+                visibleForRoles = setOf("PRODUCCIÓN", "ADMIN")
             ),
             DrawerItem(
                 id = "parada_maquina",
@@ -79,7 +79,7 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                 subItems = listOf(
                     DrawerSubItem("Lista de Paradas") { navController.navigate("listaParada/$id") },
                 ),
-                visibleForRoles = setOf("operador", "admin")
+                visibleForRoles = setOf("PRODUCCIÓN", "ADMIN")
             ),
             DrawerItem(
                 id = "mantenimiento",
@@ -88,7 +88,7 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                 subItems = listOf(
                     DrawerSubItem("Registro de Paradas") { navController.navigate("paradaMantenimiento") },
                 ),
-                visibleForRoles = setOf("mantenimiento", "admin")
+                visibleForRoles = setOf("MANTENIMIENTO", "ADMIN")
             ),
             DrawerItem(
                 id = "configuracion",

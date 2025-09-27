@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Producción</string>
+    <string name="app_name_dev">Operity Core</string>
     <string name="switch_check">Check</string>
 </resources>

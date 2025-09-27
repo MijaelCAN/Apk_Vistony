@@ -4,6 +4,7 @@ import android.app.Activity
 import android.net.Uri
 import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
@@ -37,6 +38,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -73,9 +75,12 @@ import com.vistony.app.Extras.randomMutedColor
 import com.vistony.app.Screen.Generic.CustomOutlinedTextField
 import com.vistony.app.Screen.Generic.DateOutlinedTextField
 import com.vistony.app.Screen.Generic.GenericDropdownMenu2
+import com.vistony.app.Screen.Generic.TimeOutlinedTextField
 import com.vistony.app.ViewModel.ActividadViewModel
 import com.vistony.app.ViewModel.OTViewModel
 import com.vistony.app.ui.theme.theme.Dimensions
+import kotlinx.coroutines.delay
+import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
@@ -94,6 +99,7 @@ fun BodyActividad(
     val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
     val buttonHeight = Dimensions.getButtonHeight(windowSize.widthSizeClass)
     val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
+
 
     // ============================ ESTADO GENERAL DE LA UI ===========================
     val uiState by viewModel.uiState.collectAsState()
@@ -120,6 +126,7 @@ fun BodyActividad(
             if (startIndex != -1 && endIndex != -1 && startIndex < endIndex) {
                 new_ot = scannedText.substring(startIndex, endIndex)
                 viewModel.onOTChange(new_ot)
+
             } else {
                 //ot = "Codigo de barra, no válido"
                 viewModel.onOTChange("Codigo de barra, no válido")
@@ -130,8 +137,8 @@ fun BodyActividad(
     val currentOt by rememberUpdatedState(uiState.selectedActividad.OT)
     LaunchedEffect(currentOt) {
         if (currentOt.isNotEmpty()) {
-            otViewModel.getCodigoBarra(currentOt)
-
+            //otViewModel.getCodigoBarra(currentOt)
+            viewModel.getAllOT(currentOt)
             //um = otState.productoResponse?.data?.UM.toString()
             //description = otState.productoResponse?.data?.Producto.toString()
             //linea = otState.productoResponse?.data?.Linea.toString()
@@ -144,7 +151,21 @@ fun BodyActividad(
             Log.i("VER", "ENTRO AL VACIO")
         }
     }
-    //(01)1110001100303(10)250008213(17)280601
+    LaunchedEffect(uiState.createSuccess, uiState.createError) {
+        if (uiState.createSuccess) {
+            // Mostrar mensaje de éxito
+            showSuccessMessage("Actividad creada exitosamente")
+            // Opcional: resetear después de un tiempo
+            delay(3000)
+            //viewModel.resetCreateState()
+        }
+
+        if (uiState.createError != null) {
+            // Mostrar mensaje de error
+            showErrorMessage(uiState.createError!!)
+        }
+    }
+            //(01)1110001100303(10)250008213(17)280601
 
 
     Column(
@@ -179,13 +200,37 @@ fun BodyActividad(
                 showDialog = uiState.showDialogDateIni,
                 onShowDialogChange = viewModel::onShowDialogDateIniChange
             )
+            Spacer(Modifier.width(8.dp))
+            TimeOutlinedTextField(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                texto = "Hora Inicio",
+                readonly = true,
+                selectedTime = uiState.selectedActividad.initialHour,
+                onTimeChange = { newTime ->
+                    Log.d("DATE1", newTime.toString())
+                    // Combinar fecha existente con la nueva hora
+                    val currentDate = uiState.selectedActividad.initialHour
+                    if (currentDate != null && newTime != null) {
+                        Log.d("DATE2", newTime.toString())
+                        val combinedDateTime = currentDate
+                            .withHour(newTime.hour)
+                            .withMinute(newTime.minute)
+                            .truncatedTo(ChronoUnit.SECONDS)
+                        viewModel.onInitialHourChange(combinedDateTime)
+                    }
+                },
+                showDialog = uiState.showDialogTimeIni,
+                onShowDialogChange = viewModel::onShowDialogTimeIniChange,
+            )
         }
 
         Spacer(Modifier.height(8.dp))
         CustomOutlinedTextField( // ---- OT ----
             value = uiState.selectedActividad.OT,
             onValueChange = viewModel::onOTChange,
-            label = "OT",
+            label = "OT Mezcla",
             trailingIcon = {
                 IconButton(onClick = { scanLauncher.launch(ScanOptions()) }
                 ) {
@@ -194,6 +239,21 @@ fun BodyActividad(
             },
             keyboardOption = KeyboardOptions().copy(keyboardType = KeyboardType.Number),
             readOnly = false
+        )
+        Spacer(Modifier.height(8.dp))
+        GenericDropdownMenu2(
+            label = "OT Envazado",
+            options = uiState.listOT,
+            selectedOption = uiState.selectedOT,
+            onOptionSelected = {
+                /*viewModel.onAreaChange(it)
+                viewModel.getMachinesByLine(it)
+                viewModel.getEquipmentByLine(it)*/
+                viewModel.onOTItemChange(it)
+            },
+            optionToText = { it.ItemName },
+            expanded = uiState.expandedOT,
+            onExpandedChange = viewModel::onExpandedOTChange
         )
         Spacer(Modifier.height(8.dp))
         GenericDropdownMenu2(
@@ -268,7 +328,6 @@ fun BodyActividad(
             onClick = {
                 viewModel.onInitialChange(userState.currentUser)
                 viewModel.crearActividad(otraMaquina, otroEquipo)
-                onClose()
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -277,13 +336,28 @@ fun BodyActividad(
                 .clip(RoundedCornerShape(0.dp)),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFFC6A68),
+                //containerColor = Color(0xFFFC6A68),
+                containerColor = Color(0xFF01398D),
                 contentColor = Color.White
             )
         ) {
-
-            Text(text = "Crear actividad", fontSize = bodyFontSize.sp)
+            if (uiState.isCreating) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Creando...",fontSize = bodyFontSize.sp)
+            } else {
+                Text("Crear Actividad",fontSize = bodyFontSize.sp)
+            }
+            if (uiState.createSuccess) {
+                onClose()
+                viewModel.resetCreateState()
+            }
         }
+
         Spacer(modifier = Modifier.height(32.dp))
     }
 }

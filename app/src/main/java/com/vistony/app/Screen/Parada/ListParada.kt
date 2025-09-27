@@ -130,7 +130,7 @@ fun ListParada(
         ModalBottomSheetLayout(
             modifier = Modifier.fillMaxWidth(),
             sheetState = bottomSheetState,
-            sheetContent = { BottomBar("parada") }
+            sheetContent = { BottomBar("parada",userState.currentUser) }
         ) {
             Scaffold(
                 topBar = {
@@ -148,7 +148,8 @@ fun ListParada(
                                     bottomSheetState.show()
                                 }
                             }
-                        }
+                        },
+                        viewModel = loginViewModel
                     )
                 },
                 floatingActionButton = {

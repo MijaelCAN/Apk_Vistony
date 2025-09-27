@@ -173,7 +173,7 @@ fun ListScreen(
         ModalBottomSheetLayout(
             modifier = Modifier.fillMaxWidth(),
             sheetState = bottomSheetState,
-            sheetContent = { BottomBar("inspection") }
+            sheetContent = { BottomBar("inspection",userState.currentUser) }
         ) {
             Scaffold(
                 topBar = {
@@ -192,7 +192,8 @@ fun ListScreen(
                                     bottomSheetState.show()
                                 }
                             }
-                        }
+                        },
+                        viewModel = loginViewModel
                     )
                 },
                 content = { paddingValues ->

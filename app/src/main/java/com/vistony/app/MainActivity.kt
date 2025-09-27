@@ -47,7 +47,6 @@ class MainActivity : ComponentActivity() {
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         setContent {
             AppTheme() {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -70,12 +69,6 @@ class MainActivity : ComponentActivity() {
                                 Login2(navController,loginViewModel, userState)
                                 //LoginScreen(navController)
                             }
-                            /*composable(
-                                route = "home/{user}",
-                                arguments = listOf(navArgument("user") { type = NavType.StringType })
-                            ) { it ->
-                                HomeScreen(navController, sharedViewModel, id = it.arguments?.getString("user") ?: "")
-                            }*/
                             composable(
                                 "detalle/{user}",
                                 arguments = listOf(navArgument("user") { type = NavType.StringType })
@@ -91,12 +84,6 @@ class MainActivity : ComponentActivity() {
                             composable("reporte",) {
                                 LoginScreen(navController)
                             }
-                            /*composable(
-                                "homeParada/{user}",
-                                arguments = listOf(navArgument("user") { type = NavType.StringType })
-                            ) {
-                                HomeParada(navController = navController, id = it.arguments?.getString("user") ?: "")
-                            }*/
                             composable(
                                 "listaParada/{user}",
                                 arguments = listOf(navArgument("user") { type = NavType.StringType })

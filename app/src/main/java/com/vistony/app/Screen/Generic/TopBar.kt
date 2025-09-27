@@ -1,8 +1,6 @@
 package com.vistony.app.Screen.Generic
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -14,6 +12,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
+import com.vistony.app.ViewModel.LoginViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,7 +22,8 @@ fun TopBar(
     colorContent: Color = Color.White,
     navController: NavController,
     onMenuClick: () -> Unit,
-    onBottomMenuClick: (() -> Unit)? = null
+    onBottomMenuClick: (() -> Unit)? = null,
+    viewModel: LoginViewModel
 ) {
     TopAppBar(
         title = { Text(text = title, color = colorContent) },
@@ -33,8 +33,10 @@ fun TopBar(
             }
         },
         actions = {
-            IconButton(onClick = { navController.navigate("login") }) {
-                //Icon(Icons.Filled.ArrowBack, contentDescription = "Atrás", tint = Color.White)
+            IconButton(onClick = {
+                viewModel.onResetStateLogin()
+                navController.navigate("login")
+            }) {
                 Text(text = "Salir", color = colorContent)
             }
             if (title.isEmpty() && onBottomMenuClick != null) {
