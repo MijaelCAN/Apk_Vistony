@@ -2,6 +2,7 @@ package com.vistony.app.Screen.Parada
 
 import android.app.Activity
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -71,6 +72,7 @@ import com.vistony.app.R
 import com.vistony.app.Screen.Generic.CustomAlertDialog
 import com.vistony.app.Screen.Generic.DialogType
 import com.vistony.app.Screen.Generic.GenericDropdownMenu
+import com.vistony.app.Screen.LoginScreen
 import com.vistony.app.Screen.ParadaMantenimiento.TarjetaActividad
 import com.vistony.app.ViewModel.ActividadViewModel
 import com.vistony.app.ViewModel.EstadoParada
@@ -351,7 +353,8 @@ fun DetalleParada(
                             // AQUI DEBE LLAMAR A LA API DE CERRAR ACTIVIDAD, ASIMISMO CREAR UN PDF EXPORTABLE
                         }
                     }
-                    if(role == "operador") {
+                    Log.d("Role", "Rol del usuario: $role")
+                    if(role?.lowercase() == "producción") {
                         paradaViewModel.detenerParada(Integer.parseInt(parada.DocEntry))
                         showDialog = true
                     }

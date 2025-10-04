@@ -14,7 +14,7 @@ android {
         applicationId = "com.vistony.app"
         minSdk = 24
         targetSdk = 33
-        versionCode = 4
+        versionCode = 5
         versionName = "1.2.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

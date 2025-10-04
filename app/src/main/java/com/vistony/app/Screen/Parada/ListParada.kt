@@ -97,8 +97,8 @@ fun ListParada(
 ) {
     val loginViewModel = hiltViewModel<LoginViewModel>(LocalContext.current as ComponentActivity)
 
-    val role by loginViewModel.userRole.collectAsState()
-    Log.e("rol", role.toString())
+    //val role by loginViewModel.userRole.collectAsState()
+    val role = userState.currentUser.role
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -153,18 +153,16 @@ fun ListParada(
                     )
                 },
                 floatingActionButton = {
-                    if(role == "operador"){
-                        IconButton(
-                            modifier = Modifier.size(60.dp),
-                            onClick = { showDrawerHome = true },
-                            colors = IconButtonDefaults.iconButtonColors(
-                                containerColor = Color(0xFFFC6A68),
-                                contentColor = Color.White
-                            )
-                        ) {
-                            Icon(Icons.Filled.Add, contentDescription = "")
+                    IconButton(
+                        modifier = Modifier.size(60.dp),
+                        onClick = { showDrawerHome = true },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Color(0xFFFC6A68),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = "")
 
-                        }
                     }
                 },
                 content = { paddingValues ->

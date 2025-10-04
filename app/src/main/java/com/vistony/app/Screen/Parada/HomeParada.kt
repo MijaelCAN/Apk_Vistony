@@ -226,8 +226,8 @@ fun BotonParada(
                 ParadaRequest(
                     formatoServidor(newFecha),
                     maquinaId,
-                    ordenMezcla,
                     areaId,
+                    ordenMezcla,
                     comentarios,
                     "Y",
                     formatoServidor(newFecha),
