@@ -35,7 +35,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.TurnLeft
+import androidx.compose.material.icons.filled.WorkOutline
 import androidx.compose.material.rememberModalBottomSheetState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -63,6 +65,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -98,6 +101,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.Duration
+import java.time.temporal.ChronoUnit
 
 
 @OptIn(
@@ -259,10 +264,13 @@ fun ListActividad(
             onClose = { showDrawerDetalle = false },
             animationDuration = 400 // ms, ajusta velocidad
         ) {
-            IconButton(onClick = {
-                viewModel.resetCreateState()
-                showDrawerDetalle = false
-            }) {
+            IconButton(
+                enabled = !uiState.isCreating,
+                onClick = {
+                    viewModel.resetCreateState()
+                    showDrawerDetalle = false
+                }
+            ) {
                 Icon(Icons.Default.TurnLeft, contentDescription = "Cerrar")
             }
             Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 32.dp)) {
@@ -306,10 +314,12 @@ fun ListActividad(
             onClose = { showDrawerActivity = false },
             animationDuration = 300
         ) {
-            IconButton(onClick = {
-                viewModel.onResetSelectedActividad()
-                viewModel.resetCreateState()
-                showDrawerActivity = false}
+            IconButton(
+                enabled = !uiState.isCreating,
+                onClick = {
+                    viewModel.onResetSelectedActividad()
+                    viewModel.resetCreateState()
+                    showDrawerActivity = false}
             ) {
                 Icon(Icons.Default.TurnLeft, contentDescription = "Cerrar")
             }
@@ -381,28 +391,97 @@ fun BodyListActividad(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        CustomSearchText(
-            text = searchText,
-            onTextChange = { searchText = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp),
-            containerColor = Color.White,
-            searchIcon = Icons.Default.Search,
-            placeholderText = "Buscar actividad..."
-        )
+        // Solo mostrar la barra de búsqueda si no está cargando
+        if (!uiState.isLoading) {
+            CustomSearchText(
+                text = searchText,
+                onTextChange = { searchText = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
+                containerColor = Color.White,
+                searchIcon = Icons.Default.Search,
+                placeholderText = "Buscar actividad..."
+            )
 
-        Spacer(modifier = Modifier.height(8.dp))
-        LazyColumn(modifier = Modifier.fillMaxWidth()) {
-            itemsIndexed(listaFiltrada) { index,item ->
-                val imageUrl = UnsplashImages.urls[index % UnsplashImages.urls.size]
-                TarjetaActividad(
-                    actividad = item,
-                    viewModel = viewModel,
-                    navController = navController,
-                    imageUrl = imageUrl,
-                    function = { function(item) }
-                )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+        
+        // Mostrar diferentes estados según el estado de la UI
+        when {
+            uiState.isLoading -> {
+                // Estado de carga
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(48.dp),
+                            color = blueDarkVistony,
+                            strokeWidth = 4.dp
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Cargando actividades...",
+                            color = textColorSubTitle,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
+            listaFiltrada.isEmpty() -> {
+                // Estado vacío
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.WorkOutline,
+                            contentDescription = "Sin actividades",
+                            modifier = Modifier.size(50.dp),
+                            tint = textColorSubTitle.copy(alpha = 0.2f)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "No tiene registros en estas fechas",
+                            color = textColorTitle,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "Registre uno",
+                            color = textColorSubTitle,
+                            fontSize = 10.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+            else -> {
+                // Estado con datos - mostrar lista
+                LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                    itemsIndexed(listaFiltrada) { index,item ->
+                        val imageUrl = UnsplashImages.urls[index % UnsplashImages.urls.size]
+                        TarjetaActividad(
+                            actividad = item,
+                            viewModel = viewModel,
+                            navController = navController,
+                            imageUrl = imageUrl,
+                            function = { function(item) }
+                        )
+                    }
+                }
             }
         }
     }
@@ -461,6 +540,32 @@ fun TarjetaActividad(
                     modifier = Modifier.fillMaxHeight().padding(bottom = 20.dp),
                     verticalArrangement = Arrangement.Center
                 ) {
+                    // Diferenciador visual de estado
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(
+                                    getActivityStatusColor(actividad),
+                                    CircleShape
+                                )
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (isActivityFinished(actividad)) "Finalizada - " else "En progreso - ",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = getActivityStatusColor(actividad)
+                        )
+                        LiveTimer(
+                            startTime = actividad.U_InitialHour,
+                            finishTime = actividad.U_FinalHour,
+                            color = getActivityStatusColor(actividad)
+                        )
+                    }
+                    
                     Text(
                         text = actividad.U_area + " - " + actividad.U_equipment,
                         fontSize = 12.sp,
@@ -477,15 +582,30 @@ fun TarjetaActividad(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        //text = "${actividad.U_?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))} - ${actividad.U_.name}",
                         text = actividad.U_description_OT,
                         fontSize = 12.sp,
                         lineHeight = 14.sp,
                         color = Color(0xFF78909C)
                     )
+                    
+                    // Cronómetro/Tiempo
+                    /*Spacer(modifier = Modifier.height(1.dp))
+                    if (isActivityFinished(actividad)) {
+                        Text(
+                            text = "Finalizada - ${formatTimeDuration(actividad.U_InitialHour, actividad.U_FinalHour)}",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = getActivityStatusColor(actividad)
+                        )
+                    } else {
+                        LiveTimer(
+                            startTime = actividad.U_InitialHour,
+                            color = getActivityStatusColor(actividad)
+                        )
+                    }*/
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
                 Divider(
                     color = Color(0xFFE0E0E0),
@@ -501,6 +621,90 @@ fun TarjetaActividad(
             )*/
 
         }
+    }
+}
+
+// Composable para cronómetro en tiempo real
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun LiveTimer(
+    startTime: String?,
+    finishTime: String? = null,
+    color: Color
+) {
+
+    var currentTime by remember { mutableStateOf(LocalDateTime.now()) }
+    val endTime = if (finishTime.isNullOrEmpty()) {
+        currentTime
+    } else {
+        LocalDateTime.parse(finishTime, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
+    }
+    
+    LaunchedEffect(Unit) {
+        while (true) {
+            currentTime = LocalDateTime.now()
+            delay(1000) // Actualizar cada segundo
+        }
+    }
+    
+    Text(
+        text = " ${formatTimeDuration(startTime, endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))}",
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Medium,
+        color = color
+    )
+}
+
+// Funciones auxiliares para el cálculo de tiempo
+@RequiresApi(Build.VERSION_CODES.O)
+fun isActivityFinished(actividad: semiActivity): Boolean {
+    val isFinished = !actividad.U_FinalHour.isNullOrBlank()
+    android.util.Log.d("ActivityStatus", "DocEntry: ${actividad.DocEntry}, U_FinalHour: '${actividad.U_FinalHour}', isFinished: $isFinished")
+    return isFinished
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun formatTimeDuration(startTime: String?, endTime: String?): String {
+    if (startTime.isNullOrBlank()) return "Hora desconocida"
+    
+    return try {
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+        val start = LocalDateTime.parse(startTime, formatter)
+        val end = if (endTime.isNullOrBlank()) LocalDateTime.now() else LocalDateTime.parse(endTime, formatter)
+        
+        val duration = Duration.between(start, end)
+        val hours = duration.toHours()
+        val minutes = duration.toMinutesPart()
+        
+        val result = when {
+            hours > 0 -> "${hours}h ${minutes}m"
+            minutes > 0 -> "${minutes}m"
+            else -> "< 1m"
+        }
+        
+        android.util.Log.d("TimeDuration", "startTime: $startTime, endTime: $endTime, result: $result")
+        result
+    } catch (e: Exception) {
+        android.util.Log.e("TimeDuration", "Error parsing time: ${e.message}")
+        "Hora desconocida"
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun getActivityStatusText(actividad: semiActivity): String {
+    return if (isActivityFinished(actividad)) {
+        "Finalizada - ${formatTimeDuration(actividad.U_InitialHour, actividad.U_FinalHour)}"
+    } else {
+        "En progreso - ${formatTimeDuration(actividad.U_InitialHour, null)}"
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun getActivityStatusColor(actividad: semiActivity): Color {
+    return if (isActivityFinished(actividad)) {
+        Color(0xFF4CAF50) // Verde para finalizada
+    } else {
+        Color(0xFFFF9800) // Naranja para en progreso
     }
 }
 

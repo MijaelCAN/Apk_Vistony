@@ -196,7 +196,8 @@ fun TimeOutlinedTextField(
     onTimeChange: (LocalDateTime?) -> Unit,
     showDialog: Boolean,
     onShowDialogChange: (Boolean) -> Unit,
-    is24HourFormat: Boolean = true
+    is24HourFormat: Boolean = true,
+    minTime: LocalDateTime? = null
 ) {
     val timeFormatter = DateTimeFormatter.ofPattern(if (is24HourFormat) "HH:mm" else "hh:mm a")
 
@@ -249,7 +250,8 @@ fun TimeOutlinedTextField(
                 onShowDialogChange(false)
             },
             onDismiss = { onShowDialogChange(false) },
-            is24HourFormat = is24HourFormat
+            is24HourFormat = is24HourFormat,
+            minTime = minTime
         )
     }
 }
@@ -260,7 +262,8 @@ fun TimePickerDialog(
     selectedTime: LocalDateTime?,
     onTimeSelected: (LocalDateTime?) -> Unit,
     onDismiss: () -> Unit,
-    is24HourFormat: Boolean = true
+    is24HourFormat: Boolean = true,
+    minTime: LocalDateTime? = null
 ) {
     val initialTime = selectedTime ?: LocalDateTime.now()
     var currentTime by remember { mutableStateOf(initialTime) }
@@ -307,7 +310,12 @@ fun TimePickerDialog(
                             } else {
                                 newHour % 24
                             }
-                            currentTime = currentTime.withHour(hour)
+                            val newTime = currentTime.withHour(hour)
+                            
+                            // Validar que la nueva hora no sea menor a la hora mínima
+                            if (minTime == null || !newTime.isBefore(minTime)) {
+                                currentTime = newTime
+                            }
                         },
                         range = if (is24HourFormat) 0..23 else 1..12,
                         label = { value ->
@@ -329,7 +337,12 @@ fun TimePickerDialog(
                     TimeWheel(
                         value = currentTime.minute,
                         onValueChange = { newMinute ->
-                            currentTime = currentTime.withMinute(newMinute % 60)
+                            val newTime = currentTime.withMinute(newMinute % 60)
+                            
+                            // Validar que la nueva hora no sea menor a la hora mínima
+                            if (minTime == null || !newTime.isBefore(minTime)) {
+                                currentTime = newTime
+                            }
                         },
                         range = 0..59,
                         label = { value -> String.format("%02d", value) }
@@ -344,8 +357,15 @@ fun TimePickerDialog(
                                 onClick = {
                                     isAm = true
                                     // Adjust hour when switching to AM
-                                    if (currentTime.hour >= 12) {
-                                        currentTime = currentTime.withHour(currentTime.hour - 12)
+                                    val newTime = if (currentTime.hour >= 12) {
+                                        currentTime.withHour(currentTime.hour - 12)
+                                    } else {
+                                        currentTime
+                                    }
+                                    
+                                    // Validar que la nueva hora no sea menor a la hora mínima
+                                    if (minTime == null || !newTime.isBefore(minTime)) {
+                                        currentTime = newTime
                                     }
                                 },
                                 modifier = Modifier.size(40.dp)
@@ -362,8 +382,15 @@ fun TimePickerDialog(
                                 onClick = {
                                     isAm = false
                                     // Adjust hour when switching to PM
-                                    if (currentTime.hour < 12) {
-                                        currentTime = currentTime.withHour(currentTime.hour + 12)
+                                    val newTime = if (currentTime.hour < 12) {
+                                        currentTime.withHour(currentTime.hour + 12)
+                                    } else {
+                                        currentTime
+                                    }
+                                    
+                                    // Validar que la nueva hora no sea menor a la hora mínima
+                                    if (minTime == null || !newTime.isBefore(minTime)) {
+                                        currentTime = newTime
                                     }
                                 },
                                 modifier = Modifier.size(40.dp)

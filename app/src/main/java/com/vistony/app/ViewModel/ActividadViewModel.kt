@@ -82,7 +82,8 @@ data class ActivityUi_State @RequiresApi(Build.VERSION_CODES.O) constructor(
     val isCreating: Boolean = false,
     val createSuccess: Boolean = false,
     val createError: String? = null,
-    val createdActivityId: String? = null
+    val createdActivityId: String? = null,
+    val isButtonEnabled: Boolean = false
 
 
 )
@@ -149,6 +150,7 @@ class ActividadViewModel @Inject constructor(
     fun onInitialHourChange(date: LocalDateTime?) {
         Log.d("DATE3", date.toString())
         _uiState.update { it.copy(selectedActividad = it.selectedActividad.copy(initialHour = date)) }
+        updateButtonState()
     }
 
     fun onFinalHourChange(date: LocalDateTime?) {
@@ -160,6 +162,7 @@ class ActividadViewModel @Inject constructor(
     fun onOTChange(ot: String) {
         _uiState.value =
             _uiState.value.copy(selectedActividad = _uiState.value.selectedActividad.copy(OT = ot))
+        updateButtonState()
     }
 
     fun onOTItemChange(otItem: OTItem) {
@@ -172,22 +175,26 @@ class ActividadViewModel @Inject constructor(
                 ), selectedOT = otItem
             )
         }
+        updateButtonState()
     }
 
 
     fun onAreaChange(area: String) {
         _uiState.value =
             _uiState.value.copy(selectedActividad = _uiState.value.selectedActividad.copy(area = area))
+        updateButtonState()
     }
 
     fun onMachineChange(maquina: Machine) {
         _uiState.value =
             _uiState.value.copy(selectedActividad = _uiState.value.selectedActividad.copy(machine = maquina))
+        updateButtonState()
     }
 
     fun onEquipamentChange(equipo: Equipment) {
         _uiState.value =
             _uiState.value.copy(selectedActividad = _uiState.value.selectedActividad.copy(equipment = equipo))
+        updateButtonState()
     }
 
     fun onReasonChange(motivo: FailureType) {
@@ -701,5 +708,48 @@ class ActividadViewModel @Inject constructor(
         val now = LocalDateTime.now()
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
         return now.format(formatter)
+    }
+
+    // Función para validar si todos los campos requeridos están llenos
+    fun areRequiredFieldsFilled(otraMaquina: String = "", otroEquipo: String = ""): Boolean {
+        val selected = _uiState.value.selectedActividad
+        val selectedOT = _uiState.value.selectedOT
+        
+        return selected.OT.isNotBlank() &&
+               selectedOT.ItemName.isNotBlank() &&
+               selected.area.isNotBlank() &&
+               selected.machine.name.isNotBlank() &&
+               (selected.machine.name != "Otro" || otraMaquina.isNotBlank()) &&
+               selected.equipment.name.isNotBlank() &&
+               (selected.equipment.name != "Otro" || otroEquipo.isNotBlank())
+    }
+
+    // Función para validar si la hora de inicio es válida (no es menor a la actual)
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun isInitialHourValid(): Boolean {
+        val selected = _uiState.value.selectedActividad
+        val currentTime = LocalDateTime.now()
+        
+        return selected.initialHour == null || !selected.initialHour!!.isBefore(currentTime)
+    }
+
+    // Función para validar formulario completo
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun isFormValid(otraMaquina: String = "", otroEquipo: String = ""): Boolean {
+        return areRequiredFieldsFilled(otraMaquina, otroEquipo) //&& isInitialHourValid()
+    }
+
+    // Función para actualizar el estado del botón
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun updateButtonState(otraMaquina: String = "", otroEquipo: String = "") {
+        val isValid = isFormValid(otraMaquina, otroEquipo)
+        _uiState.update { it.copy(isButtonEnabled = isValid) }
+    }
+
+    // Función para actualizar el estado del botón con valores externos
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun updateButtonStateWithExternalValues(otraMaquina: String, otroEquipo: String) {
+        val isValid = isFormValid(otraMaquina, otroEquipo)
+        _uiState.update { it.copy(isButtonEnabled = isValid) }
     }
 }

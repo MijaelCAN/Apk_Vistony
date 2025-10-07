@@ -48,6 +48,7 @@ import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -80,6 +81,7 @@ import com.vistony.app.ViewModel.ActividadViewModel
 import com.vistony.app.ViewModel.OTViewModel
 import com.vistony.app.ui.theme.theme.Dimensions
 import kotlinx.coroutines.delay
+import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
@@ -113,7 +115,7 @@ fun BodyActividad(
     // ============================ LISTAS Y VARIABLES DE CONTROL  ============================
 
     // ============================ ESTADO DEL BOTON  ============================
-    val stateButton = true
+    // El estado del botón ahora viene del uiState
 
     // ============================ SCANEADO DE OT ============================
     val scanLauncher = rememberLauncherForActivityResult(
@@ -164,6 +166,11 @@ fun BodyActividad(
             // Mostrar mensaje de error
             showErrorMessage(uiState.createError!!)
         }
+    }
+
+    // Actualizar estado del botón cuando cambien los valores de otra máquina y otro equipo
+    LaunchedEffect(otraMaquina.value, otroEquipo.value) {
+        viewModel.updateButtonStateWithExternalValues(otraMaquina.value, otroEquipo.value)
     }
             //(01)1110001100303(10)250008213(17)280601
 
@@ -223,6 +230,7 @@ fun BodyActividad(
                 },
                 showDialog = uiState.showDialogTimeIni,
                 onShowDialogChange = viewModel::onShowDialogTimeIniChange,
+                minTime = LocalDateTime.now()
             )
         }
 
@@ -324,7 +332,7 @@ fun BodyActividad(
         Spacer(modifier = Modifier.height(32.dp)) // En caso d eque no haya espacio suficiente
         Spacer(modifier = Modifier.weight(1f))
         Button(
-            enabled = stateButton,
+            enabled = uiState.isButtonEnabled && !uiState.isCreating,
             onClick = {
                 viewModel.onInitialChange(userState.currentUser)
                 viewModel.crearActividad(otraMaquina, otroEquipo)

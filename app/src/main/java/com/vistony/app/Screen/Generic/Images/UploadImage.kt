@@ -38,8 +38,9 @@ fun ImagePickerExample(
     }
 
     val galleryIntent = remember {
-        Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
+        Intent(Intent.ACTION_GET_CONTENT).apply {
             type = "image/*"
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         }
     }
     val cameraIntent = remember {
@@ -50,7 +51,7 @@ fun ImagePickerExample(
     }
 
     val chooserIntent = remember {
-        Intent.createChooser(galleryIntent, "Selecciona imagen o cámara").apply {
+        Intent.createChooser(galleryIntent, "Selecciona imágenes (múltiples) o cámara").apply {
             putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(cameraIntent))
         }
     }
@@ -58,10 +59,28 @@ fun ImagePickerExample(
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val data = result.data
-            val selectedImageUri = data?.data ?: photoUri
-            selectedImageUri?.let {
-                onAddImage(it)
-                //images.add(it)
+            when {
+                data?.clipData != null -> {
+                    // Múltiples imágenes seleccionadas
+                    val clipData = data.clipData!!
+                    for (i in 0 until clipData.itemCount) {
+                        val uri = clipData.getItemAt(i).uri
+                        onAddImage(uri)
+                    }
+                    Toast.makeText(context, "${clipData.itemCount} imágenes agregadas", Toast.LENGTH_SHORT).show()
+                }
+                data?.data != null -> {
+                    // Una sola imagen seleccionada
+                    onAddImage(data.data!!)
+                    Toast.makeText(context, "Imagen agregada", Toast.LENGTH_SHORT).show()
+                }
+                else -> {
+                    // Imagen de cámara
+                    photoUri?.let { 
+                        onAddImage(it)
+                        Toast.makeText(context, "Foto tomada", Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
         }
     }

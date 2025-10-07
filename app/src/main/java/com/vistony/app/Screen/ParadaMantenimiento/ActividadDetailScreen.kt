@@ -942,7 +942,7 @@ fun DetalleActividad(
 
         // ======================= BOTÓN FINALIZAR =======================
         Button(
-            enabled = if(uiState.selectedActividad.endTime != null) false else true,
+            enabled = if(uiState.selectedActividad.endTime != null) false else !uiState.isCreating,
             onClick = {
                 viewModel.UpdateActividad(context, actividad.DocEntry, otherReason)
             },
