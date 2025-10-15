@@ -24,8 +24,7 @@ interface ParadaService {
     /*@PUT("paradas/detener")
     suspend fun detenerParada(@Body parada: Parada): Response<PostParada>*/
 
-    @PATCH("ParadaMaquina/StockParadaMaquina")
-    suspend fun detenerParada(@Query("DocEntry") docEntry: Int): Response<PostParada>
+
 
     @GET("ParadaMaquina/Area")
     suspend fun getAreas(): Response<AreaResponse>
@@ -36,4 +35,9 @@ interface ParadaService {
     @GET("ParadaMaquina/MotivoParada")
     suspend fun getMotivoParada(@Query("Area") Area: Int): Response<MotivoResponse>
 
+}
+
+interface DetenerParadaService{
+    @PATCH("ParadaMaquina/StockParadaMaquina")
+    suspend fun detenerParada(@Query("DocEntry") docEntry: Int): Response<PostParada>
 }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+//import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,7 +22,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
@@ -34,6 +37,10 @@ import androidx.compose.material.icons.filled.TurnLeft
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material.Card
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.PullRefreshState
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,6 +50,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -64,8 +72,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.vistony.app.Entidad.Actividad
+import com.vistony.app.Entidad.ListaRequest
 import com.vistony.app.Entidad.Parada
 import com.vistony.app.Entidad.UserState
+import com.vistony.app.Extras.formatoServidor
 import com.vistony.app.Screen.Generic.CustomAlertDialog
 import com.vistony.app.Screen.Generic.CustomSearchText
 import com.vistony.app.Screen.Generic.DialogType
@@ -81,6 +91,7 @@ import com.vistony.app.ViewModel.ActividadViewModel
 import com.vistony.app.ViewModel.EstadoParada
 import com.vistony.app.ViewModel.LoginViewModel
 import com.vistony.app.ViewModel.ParadaViewModel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 import kotlin.math.absoluteValue
@@ -113,8 +124,48 @@ fun ListParada(
     var showDrawerHome by remember { mutableStateOf(false) }
     var showDrawerActivity by remember { mutableStateOf(false) }
 
-    var selected by remember { mutableStateOf(if(role == "mantenimiento") "Iniciado" else "Todos") }
+    var selected by remember { mutableStateOf(if (role == "mantenimiento") "Iniciado" else "Todos") }
     val actividades by actividadViewModel.actividades.collectAsState()
+
+    // Estado para pull-to-refresh
+    var isRefreshing by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+    
+    // Función para refrescar datos
+    fun refreshData() {
+        if (userState.currentUser.dni.isNotEmpty()) {
+            paradaViewModel.obtenerParadas(
+                ListaRequest(
+                    formatoServidor(paradaViewModel.fechaIni.value),
+                    formatoServidor(paradaViewModel.fechaFin.value),
+                    "T",
+                    userState.currentUser.dni
+                )
+            )
+        }
+    }
+
+    // Inicializar paradas con DNI del usuario
+    LaunchedEffect(userState.currentUser.dni) {
+        if (userState.currentUser.dni.isNotEmpty()) {
+            refreshData()
+        }
+    }
+    val coroutineScope = rememberCoroutineScope()
+
+    // Estado de pull-to-refresh
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isRefreshing,
+        onRefresh = {
+            coroutineScope.launch{
+                isRefreshing = true
+                refreshData()
+                // Simular un pequeño delay para mostrar el indicador
+                kotlinx.coroutines.delay(500)
+                isRefreshing = false
+            }
+        }
+    )
 
     SideEffect {
         systemUiController.setStatusBarColor(
@@ -125,12 +176,18 @@ fun ListParada(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        drawerContent = { CustomDrawer(navController = navController, id = id, userState = userState) }
+        drawerContent = {
+            CustomDrawer(
+                navController = navController,
+                id = id,
+                userState = userState
+            )
+        }
     ) {
         ModalBottomSheetLayout(
             modifier = Modifier.fillMaxWidth(),
             sheetState = bottomSheetState,
-            sheetContent = { BottomBar("parada",userState.currentUser) }
+            sheetContent = { BottomBar("parada", userState.currentUser) }
         ) {
             Scaffold(
                 topBar = {
@@ -174,18 +231,25 @@ fun ListParada(
                         role = role,
                         selected = selected,
                         onSelectedChange = { selected = it },
+                        listState = listState,
+                        pullRefreshState = pullRefreshState,
+                        isRefreshing = isRefreshing,
                         paddingValues,
                         function = { it ->
+                            Log.d("TAG", "DetalleParada-CallBack: $it")
                             paradaSeleccionada = it
-                            if (it.UserMantemiento.isEmpty()) {
+                            //if (it.FechaHoraFin.isNullOrEmpty()) {
                                 showDrawerDetalle = true
-                            }else {
-                                if (actividades.none { it.paradaDocEntry == paradaSeleccionada?.DocEntry }){
+                            //}
+                            /*if (it.Usuario.isEmpty()) {
+                                showDrawerDetalle = true
+                            } else {
+                                if (actividades.none { it.paradaDocEntry == paradaSeleccionada?.DocEntry }) {
                                     showDrawerActivity = true
                                 } else {
                                     showDrawerDetalle = true
                                 }
-                            }
+                            }*/
                         }
                     )
                 },
@@ -201,7 +265,7 @@ fun ListParada(
         onClose = { showDrawerDetalle = false },
         animationDuration = 300 // ms, ajusta velocidad
     ) {
-        IconButton(onClick = {showDrawerDetalle = false}) {
+        IconButton(onClick = { showDrawerDetalle = false }) {
             Icon(Icons.Default.TurnLeft, contentDescription = "Cerrar")
         }
         Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 32.dp)) {
@@ -215,7 +279,7 @@ fun ListParada(
                 onClose = {
                     showDrawerDetalle = false
                     selected = it
-                          },
+                },
                 onOpenActivity = { showDrawerActivity = true }
             )
         }
@@ -227,11 +291,12 @@ fun ListParada(
         onClose = { showDrawerHome = false },
         animationDuration = 300 // ms, ajusta velocidad
     ) {
-        IconButton(onClick = {showDrawerHome = false}) {
+        IconButton(onClick = { showDrawerHome = false }) {
             Icon(Icons.Default.TurnLeft, contentDescription = "Cerrar")
         }
         Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 32.dp)) {
             // =========== CONTENIDO =============== //
+            Log.d("TAG", "id: $id")
             BodyParada(navController, paradaViewModel, id)
         }
     }
@@ -243,7 +308,7 @@ fun ListParada(
         onClose = { showDrawerActivity = false },
         animationDuration = 300
     ) {
-        IconButton(onClick = {showDrawerActivity = false}) {
+        IconButton(onClick = { showDrawerActivity = false }) {
             Icon(Icons.Default.TurnLeft, contentDescription = "Cerrar")
         }
         Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 32.dp)) {
@@ -262,6 +327,7 @@ fun ListParada(
 
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun BodyListParada(
@@ -269,9 +335,12 @@ fun BodyListParada(
     id: String,
     paradaViewModel: ParadaViewModel,
     actividadViewModel: ActividadViewModel,
-    role:String?, // listOf("produccion", "mantenimiento")
+    role: String?, // listOf("produccion", "mantenimiento")
     selected: String,
     onSelectedChange: (String) -> Unit,
+    listState: LazyListState,
+    pullRefreshState: PullRefreshState,
+    isRefreshing: Boolean,
     paddingValues: PaddingValues,
     function: (Parada) -> Unit
 ) {
@@ -293,8 +362,8 @@ fun BodyListParada(
     val listaFiltradaParadas = remember(paradas.data, selected, searchText) {
         paradas.data.filter { parada ->
             // Filtro por estado
-            val estadoFilter = when(selected) {
-                "Iniciado" -> parada.FechaHoraFin.isNullOrBlank() && parada.UserMantemiento.isEmpty()
+            val estadoFilter = when (selected) {
+                "Iniciado" -> parada.FechaHoraFin.isNullOrBlank()
                 "Finalizado" -> !parada.FechaHoraFin.isNullOrBlank()
                 else -> true
             }
@@ -309,7 +378,7 @@ fun BodyListParada(
             estadoFilter && searchFilter
         }
     }
-    val listaFiltradaActividad = remember(paradas.data, searchText){
+    val listaFiltradaActividad = remember(paradas.data, searchText) {
         paradas.data.filter { parada ->
             // Filtro por texto de búsqueda
             val searchFilter = searchText.isEmpty() || listOf(
@@ -322,21 +391,24 @@ fun BodyListParada(
         }
 
     }
-    val listaFiltrada: List<ListItem> = remember(paradas.data, actividades, selected, searchText, role) {
-        if (role == "mantenimiento") {
-            when (selected) {
-                "Iniciado" -> listaFiltradaParadas
-                    .filter { parada -> parada.FechaHoraFin.isNullOrBlank() }
-                    .map { ListItem.ParadaItem(it) }
-                "Asignados" -> listaFiltradaActividad
-                    .filter { actividad -> actividad.UserMantemiento.isNotEmpty() }
-                    .map { ListItem.ParadaItem(it) }
-                else -> emptyList()
+    val listaFiltrada: List<ListItem> =
+        remember(paradas.data, actividades, selected, searchText, role) {
+            if (role == "mantenimiento") {
+                when (selected) {
+                    "Iniciado" -> listaFiltradaParadas
+                        .filter { parada -> parada.FechaHoraFin.isNullOrBlank() }
+                        .map { ListItem.ParadaItem(it) }
+
+                    "Asignados" -> listaFiltradaActividad
+                        .filter { parada -> parada.Usuario.isNotEmpty() }
+                        .map { ListItem.ParadaItem(it) }
+
+                    else -> emptyList()
+                }
+            } else {
+                listaFiltradaParadas.map { ListItem.ParadaItem(it) }
             }
-        } else {
-            listaFiltradaParadas.map { ListItem.ParadaItem(it) }
         }
-    }
 
 
 
@@ -411,37 +483,43 @@ fun BodyListParada(
                 )
             }
         } else {
-            /*LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                items(listaFiltrada.asReversed()) { parada ->
-                    TarjetaParada(
-                        parada = parada,
-                        paradaViewModel = paradaViewModel,
-                        navController = navController,
-                        id = id,
-                        function = { function(parada) }
-                    )
-                }
-            }*/
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                items(listaFiltrada.asReversed()) { item ->
-                    when (item) {
-                        is ListItem.ParadaItem -> TarjetaParada(
-                            parada = item.parada,
-                            paradaViewModel = paradaViewModel,
-                            navController = navController,
-                            id = id,
-                            function = { function(item.parada) }
-                        )
-                        is ListItem.ActividadItem -> TarjetaActividad(
-                            actividad = item.actividad,
-                            id = id,
-                            actividadViewModel = actividadViewModel,
-                            function = {
-                            /* función para actividad */
-                            }
-                        )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pullRefresh(pullRefreshState)
+            ) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    state = listState
+                ) {
+                    items(listaFiltrada.asReversed()) { item ->
+                        when (item) {
+                            is ListItem.ParadaItem -> TarjetaParada(
+                                parada = item.parada,
+                                paradaViewModel = paradaViewModel,
+                                navController = navController,
+                                id = id,
+                                function = { function(item.parada) }
+                            )
+
+                            is ListItem.ActividadItem -> TarjetaActividad(
+                                actividad = item.actividad,
+                                id = id,
+                                actividadViewModel = actividadViewModel,
+                                function = {
+                                    /* función para actividad */
+                                }
+                            )
+                        }
                     }
                 }
+                
+                // Indicador de pull-to-refresh
+                PullRefreshIndicator(
+                    refreshing = isRefreshing,
+                    state = pullRefreshState,
+                    modifier = Modifier.align(Alignment.TopCenter)
+                )
             }
         }
 
@@ -517,7 +595,8 @@ fun TarjetaParada(
                 )
                 */
                 // Por ahora dejamos solo el círculo con color
-                val cadena = parada.Maquina.split(" ")[1]
+                val palabras = parada.Maquina.split(" ")
+                val cadena = if (palabras.size > 1) palabras[1] else palabras[0]
 
                 Text(
                     text = cadena.take(1).uppercase(),
@@ -549,7 +628,7 @@ fun TarjetaParada(
                 )
                 Text(
                     text = "${parada.FechaHoraInicio.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} - ${
-                        parada.FechaHoraFin.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) ?: "En curso"
+                        parada.FechaHoraFin?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) ?: "En curso"
                     }",
                     fontSize = 12.sp,
                     color = Color(0xFF78909C)

@@ -72,10 +72,10 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
                 if(body?.statusCode==200){
                     _areas.value = areaResponseState(true, body, "OK")
                 }else{
-                    _areas.value = areaResponseState(false, AreaResponse(500, emptyList()), "Error al obtener las áreas")
+                    _areas.value = areaResponseState(false, AreaResponse(500, data = emptyList()), "Error al obtener las áreas")
                 }
             } else {
-                _areas.value = areaResponseState(false, AreaResponse(500, emptyList()), "Error al obtener las áreas")
+                _areas.value = areaResponseState(false, AreaResponse(500, data =  emptyList()), "Error al obtener las áreas")
             }
 
             // Obtener las maquinas desde el repositorio
@@ -93,7 +93,7 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
                 Log.e("Error", e.toString())
             }
         }
-        obtenerParadas(ListaRequest(formatoServidor(fechaIni.value), formatoServidor(fechaFin.value), "T"))
+        // No cargar paradas en el init, se cargarán cuando se llame con DNI específico
     }
     fun obtenerParadas(request: ListaRequest) {
         Log.e("MDCR", request.toString())
@@ -103,10 +103,10 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
                 if (response.isSuccessful) {
                     val body = response.body()
                     if (body?.statusCode == 200) {
-                        _listParadas.value = ParadaResponse(200, body.data)
+                        _listParadas.value = ParadaResponse(200, data =body.data)
                         Log.e("MDCR", "LISTA PARADAS: ${body.data}")
                     }else{
-                        _listParadas.value = ParadaResponse(500, emptyList())
+                        _listParadas.value = ParadaResponse(500, data = emptyList())
                     }
                 }
             }catch (e: Exception) {
@@ -124,9 +124,9 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
                 val response = paradaRepository.registrarParada(parada)
                 if (response.isSuccessful) {
                     val body = response.body()
-                    if (body?.statusCode == 201){
+                    if (body?.statusCode == 200){
                         _paradas.value =
-                            ParadaResponseState(state = true, paradaResponse = body, message = "OK")
+                            ParadaResponseState(state = true, paradaResponse = body, message = body.message)
                         _estadoParada.value = EstadoParada.Exitoso
                         Log.d("Parada", body.toString())
                     }else{

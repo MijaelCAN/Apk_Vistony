@@ -57,7 +57,13 @@ fun BottomBar(
                     }
                 }
             }
-            "parada"->{ paradaViewModel.obtenerParadas(ListaRequest(newfechaIni, newfechaFin, "T")) }
+            "parada"->{ paradaViewModel.obtenerParadas(
+                ListaRequest(
+                    newfechaIni,
+                    newfechaFin,
+                    "T",
+                    userResponse.dni
+                )) }
             "mantenimiento"->{
                 selectedDateIni?.let { selectedDateFin?.let { it1 ->
                     actividadViewModel.getAllActividades(userResponse,it, it1)

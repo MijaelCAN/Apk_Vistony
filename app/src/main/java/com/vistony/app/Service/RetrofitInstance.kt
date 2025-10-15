@@ -63,7 +63,11 @@ object RetrofitInstance {
         retrofit.create(LineaService::class.java)
     }
     val paradaService: ParadaService by lazy {
-        retrofit.create(ParadaService::class.java)
+        retrofitNew.create(ParadaService::class.java)
+    }
+
+    val detenerParadaService: DetenerParadaService by lazy {
+        retrofit.create(DetenerParadaService::class.java)
     }
 
     val actividadService: ActividadService by lazy {

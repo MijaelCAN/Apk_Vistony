@@ -15,7 +15,7 @@ android {
         minSdk = 24
         targetSdk = 33
         versionCode = 5
-        versionName = "1.2.2"
+        versionName = "1.2.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
@@ -113,6 +113,7 @@ dependencies {
 
     // Accompanist
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.36.0")
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.32.0")
 
     // Coil
     //implementation("io.coil-kt.coil3:coil-compose:3.2.0")

@@ -111,7 +111,7 @@ fun DetalleParada(
     var selectedDateIni = paradaViewModel.fechaIni.value?.toLocalDate()?.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
     var selectedDateFin = paradaViewModel.fechaFin.value?.toLocalDate()?.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
 
-    var tecnico by remember { mutableStateOf(parada?.UserMantemiento ?: "") }
+    var tecnico by remember { mutableStateOf(parada?.Usuario ?: "") }
     val expandedTecnico = remember { mutableStateOf(false) }
     val listTecnicos = listOf(
         "1" to "Junior A.",
@@ -125,6 +125,7 @@ fun DetalleParada(
         "9" to "Jesus A.",
     )
 
+    Log.d("TAG", "DetalleParada: $parada")
 
     Column(
         modifier = Modifier
@@ -162,7 +163,10 @@ fun DetalleParada(
         Spacer(Modifier.height(16.dp))
 
         if (parada == null) return
-        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy   HH:mm")
+        // Formato del backend: "2025-10-15 1013" -> "yyyy-MM-dd Hmm"
+        val formatterBackend = DateTimeFormatter.ofPattern("yyyy-MM-dd Hmm")
+        // Formato para mostrar: "15-10-2025 08:21"
+        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")
 
         Box(modifier = Modifier.clip(RoundedCornerShape(20.dp))){
             Image(
@@ -203,10 +207,10 @@ fun DetalleParada(
                     modifier = Modifier.padding(24.dp)
                 ) {
                     TiempoTranscurrido(
-                        fechaInicio = LocalDateTime.parse(parada.FechaHoraInicio, formatter),
+                        fechaInicio = LocalDateTime.parse(parada.FechaHoraInicio, formatterBackend),
                         fechaFin = if (parada.FechaHoraFin.isNullOrBlank()) null else LocalDateTime.parse(
                             parada.FechaHoraFin,
-                            formatter
+                            formatterBackend
                         )
                     )
                     Row(
@@ -227,8 +231,16 @@ fun DetalleParada(
         Spacer(modifier = Modifier.height(8.dp))
         InfoRow("Área:", parada.Area ?: "-")
         InfoRow("Coment.:", parada.Comentario ?: "-")
-        InfoRow("Inicio:", parada.FechaHoraInicio ?: "-")
-        InfoRow("Fin:", parada.FechaHoraFin?.takeIf { it.isNotBlank() } ?: "En curso")
+        InfoRow("Inicio:", try {
+            LocalDateTime.parse(parada.FechaHoraInicio, formatterBackend).format(formatter)
+        } catch (e: Exception) {
+            parada.FechaHoraInicio ?: "-"
+        })
+        InfoRow("Fin:", if (parada.FechaHoraFin.isNullOrBlank()) "En curso" else try {
+            LocalDateTime.parse(parada.FechaHoraFin, formatterBackend).format(formatter)
+        } catch (e: Exception) {
+            parada.FechaHoraFin ?: "En curso"
+        })
 
         val listaFiltrada = actividades.filter { it.paradaDocEntry == parada.DocEntry }
         if (role == "mantenimiento") {
@@ -347,7 +359,7 @@ fun DetalleParada(
                 onClick = {
                     if(role == "mantenimiento") {
                         if(listaFiltrada.isEmpty()){
-                            parada.UserMantemiento = tecnico
+                            parada.Usuario = tecnico
                             onClose("Asignados")
                         }else{
                             // AQUI DEBE LLAMAR A LA API DE CERRAR ACTIVIDAD, ASIMISMO CREAR UN PDF EXPORTABLE
@@ -402,7 +414,13 @@ fun DetalleParada(
                     dismissButtonText = null,
                     onDismiss = {
                         showDialog = false
-                        paradaViewModel.obtenerParadas(ListaRequest(selectedDateIni, selectedDateFin, "T"))
+                        paradaViewModel.obtenerParadas(
+                            ListaRequest(
+                                selectedDateIni,
+                                selectedDateFin,
+                                "T",
+                                id
+                            ))
                         onClose("Todos")
                     },
                     dialogType = DialogType.SUCCESS

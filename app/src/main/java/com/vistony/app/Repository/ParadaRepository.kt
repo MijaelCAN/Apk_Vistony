@@ -13,10 +13,12 @@ import javax.inject.Inject
 
 class ParadaRepository @Inject constructor() {
     private val paradaService = RetrofitInstance.paradaService
+    private val paradaServiceOld = RetrofitInstance.detenerParadaService
+
 
     suspend fun registrarParada(request: ParadaRequest): Response<PostParada> = paradaService.registrarParada(request)
     suspend fun obtenerParadas(request: ListaRequest): Response<ParadaResponse> = paradaService.obtenerParadas(request)
-    suspend fun detenerParada(DocEntry: Int):Response<PostParada> = paradaService.detenerParada(DocEntry)
+    suspend fun detenerParada(DocEntry: Int):Response<PostParada> = paradaServiceOld.detenerParada(DocEntry)
     suspend fun getAreas(): Response<AreaResponse> = paradaService.getAreas()
     suspend fun getMaquinas(): Response<MaquinaResponse> = paradaService.getMaquinas()
     suspend fun getMotivoParada(areaId: Int): Response<MotivoResponse> = paradaService.getMotivoParada(areaId)

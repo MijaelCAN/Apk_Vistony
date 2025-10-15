@@ -3,6 +3,7 @@ package com.vistony.app.Screen.Parada
 
 import android.app.Activity
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -82,6 +83,7 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
     val buttonHeight = Dimensions.getButtonHeight(windowSize.widthSizeClass)
     val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
 
+    Log.d("TAG", "BodyParada: $areaState")
     val listAreas = areaState.areaResponse.data.map { it.Code to it.Name }
     val listMaquinas = maquinaState.maquinaResponse.data.map { it.Code to it.Name }
     val listMotivos = motivoState.motivoResponse.data.map { it.Code to it.Name }
@@ -112,18 +114,17 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
             readOnly = true
         )
         Spacer(Modifier.height(8.dp))
+        Log.d("TAG", "BodyParada: $listAreas")
         //----------- FILA 2 -----------
         GenericDropdownMenu(
             label = "Área",
             options = listAreas,
             selectedValue = area.value,
-            onValueChange = {
-                area.value = it
-                if (areaId.isNotEmpty()){
-                    paradaViewModel.obtenerMotivos(areaId.toInt())
-                }
+            onValueChange = { area.value = it },
+            onCodeChange = { areaId = it
+                paradaViewModel.obtenerMotivos(areaId.toInt())
+                motivoParada.value = ""
             },
-            onCodeChange = { areaId = it },
             expanded = expandedArea.value,
             onExpandedChange = { expandedArea.value = it }
         )
@@ -136,7 +137,7 @@ fun BodyParada(navController: NavController, paradaViewModel: ParadaViewModel, i
             selectedValue = maquina.value,
             onValueChange = { maquina.value = it },
             onCodeChange = { maquinaId = it
-                paradaViewModel.obtenerMotivos(areaId.toInt())
+                //paradaViewModel.obtenerMotivos(areaId.toInt())
                            },
             expanded = expandedMaquina.value,
             onExpandedChange = { expandedMaquina.value = it }
