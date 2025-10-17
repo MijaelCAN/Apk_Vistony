@@ -45,7 +45,7 @@ data class PostParada(
     @SerializedName("statusCode") val statusCode: Int = 0,
     @SerializedName("success") val success: Boolean = false,
     @SerializedName("message") val message: String = "",
-    @SerializedName("data") val data: String = "Cargando..."
+    @SerializedName("data") val data: List<Parada> = emptyList()
 )
 
 data class ParadaStopResponse(

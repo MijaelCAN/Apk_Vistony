@@ -6,6 +6,7 @@ import com.vistony.app.Entidad.MaquinaResponse
 import com.vistony.app.Entidad.MotivoResponse
 import com.vistony.app.Entidad.ParadaRequest
 import com.vistony.app.Entidad.ParadaResponse
+import com.vistony.app.Entidad.ParadaStopResponse
 import com.vistony.app.Entidad.PostParada
 import retrofit2.Response
 import retrofit2.http.Body
@@ -39,5 +40,5 @@ interface ParadaService {
 
 interface DetenerParadaService{
     @PATCH("ParadaMaquina/StockParadaMaquina")
-    suspend fun detenerParada(@Query("DocEntry") docEntry: Int): Response<PostParada>
+    suspend fun detenerParada(@Query("DocEntry") docEntry: Int): Response<ParadaStopResponse>
 }

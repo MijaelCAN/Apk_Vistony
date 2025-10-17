@@ -662,7 +662,7 @@ fun TarjetaParada(
                 CustomAlertDialog(
                     showDialog = showDialog,
                     title = "Éxito",
-                    message = paradaState.paradaResponse.data,
+                    message = paradaState.paradaResponse.message,
                     confirmButtonText = "OK",
                     dismissButtonText = null,
                     onConfirm = { paradaViewModel.actualizarEstadoParada(EstadoParada.Idle) },

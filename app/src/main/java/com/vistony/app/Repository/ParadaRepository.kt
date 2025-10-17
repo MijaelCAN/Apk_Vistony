@@ -6,6 +6,7 @@ import com.vistony.app.Entidad.MaquinaResponse
 import com.vistony.app.Entidad.MotivoResponse
 import com.vistony.app.Entidad.ParadaRequest
 import com.vistony.app.Entidad.ParadaResponse
+import com.vistony.app.Entidad.ParadaStopResponse
 import com.vistony.app.Entidad.PostParada
 import com.vistony.app.Service.RetrofitInstance
 import retrofit2.Response
@@ -18,7 +19,7 @@ class ParadaRepository @Inject constructor() {
 
     suspend fun registrarParada(request: ParadaRequest): Response<PostParada> = paradaService.registrarParada(request)
     suspend fun obtenerParadas(request: ListaRequest): Response<ParadaResponse> = paradaService.obtenerParadas(request)
-    suspend fun detenerParada(DocEntry: Int):Response<PostParada> = paradaServiceOld.detenerParada(DocEntry)
+    suspend fun detenerParada(DocEntry: Int):Response<ParadaStopResponse> = paradaServiceOld.detenerParada(DocEntry)
     suspend fun getAreas(): Response<AreaResponse> = paradaService.getAreas()
     suspend fun getMaquinas(): Response<MaquinaResponse> = paradaService.getMaquinas()
     suspend fun getMotivoParada(areaId: Int): Response<MotivoResponse> = paradaService.getMotivoParada(areaId)
