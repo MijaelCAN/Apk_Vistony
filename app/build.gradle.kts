@@ -14,9 +14,8 @@ android {
         applicationId = "com.vistony.app"
         minSdk = 24
         targetSdk = 33
-        versionCode = 3
-        versionName = "1.0.1"
-
+        versionCode = 6
+        versionName = "1.2.4"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
@@ -41,6 +40,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.4.3"
@@ -110,5 +110,14 @@ dependencies {
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
     implementation("com.google.zxing:core:3.5.1")
     implementation(kotlin("script-runtime"))
+
+    // Accompanist
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.36.0")
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.32.0")
+
+    // Coil
+    //implementation("io.coil-kt.coil3:coil-compose:3.2.0")
+    implementation("io.coil-kt:coil-compose:2.4.0")
+    //implementation("io.coil-kt.coil3:coil-network-okhttp:3.2.0")
 
 }

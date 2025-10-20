@@ -1,6 +1,5 @@
 package com.vistony.app.Screen.Generic
 
-import android.service.autofill.OnClickAction
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -12,8 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -73,11 +70,11 @@ fun TableScreen(data: List<Parada>, onClickAction: () -> Unit) {
 
 @Composable
 fun RowScope.TableCell(
-    text: String,
+    text: String?,
     weight: Float
 ) {
     Text(
-        text = text,
+        text = text ?: "N/A",
         Modifier
             .border(1.dp, Color.Black)
             .weight(weight)

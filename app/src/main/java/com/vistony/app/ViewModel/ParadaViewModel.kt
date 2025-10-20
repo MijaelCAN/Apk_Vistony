@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -47,9 +48,19 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
     private val _estadoParada = MutableStateFlow<EstadoParada>(EstadoParada.Idle)
     val estadoParada: StateFlow<EstadoParada> = _estadoParada.asStateFlow()
 
+
+    private val _fechaIni = mutableStateOf(LocalDateTime.now().minusDays(1))
+    val fechaIni: State<LocalDateTime?> = _fechaIni
+
+    private val _fechaFin = mutableStateOf(LocalDateTime.now())
+    val fechaFin: State<LocalDateTime?> = _fechaFin
+
+
     fun actualizarEstadoParada(nuevoEstado: EstadoParada) {
         _estadoParada.value = nuevoEstado
     }
+    fun setFechaIni(fecha: LocalDateTime?) { _fechaIni.value = fecha?.toLocalDate()?.atStartOfDay() }
+    fun setFechaFin(fecha: LocalDateTime?) { _fechaFin.value = fecha?.toLocalDate()?.atStartOfDay() }
 
     init {
         viewModelScope.launch {
@@ -61,30 +72,11 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
                 if(body?.statusCode==200){
                     _areas.value = areaResponseState(true, body, "OK")
                 }else{
-                    _areas.value = areaResponseState(false, AreaResponse(500, emptyList()), "Error al obtener las áreas")
+                    _areas.value = areaResponseState(false, AreaResponse(500, data = emptyList()), "Error al obtener las áreas")
                 }
             } else {
-                _areas.value = areaResponseState(false, AreaResponse(500, emptyList()), "Error al obtener las áreas")
+                _areas.value = areaResponseState(false, AreaResponse(500, data =  emptyList()), "Error al obtener las áreas")
             }
-
-            // Obtener las paradas desde el repositorio
-            /*val response = paradaRepository.obtenerParadas()
-            if (response.statusCode == 200) {
-                _paradas.value =
-                    ParadaResponseState(state = true, paradaResponse = response, message = "OK")
-            } else {
-                val data = listOf(
-                    Parada(1, "Maquina 1", "10/10/2024", "10/10/2024", "10:12", ""),
-                    Parada(2, "Maquina 2", "12/08/2024", "12/08/2024", "12:09", ""),
-                    Parada(3, "Maquina 3", "03/10/2023", "03/10/2023", "22:34", ""),
-                    Parada(4, "Maquina 4", "22/05/2023", "22/05/2023", "09:47", ""),
-                )
-                _paradas.value = ParadaResponseState(
-                    state = false,
-                    paradaResponse = ParadaResponse(200, data),
-                    message = "Error al obtener las paradas"
-                )
-            }*/
 
             // Obtener las maquinas desde el repositorio
             try {
@@ -101,18 +93,20 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
                 Log.e("Error", e.toString())
             }
         }
-        obtenerParadas(ListaRequest(formatoServidor(LocalDateTime.now()), formatoServidor(LocalDateTime.now()), "T"))
+        // No cargar paradas en el init, se cargarán cuando se llame con DNI específico
     }
     fun obtenerParadas(request: ListaRequest) {
+        Log.e("MDCR", request.toString())
         viewModelScope.launch {
             try {
                 val response = paradaRepository.obtenerParadas(request)
                 if (response.isSuccessful) {
                     val body = response.body()
                     if (body?.statusCode == 200) {
-                        _listParadas.value = ParadaResponse(200, body.data)
+                        _listParadas.value = ParadaResponse(200, data =body.data)
+                        Log.e("MDCR", "LISTA PARADAS: ${body.data}")
                     }else{
-                        _listParadas.value = ParadaResponse(500, emptyList())
+                        _listParadas.value = ParadaResponse(500, data = emptyList())
                     }
                 }
             }catch (e: Exception) {
@@ -126,19 +120,24 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
     fun registrarParada(parada: ParadaRequest) {
         viewModelScope.launch {
             _estadoParada.value = EstadoParada.Cargando
+            Log.d("Envío-EstadoCargando", parada.toString())
             try {
                 val response = paradaRepository.registrarParada(parada)
+                Log.d("Envío-Response", parada.toString())
                 if (response.isSuccessful) {
                     val body = response.body()
-                    if (body?.statusCode == 201){
+                    Log.d("Envío-Body", body.toString());
+                    if (body?.statusCode == 200){
+                        Log.d("IF-Body", body.toString());
                         _paradas.value =
-                            ParadaResponseState(state = true, paradaResponse = body, message = "OK")
+                            ParadaResponseState(state = true, paradaResponse = body, message = body.message)
                         _estadoParada.value = EstadoParada.Exitoso
-                        Log.d("Parada", body.toString())
+                        Log.d("Envío-AfterBody", body.toString())
                     }else{
                         Log.d("ELSE", body.toString());
                     }
                 } else {
+                    Log.d("ELSE", response.toString());
                     _paradas.value = ParadaResponseState(
                         state = false,
                         message = "Error al registrar la parada"
@@ -151,6 +150,7 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
                 _estadoParada.value = EstadoParada.Exitoso*/
                 Log.d("Envío", parada.toString())
             } catch (e: Exception) {
+                Log.d("Error Cath", e.toString())
                 _paradas.value =
                     ParadaResponseState(state = false, message = "Error de Comunicacion")
             }
@@ -167,7 +167,16 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
                     val body = response.body()
                     if(body?.statusCode == 200){
                         _paradas.value =
-                            ParadaResponseState(state = true, paradaResponse = body, message = "Se detuvo con Exito")
+                            ParadaResponseState(
+                                state = true,
+                                paradaResponse = PostParada(
+                                    body.statusCode,
+                                    body.success,
+                                    body.message,
+                                    emptyList()
+                                ),
+                                message = body.data
+                            )
                         _estadoParada.value = EstadoParada.Exitoso
                     }
                 } else {
@@ -179,8 +188,8 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
                 }
             } catch (e: Exception) {
                 _paradas.value =
-                    ParadaResponseState(state = false, message = "Error de Comunicacion")
-                _estadoParada.value = EstadoParada.Error("Error de Comunicacion")
+                    ParadaResponseState(state = false, message = e.toString())
+                _estadoParada.value = EstadoParada.Error(e.toString())
             }
         }
     }
