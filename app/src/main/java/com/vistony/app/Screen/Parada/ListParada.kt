@@ -91,7 +91,6 @@ import com.vistony.app.ViewModel.ActividadViewModel
 import com.vistony.app.ViewModel.EstadoParada
 import com.vistony.app.ViewModel.LoginViewModel
 import com.vistony.app.ViewModel.ParadaViewModel
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 import kotlin.math.absoluteValue
@@ -104,7 +103,8 @@ fun ListParada(
     paradaViewModel: ParadaViewModel = hiltViewModel(),
     actividadViewModel: ActividadViewModel = hiltViewModel(),
     id: String,
-    userState: UserState
+    userState: UserState,
+    onLogout: () -> Unit
 ) {
     val loginViewModel = hiltViewModel<LoginViewModel>(LocalContext.current as ComponentActivity)
 
@@ -180,7 +180,8 @@ fun ListParada(
             CustomDrawer(
                 navController = navController,
                 id = id,
-                userState = userState
+                userState = userState,
+                onLogout = onLogout
             )
         }
     ) {

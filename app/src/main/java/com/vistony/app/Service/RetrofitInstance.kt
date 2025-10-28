@@ -74,6 +74,14 @@ object RetrofitInstance {
         retrofitNew.create(ActividadService::class.java)
     }
 
+    val temperaturaService: TemperaturaService by lazy {
+        retrofitNew.create(TemperaturaService::class.java)
+    }
+
+    val muestraService: MuestraService by lazy {
+        retrofitNew.create(MuestraService::class.java)
+    }
+
 }
 /*
 //Configuracion Clase
