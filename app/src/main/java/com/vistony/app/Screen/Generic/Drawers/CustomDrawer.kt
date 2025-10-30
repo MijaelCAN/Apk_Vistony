@@ -1,5 +1,6 @@
 package com.vistony.app.Screen.Generic.Drawers
 
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,10 +22,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Construction
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.HomeRepairService
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.NavigateNext
+import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -42,21 +46,27 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.vistony.app.Entidad.UserState
 import com.vistony.app.R
+import com.vistony.app.ViewModel.LoginViewModel
 
 @Composable
 fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
     navController: NavController,
     id: String,
     userState: UserState,
+    onLogout: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+
+    val loginViewModel = hiltViewModel<LoginViewModel>(LocalContext.current as ComponentActivity)
     var selectedItem by remember { mutableStateOf<String?>(null) }
     var expandedItems by remember { mutableStateOf(setOf<String>()) }
 
@@ -91,11 +101,36 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                 visibleForRoles = setOf("MANTENIMIENTO", "ADMIN")
             ),
             DrawerItem(
+                id = "control_temperatura",
+                icon = Icons.Default.Thermostat,
+                label = "Control de Temperatura",
+                subItems = listOf(
+                    DrawerSubItem("Lista de Temperaturas") { navController.navigate("listaTemperatura") },
+                ),
+                visibleForRoles = setOf("PRODUCCIÓN", "ADMIN") // CAMBIAR POR EL AREA
+            ),
+            DrawerItem(
+                id = "soplado",
+                icon = Icons.Default.Science,
+                label = "Registro de Muestras",
+                subItems = listOf(
+                    DrawerSubItem("Lista de Muestras") { navController.navigate("listaMuestra") },
+                ),
+                visibleForRoles = setOf("PRODUCCIÓN", "ADMIN") // CAMBIAR POR EL AREA
+            ),
+            DrawerItem(
                 id = "configuracion",
                 icon = Icons.Default.Settings,
                 label = "Configuración",
                 subItems = emptyList(),
                 visibleForRoles = setOf("admin", "supervisor")
+            ),
+            DrawerItem(
+                id = "salir",
+                icon = Icons.Default.ExitToApp,
+                label = "Salir",
+                subItems = emptyList(),
+                visibleForRoles = emptySet(), // Visible para todos los usuarios
             )
         ).filter { item ->
             item.visibleForRoles.isEmpty() ||
@@ -169,33 +204,6 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                 .background(Color(0xFFF7F7F7))
                 .padding(horizontal = 8.dp)
         ) {
-            /*val menuItems = listOf(
-                DrawerItem(
-                    id = "inspeccion",
-                    icon = Icons.Default.Checklist,
-                    label = "Inspección",
-                    subItems = listOf(
-                        DrawerSubItem("Lista Inspecciones") { navController.navigate("listaInsp/$id") },
-                        //DrawerSubItem("Nueva Inspección") { navController.navigate("home/$id") }
-                    )
-                ),
-                DrawerItem(
-                    id = "parada_maquina",
-                    icon = Icons.Default.Construction,
-                    label = "Parada Máquina",
-                    subItems = listOf(
-                        DrawerSubItem("Lista de Paradas") { navController.navigate("listaParada/$id") },
-                        //DrawerSubItem("Nueva Parada") { navController.navigate("homeParada/$id") }
-                    )
-                ),
-                DrawerItem(
-                    id = "configuracion",
-                    icon = Icons.Default.Settings,
-                    label = "Configuración",
-                    subItems = emptyList()
-                )
-            )*/
-
             items(menuItems) { item ->
                 if (item.visibleForRoles.isEmpty() || userState.hasAnyRole(*item.visibleForRoles.toTypedArray())) {
                     DrawerMenuItem(
@@ -204,7 +212,10 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                         isExpanded = expandedItems.contains(item.id),
                         onClick = {
                             selectedItem = item.id
-                            if (item.subItems.isNotEmpty()) {
+                            if (item.id == "salir") {
+                                // Manejar logout
+                                onLogout()
+                            } else if (item.subItems.isNotEmpty()) {
                                 expandedItems = if (expandedItems.contains(item.id))
                                     expandedItems - item.id
                                 else
