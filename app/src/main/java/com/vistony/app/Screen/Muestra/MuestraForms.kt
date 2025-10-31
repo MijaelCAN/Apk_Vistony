@@ -584,10 +584,11 @@ fun CheckListForm(
             Spacer(modifier = Modifier.height(16.dp))
             
             // Hora de check list
-            MuestraTextField(
+            /*MuestraTextField(
                 value = formState.horaCheckList,
                 onValueChange = { muestraViewModel.updateCheckList("horaCheckList", it) },
                 label = "Hora de Check List",
+                enabled = true,
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Schedule,
@@ -596,7 +597,7 @@ fun CheckListForm(
                         modifier = Modifier.size(20.dp)
                     )
                 }
-            )
+            )*/
             
             Spacer(modifier = Modifier.height(16.dp))
             
