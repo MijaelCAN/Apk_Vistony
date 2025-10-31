@@ -287,7 +287,9 @@ fun Login2(
                                 }
                             }
                             else -> {
-                                navController.navigate("listaInsp/${user.dni}") {
+                                // Limpiar sesión/estado para evitar revalidaciones y bucles
+                                viewModel.clearUserData()
+                                navController.navigate("noModules") {
                                     popUpTo("login") { inclusive = true }
                                 }
                             }

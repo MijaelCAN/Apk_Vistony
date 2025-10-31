@@ -35,6 +35,7 @@ import com.vistony.app.Screen.Inspeccion.ListScreen
 import com.vistony.app.Screen.Login2
 import com.vistony.app.Screen.LoginScreen
 import com.vistony.app.Screen.NoInternetScreen
+import com.vistony.app.Screen.NoModulesScreen
 import com.vistony.app.Screen.Parada.ListParada
 import com.vistony.app.Screen.ParadaMantenimiento.ListActividad
 import com.vistony.app.Screen.Temperatura.ListTemperatura
@@ -82,6 +83,14 @@ class MainActivity : ComponentActivity() {
                             composable("login") {
                                 Login2(navController,loginViewModel, userState)
                                 //LoginScreen(navController)
+                            }
+                            composable("noModules") {
+                                NoModulesScreen(
+                                    navController = navController,
+                                    onLogout = {
+                                        loginViewModel.clearUserData()
+                                    }
+                                )
                             }
                             composable(
                                 "detalle/{user}",
