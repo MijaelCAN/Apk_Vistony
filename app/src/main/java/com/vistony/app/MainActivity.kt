@@ -30,6 +30,7 @@ import com.vistony.app.Service.ConnectivityObserver
 import com.vistony.app.ViewModel.NetworkStatusViewModel
 import com.vistony.app.ViewModel.SharedViewModel
 import com.vistony.app.ui.theme.theme.AppTheme
+import com.vistony.app.Screen.Admin.DashboardAdmin
 import com.vistony.app.Screen.Inspeccion.DetalleScreen
 import com.vistony.app.Screen.Inspeccion.ListScreen
 import com.vistony.app.Screen.Login2
@@ -89,6 +90,18 @@ class MainActivity : ComponentActivity() {
                                     navController = navController,
                                     onLogout = {
                                         loginViewModel.clearUserData()
+                                    }
+                                )
+                            }
+                            composable("dashboardAdmin") {
+                                DashboardAdmin(
+                                    navController = navController,
+                                    userState = userState,
+                                    onLogout = {
+                                        loginViewModel.clearUserData()
+                                        navController.navigate("login") {
+                                            popUpTo(0) { inclusive = true }
+                                        }
                                     }
                                 )
                             }

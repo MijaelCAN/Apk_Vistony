@@ -210,6 +210,7 @@ fun ListMuestra(
                                         // Obtener muestra completa y cargar para edición
                                         muestraViewModel.obtenerMuestraCompletaPorId(muestra.id)
                                         //onNavigateToEdit(muestra)
+                                        muestraViewModel.activarModoEdicion(muestra.id)
                                         onNavigateToCreate()
                                         muestraViewModel.irAPaso(4)
                                     },

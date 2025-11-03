@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.vistony.app.Entidad.Temperatura
 import com.vistony.app.Entidad.UserState
 import com.vistony.app.Screen.Generic.Drawers.BottomBar
@@ -82,6 +83,12 @@ fun ListTemperatura(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val bottomSheetState =
         rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
+
+    val systemUiController = rememberSystemUiController()
+    SideEffect {
+        //systemUiController.setStatusBarColor(Color(0xFF0957c3))
+        systemUiController.setStatusBarColor(Color(0xFFF8FAFF))
+    }
 
     // Cargar datos iniciales
     LaunchedEffect(Unit) {

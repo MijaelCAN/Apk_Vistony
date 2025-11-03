@@ -271,8 +271,8 @@ fun Login2(
                 EstadoLogin.Exitoso -> {
                     userData?.let { user ->
                         when (user.role.lowercase()) {
-                            "admin", "supervisor" -> {
-                                navController.navigate("dashboardAdmin/${user.id}") {
+                            "sistemas", "supervisor" -> {
+                                navController.navigate("dashboardAdmin") {
                                     popUpTo("login") { inclusive = true }
                                 }
                             }
@@ -283,6 +283,11 @@ fun Login2(
                             }
                             "producción" -> {
                                 navController.navigate("listaParada/${user.dni}"){
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            }
+                            "soplado", "almacen insumos" -> {
+                                navController.navigate("listaMuestra"){
                                     popUpTo("login") { inclusive = true }
                                 }
                             }

@@ -259,7 +259,12 @@ data class ProductoResponseTemp(
 
 // Consulta de producto por código
 data class ConsultaProductoItem(
-    @SerializedName("ItemName") val itemName: String = ""
+    @SerializedName("Codigo") val codigo: String = "",
+    @SerializedName("Producto") val descripcion: String = "",
+    @SerializedName("Lote") val lote: String = "",
+    @SerializedName("Maquina") val maquina: String = "",
+    @SerializedName("Embalaje") val embalaje: String,
+    @SerializedName("Encargado_produccion") val encargadoProduccion: String = ""
 )
 
 data class ConsultaProductoResponse(

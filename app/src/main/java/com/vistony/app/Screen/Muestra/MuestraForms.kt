@@ -690,7 +690,7 @@ fun CheckListForm(
     
     Spacer(modifier = Modifier.height(24.dp))
     
-    // Lista de check lists agregados
+    // Lista de check lists agregados formState.isFormValid &&
     if (checkLists.isNotEmpty()) {
         Text(
             text = "Check Lists Agregados (${checkLists.size})",
@@ -704,7 +704,7 @@ fun CheckListForm(
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            checkLists.forEach { checkList ->
+            checkLists.sortedByDescending { it.horaCheckList }.forEach { checkList ->
                 CheckListItemCard(
                     checkList = checkList,
                     onDelete = { muestraViewModel.eliminarCheckList(checkList.id) }
@@ -754,7 +754,7 @@ fun CheckListItemCard(
                 )
             }
             
-            IconButton(
+            /*IconButton(
                 onClick = onDelete,
                 modifier = Modifier.size(32.dp)
             ) {
@@ -764,7 +764,7 @@ fun CheckListItemCard(
                     tint = Color(0xFFEF4444),
                     modifier = Modifier.size(16.dp)
                 )
-            }
+            }*/
         }
     }
 }

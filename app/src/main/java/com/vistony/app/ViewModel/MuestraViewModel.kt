@@ -630,12 +630,12 @@ class MuestraViewModel @Inject constructor(
                 val request = MuestraCreateRequest(
                     codeProd = cabeceraForm.codigo,
                     producto = cabeceraForm.producto,
-                    lote = cabeceraForm.lote, // NO SE ENVIA
+                    lote = cabeceraForm.lote,
                     embalaje = cabeceraForm.embalaje, // NO SE ENVIA
                     userRegister = currentUser.dni,
                     fecRegister = fechaActual,
                     turno = cabeceraForm.turno,
-                    maquina = cabeceraForm.maquina, // NO SE ENVIA
+                    maquina = cabeceraForm.maquina,
                     encargadoProd = cabeceraForm.encargadoProduccion, // NO SE ENVIA
                     estado = "NUEVO"
                 )
@@ -872,7 +872,7 @@ class MuestraViewModel @Inject constructor(
                             )
                             
                             // Mapear checkLists
-                            val checkLists = muestraDetalle.checkList.map { checkListAPI ->
+                                val checkLists = muestraDetalle.checkList.map { checkListAPI ->
                                 CheckListInspeccion(
                                     id = "", // No viene del API
                                     muestraId = id,
@@ -921,6 +921,10 @@ class MuestraViewModel @Inject constructor(
                                     encargadoProduccion = cabecera.encargadoProduccion,
                                     isFormValid = true // En modo edición siempre es válido
                                 )
+
+                                val listaActual = checkLists.toMutableList()
+                                _checkListsTemporales.value = listaActual
+
                                 android.util.Log.d("MuestraViewModel", "Datos de cabecera cargados en el formulario")
                             }
                             
@@ -1011,18 +1015,23 @@ class MuestraViewModel @Inject constructor(
                         android.util.Log.d("MuestraViewModel", "SUCCESS - Cantidad de productos: ${response.data.size}")
                         
                         if (response.success && response.data.isNotEmpty()) {
-                            val producto = response.data.first().itemName
-                            android.util.Log.d("MuestraViewModel", "Producto encontrado: $producto")
+                            val ordenFabricacion = response.data.first()
+                            android.util.Log.d("MuestraViewModel", "Producto encontrado: $ordenFabricacion")
                             
                             // Actualizar el campo producto en el formulario
                             val current = _cabeceraFormState.value
-                            _cabeceraFormState.value = current.copy(producto = producto)
+                            _cabeceraFormState.value = current.copy(
+                                codigo = ordenFabricacion.codigo,
+                                producto = ordenFabricacion.descripcion,
+                                lote = ordenFabricacion.lote,
+                                maquina = ordenFabricacion.maquina,
+                            )
                             validateCabeceraForm()
                         } else {
                             android.util.Log.w("MuestraViewModel", "No se encontró producto para código: $codigo")
                             // Limpiar el campo producto si no se encuentra
                             val current = _cabeceraFormState.value
-                            _cabeceraFormState.value = current.copy(producto = "")
+                            _cabeceraFormState.value = current.copy(producto = "", lote = "", maquina = "")
                             validateCabeceraForm()
                         }
                     },
@@ -1030,14 +1039,14 @@ class MuestraViewModel @Inject constructor(
                         android.util.Log.e("MuestraViewModel", "FAILURE - Excepción: ${exception.message}", exception)
                         // Limpiar el campo producto en caso de error
                         val current = _cabeceraFormState.value
-                        _cabeceraFormState.value = current.copy(producto = "")
+                        _cabeceraFormState.value = current.copy(producto = "", lote = "", maquina = "")
                         validateCabeceraForm()
                     }
                 )
             } catch (e: Exception) {
                 android.util.Log.e("MuestraViewModel", "EXCEPCIÓN INESPERADA", e)
                 val current = _cabeceraFormState.value
-                _cabeceraFormState.value = current.copy(producto = "")
+                _cabeceraFormState.value = current.copy(producto = "", lote = "", maquina = "")
                 validateCabeceraForm()
             }
             

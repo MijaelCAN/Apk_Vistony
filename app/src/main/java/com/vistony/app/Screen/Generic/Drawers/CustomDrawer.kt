@@ -80,7 +80,7 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                     DrawerSubItem("Lista Inspecciones") { navController.navigate("listaInsp/$id") },
                 ),
                 // Solo visible para ciertos roles
-                visibleForRoles = setOf("PRODUCCIÓN", "ADMIN")
+                visibleForRoles = setOf("PRODUCCIÓN", "SISTEMAS")
             ),
             DrawerItem(
                 id = "parada_maquina",
@@ -89,7 +89,7 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                 subItems = listOf(
                     DrawerSubItem("Lista de Paradas") { navController.navigate("listaParada/$id") },
                 ),
-                visibleForRoles = setOf("PRODUCCIÓN", "ADMIN")
+                visibleForRoles = setOf("PRODUCCIÓN", "SISTEMAS")
             ),
             DrawerItem(
                 id = "mantenimiento",
@@ -98,7 +98,7 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                 subItems = listOf(
                     DrawerSubItem("Registro de Paradas") { navController.navigate("paradaMantenimiento") },
                 ),
-                visibleForRoles = setOf("MANTENIMIENTO", "ADMIN")
+                visibleForRoles = setOf("MANTENIMIENTO", "SISTEMAS")
             ),
             DrawerItem(
                 id = "control_temperatura",
@@ -107,7 +107,7 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                 subItems = listOf(
                     DrawerSubItem("Lista de Temperaturas") { navController.navigate("listaTemperatura") },
                 ),
-                visibleForRoles = setOf("PRODUCCIÓN", "ADMIN") // CAMBIAR POR EL AREA
+                visibleForRoles = setOf("PRODUCCIÓN", "SISTEMAS", "SOPLADO", "ALMACEN INSUMOS")
             ),
             DrawerItem(
                 id = "soplado",
@@ -116,14 +116,14 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                 subItems = listOf(
                     DrawerSubItem("Lista de Muestras") { navController.navigate("listaMuestra") },
                 ),
-                visibleForRoles = setOf("PRODUCCIÓN", "ADMIN") // CAMBIAR POR EL AREA
+                visibleForRoles = setOf("PRODUCCIÓN", "SISTEMAS", "SOPLADO", "ALMACEN INSUMOS") // CAMBIAR POR EL AREA
             ),
             DrawerItem(
                 id = "configuracion",
                 icon = Icons.Default.Settings,
                 label = "Configuración",
                 subItems = emptyList(),
-                visibleForRoles = setOf("admin", "supervisor")
+                visibleForRoles = setOf("SISTEMAS", "supervisor")
             ),
             DrawerItem(
                 id = "salir",

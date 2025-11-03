@@ -404,7 +404,7 @@ fun CabeceraForm(
     // Consultar producto automáticamente cuando cambie el código
     LaunchedEffect(formState.codigo) {
         if (formState.codigo.isNotEmpty() && formState.codigo.length >= 3) {
-            muestraViewModel.consultarProducto(formState.codigo)
+            if(!isEditMode) muestraViewModel.consultarProducto(formState.codigo)
         } else if (formState.codigo.isEmpty()) {
             // Limpiar producto si se borra el código
             val current = muestraViewModel.cabeceraFormState.value
@@ -443,7 +443,7 @@ fun CabeceraForm(
         MuestraTextField(
             value = formState.codigo,
             onValueChange = { muestraViewModel.updateCabecera("codigo", it) },
-            label = "Código",
+            label = "N° Orden de Fabricacion",
             enabled = !isEditMode,
             modifier = Modifier.weight(1f),
             leadingIcon = {
@@ -460,7 +460,8 @@ fun CabeceraForm(
             value = formState.lote,
             onValueChange = { muestraViewModel.updateCabecera("lote", it) },
             label = "Lote",
-            enabled = !isEditMode,
+            enabled = false,
+            readOnly = true,
             modifier = Modifier.weight(1f),
             leadingIcon = {
                 Icon(
@@ -476,9 +477,10 @@ fun CabeceraForm(
     MuestraTextField(
         value = formState.producto,
         onValueChange = { /* No permitir edición manual */ },
-        label = "Producto",
+        label = "Descripción de Producto",
         enabled = false, // Solo lectura
         readOnly = true,
+        maxLines = 2,
         leadingIcon = {
             Icon(
                 imageVector = Icons.Default.Science,
@@ -492,11 +494,11 @@ fun CabeceraForm(
     Spacer(modifier = Modifier.height(16.dp))
     
     // Embalaje y Máquina
-    /*Row(
+    Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        MuestraTextField(
+        /*MuestraTextField(
             value = formState.embalaje,
             onValueChange = { muestraViewModel.updateCabecera("embalaje", it) },
             label = "Embalaje",
@@ -510,13 +512,14 @@ fun CabeceraForm(
                     modifier = Modifier.size(20.dp)
                 )
             }
-        )
+        )*/
         
         MuestraTextField(
             value = formState.maquina,
             onValueChange = { muestraViewModel.updateCabecera("maquina", it) },
             label = "Máquina",
-            enabled = !isEditMode,
+            enabled = false,
+            readOnly = true,
             modifier = Modifier.weight(1f),
             leadingIcon = {
                 Icon(
@@ -527,7 +530,7 @@ fun CabeceraForm(
                 )
             }
         )
-    }*/
+    }
     
     Spacer(modifier = Modifier.height(16.dp))
     
