@@ -32,6 +32,7 @@ import com.vistony.app.Entidad.UserResponse
 import com.vistony.app.Screen.Generic.*
 import com.vistony.app.ViewModel.MuestraViewModel
 import com.vistony.app.ui.theme.theme.Dimensions
+import kotlinx.coroutines.delay
 import java.time.LocalTime
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
@@ -404,6 +405,7 @@ fun CabeceraForm(
     // Consultar producto automáticamente cuando cambie el código
     LaunchedEffect(formState.codigo) {
         if (formState.codigo.isNotEmpty() && formState.codigo.length >= 3) {
+            delay(1500)
             if(!isEditMode) muestraViewModel.consultarProducto(formState.codigo)
         } else if (formState.codigo.isEmpty()) {
             // Limpiar producto si se borra el código
@@ -459,7 +461,7 @@ fun CabeceraForm(
         MuestraTextField(
             value = formState.lote,
             onValueChange = { muestraViewModel.updateCabecera("lote", it) },
-            label = "Lote",
+            label = "Código",
             enabled = false,
             readOnly = true,
             modifier = Modifier.weight(1f),

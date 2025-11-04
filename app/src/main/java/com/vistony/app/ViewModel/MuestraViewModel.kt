@@ -628,9 +628,9 @@ class MuestraViewModel @Inject constructor(
                 val fechaActual = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
                 // Crear el request con el formato requerido por el API
                 val request = MuestraCreateRequest(
-                    codeProd = cabeceraForm.codigo,
+                    codeProd = cabeceraForm.lote,
                     producto = cabeceraForm.producto,
-                    lote = cabeceraForm.lote,
+                    lote = cabeceraForm.codigo,
                     embalaje = cabeceraForm.embalaje, // NO SE ENVIA
                     userRegister = currentUser.dni,
                     fecRegister = fechaActual,
@@ -1021,9 +1021,9 @@ class MuestraViewModel @Inject constructor(
                             // Actualizar el campo producto en el formulario
                             val current = _cabeceraFormState.value
                             _cabeceraFormState.value = current.copy(
-                                codigo = ordenFabricacion.codigo,
+                                codigo = ordenFabricacion.lote,
                                 producto = ordenFabricacion.descripcion,
-                                lote = ordenFabricacion.lote,
+                                lote = ordenFabricacion.codigo,
                                 maquina = ordenFabricacion.maquina,
                             )
                             validateCabeceraForm()
