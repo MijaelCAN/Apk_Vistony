@@ -13,6 +13,7 @@ import com.vistony.app.clean.domain.model.ManufacturingOrderModel
 import com.vistony.app.clean.presentation.view.templates.ManuFacturingOrderTemplate
 import com.vistony.app.clean.presentation.viewmodels.ManufacturingOrderViewModel
 import com.vistony.app.ui.theme.theme.Dimensions
+import com.vistony.salesforce.kotlin.view.Atoms.theme.VistonyTheme
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
@@ -22,6 +23,9 @@ fun ManuFacturingOrderPage(
     userState: UserState
 ) {
 
-    ManuFacturingOrderTemplate(navController,id,userState)
+    //VistonyTheme(){
+        ManuFacturingOrderTemplate(navController,id,userState)
+    //}
+
 
 }

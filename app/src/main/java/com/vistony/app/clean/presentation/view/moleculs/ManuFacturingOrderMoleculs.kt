@@ -1,12 +1,8 @@
 package com.vistony.app.clean.presentation.view.moleculs
 
 import android.app.Activity
-import android.util.Log
-import androidx.cardview.widget.CardView
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,11 +11,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Factory
-import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,7 +25,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -40,9 +34,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.vistony.app.R
 import com.vistony.app.clean.domain.model.ApprobationDefaults
 import com.vistony.app.clean.domain.model.ManufacturingOrderDetailModel
-import com.vistony.app.clean.presentation.view.atoms.CardM3
 import com.vistony.app.clean.presentation.view.atoms.DialogM3
-import com.vistony.app.clean.presentation.view.atoms.GroupedLazyColumn
 import com.vistony.app.clean.presentation.view.atoms.ListItemM3
 import com.vistony.app.clean.presentation.view.atoms.ManuFacturingOrderEditTextView
 import com.vistony.app.clean.presentation.view.atoms.ManuFacturingOrderTextFieldView
@@ -50,16 +42,25 @@ import com.vistony.app.clean.presentation.view.atoms.SpinnerM3
 import com.vistony.app.clean.presentation.view.atoms.TextWithDivider
 import com.vistony.app.clean.presentation.viewmodels.ManufacturingOrderViewModel
 import com.vistony.app.ui.theme.theme.Dimensions
-import androidx.compose.material.icons.filled.Factory
-import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.style.TextAlign
+import kotlinx.coroutines.delay
 
 @Composable
 fun ManuFacturingOrderHead(
     viewModel: ManufacturingOrderViewModel  = hiltViewModel()
 ) {
-   // CardM3(
-    //    contentBody = {
+    val orderCode = viewModel.orderCode.collectAsState()
+
             Column {
                 ManuFacturingOrderTextFieldView(
                     value = "Digite el Nro. de Orden de Fabricación a buscar",
@@ -68,7 +69,7 @@ fun ManuFacturingOrderHead(
                 Spacer(modifier = Modifier.height(8.dp))
                 ManuFacturingOrderEditTextView(
                     status = true,
-                    text = "250010207",
+                    text = orderCode.value,
                     label = "Nro. Orden de Fabricación",
                     onClick = {
                         viewModel.onOrderCodeChange(it)
@@ -77,13 +78,12 @@ fun ManuFacturingOrderHead(
                     keyboardType = KeyboardType.Number,
                     onClickLeadingIcon = {
                         viewModel.getManufacturingOrder(it)
+                        viewModel.onDensityChange("0")
                     },
                     leadingIconStatus = true
                 )
             }
-     //   },
-      //  isUsedTextDivider = false
-   // )
+
 }
 
 
@@ -93,37 +93,52 @@ fun ManuFacturingOrderDetail(
 ) {
 
     val data = viewModel.manufacturingOrderResponseModel.collectAsState()
+    val isLoading = viewModel.isLoadingBody.collectAsState()
 
     when {
+        isLoading.value -> {
+            // Pantalla de carga
+            CustomProgressDialog()
+        }
         data.value.data.isNotEmpty() -> {
-            TextWithDivider("Lotes Encontrados")
+            //TextWithDivider("Lotes Encontrados")
             ManuFacturingOrderDetailBody()
         }
         else -> {
-            /*Image(
-                painter = painterResource(id =Icons.Filled.Factory),
-                contentDescription = "No data",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .clickable {
-                        Log.d("ManuFacturingOrderDetail", "Image clicked")
-                    },
-                alignment = Alignment.Center
-            )*/
             Icon(
                 imageVector = Icons.Filled.Factory,
                 contentDescription = "Fábrica",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp).size(400.dp)
+                    .padding(16.dp).size(500.dp)
                 ,
-                //alignment = Alignment.Center
             )
-            ManuFacturingOrderTextFieldView(
-                value = "No se encontraron lotes.",
-            )
+        }
+    }
+}
 
+@Composable
+fun CustomProgressDialog(){
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(64.dp),
+                color = MaterialTheme.colorScheme.secondary
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Cargando...",
+                style = MaterialTheme.typography.bodyLarge,
+                color = Color.Black
+            )
         }
     }
 }
@@ -133,96 +148,100 @@ fun ManuFacturingOrderDetail(
 fun ManuFacturingOrderDetailBody(
     viewModel: ManufacturingOrderViewModel  = hiltViewModel()
 ) {
-    val listApprobation =  ApprobationDefaults.DEFAULT_APPROBATIONS
+    val listApprobation = ApprobationDefaults.DEFAULT_APPROBATIONS
     val data = viewModel.manufacturingOrderResponseModel.collectAsState()
     val statusAprobationHeader1 = viewModel.statusAprobationHeader1.collectAsState()
     val context = LocalContext.current
     val activity = context as Activity
     val windowSize = calculateWindowSizeClass(context)
-
+    val density = viewModel.density.collectAsState()
     val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
-    data.value.data.forEach {
-        /*CardM3(
-            contentBody = {*/
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding_res)
-                //.border(2.dp, Color.White, RoundedCornerShape(24.dp))
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color.White.copy(alpha = 0.44f)),
-            //.graphicsLayer { alpha = 0.44f },
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Row(modifier = Modifier.fillMaxWidth()) {
-                ManuFacturingOrderTextFieldView(
-                    value = "Nro. Lote: ${it.batchName}",
-                    textAlign = TextAlign.Start,
-                    color = Color.Black
-                )
-            }
-            Row(modifier = Modifier.fillMaxWidth()) {
-            ManuFacturingOrderTextFieldView(
-                value = "Descripción: ${it.description}",
-                textAlign = TextAlign.Start,
-                color = Color.Black
-            )
-            }
-            ManuFacturingOrderEditTextView(
-                status = true,
-                text = "",
-                label = "Nueva Densidad",
-                onClick = { result ->
-                    viewModel.onDensityChange(result)
-                },
-                countMaxCharacter = 254,
-                keyboardType = KeyboardType.Number,
-                onClickLeadingIcon = { result ->
-                    //viewModel.getCalculateDensity(it.batchCode, result)
-                },
-                trailingIconStatus = true,
-                onClickTrailingIcon = { result ->
-                    viewModel.getCalculateDensity(it.batchName, result)
-                },
-                trailingIconResourceId = R.drawable.outline_send_24
-            )
-            SpinnerM3(
-                label = "Aprobación 1",
-                options = listApprobation.map { it.name },
-                selectedOption = statusAprobationHeader1.value,
-                onOptionSelected = { result ->
-                    viewModel.onOptimalWeightChange(it.detail.firstOrNull()?.optimumWeight ?: "0")
-                    viewModel.onMaximunWeightChange(it.detail.firstOrNull()?.optimumWeight ?: "0")
-                    viewModel.onStatusAprobationHeader1Change(result, "Linea1", it.batchName)
-                    //activitiesActionViewModel.updateIsErrorSpinnerTypeAction(false)
-                },
-                iconColor = MaterialTheme.colorScheme.secondary,
-                enabled = true,
-                isError = false,
-                errorMessage = "Seleccione Aprobación 2",
-            )
-            Spacer(modifier = Modifier.padding(top = 10.dp))
 
-            //},
-            //contentActions = {
-            TextWithDivider("Envases")
-            Spacer(modifier = Modifier.padding(top = 10.dp))
-            ManuFacturingOrderDetailBodyPackaging(it.detail)
-            //},
-            //textDivider = "Envases"
-            //)
+    val isLoadingBodyDetail = viewModel.isLoadingBodyDetail.collectAsState()
+
+    when {
+        isLoadingBodyDetail.value -> {
+            CustomProgressDialog()
+        }
+
+        data.value.data.isNotEmpty() -> {
+            data.value.data.forEach {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    ManuFacturingOrderTextFieldView(
+                        value = "Nro. Lote: ${it.batchName}",
+                        textAlign = TextAlign.Start,
+                        color = Color.Black
+                    )
+                }
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    ManuFacturingOrderTextFieldView(
+                        value = "Descripción: ${it.description}",
+                        textAlign = TextAlign.Start,
+                        color = Color.Black
+                    )
+                }
+                ManuFacturingOrderEditTextView(
+                    status = true,
+                    text = density.value,
+                    label = "Nueva Densidad",
+                    onClick = { result ->
+                        viewModel.onDensityChange(result)
+                    },
+                    countMaxCharacter = 254,
+                    keyboardType = KeyboardType.Number,
+                    onClickLeadingIcon = { result ->
+                        //viewModel.getCalculateDensity(it.batchCode, result)
+                    },
+                    trailingIconStatus = true,
+                    onClickTrailingIcon = { result ->
+                        viewModel.getCalculateDensity(it.batchName, result)
+                    },
+                    trailingIconResourceId = R.drawable.outline_calculate_24
+                )
+                SpinnerM3(
+                    label = "Aprobación de Lote",
+                    options = listApprobation.map { it.name },
+                    selectedOption = statusAprobationHeader1.value,
+                    onOptionSelected = { result ->
+                        viewModel.onOptimalWeightChange(
+                            it.detail.firstOrNull()?.optimumWeight ?: "0"
+                        )
+                        viewModel.onMaximunWeightChange(
+                            it.detail.firstOrNull()?.optimumWeight ?: "0"
+                        )
+                        viewModel.onStatusAprobationHeader1Change(result, "Linea1", it.batchName)
+                        //activitiesActionViewModel.updateIsErrorSpinnerTypeAction(false)
+                    },
+                    iconColor = MaterialTheme.colorScheme.secondary,
+                    enabled = true,
+                    isError = false,
+                    errorMessage = "Seleccione Aprobación 2",
+                )
+                Spacer(modifier = Modifier.padding(top = 10.dp))
+                TextWithDivider("Envases")
+                Spacer(modifier = Modifier.padding(top = 10.dp))
+                ManuFacturingOrderDetailBodyPackaging(it.detail)
+
+            }
         }
     }
 }
+
 @Composable
-fun getApprovalColor(status: String): Color {
-    return when (status.lowercase()) {
-        "aprobado" -> Color(0xFF4CAF50) // Verde
-        "rechazado" -> Color(0xFFF44336) // Rojo
-        "pendiente" -> Color(0xFFFFC107) // Amarillo
-        else -> MaterialTheme.colorScheme.onSurface // Color por defecto
+fun StatusChip(status: String) {
+    val (bg, fg, icon) = when (status.lowercase()) {
+        "aprobado" -> Triple(Color(0xFFE8F5E9), Color(0xFF2E7D32), Icons.Default.Check)
+        "pendiente" -> Triple(Color(0xFFFFF8E1), Color(0xFFF9A825), Icons.Default.Schedule)
+        "rechazado" -> Triple(Color(0xFFFFEBEE), Color(0xFFC62828), Icons.Default.Close)
+        else -> Triple(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant, Icons.Default.Info)
     }
+
+    AssistChip(
+        onClick = { },
+        label = { Text(status, color = fg) },
+        leadingIcon = { Icon(icon, null, tint = fg) },
+        colors = AssistChipDefaults.assistChipColors(containerColor = bg)
+    )
 }
 
 
@@ -231,26 +250,29 @@ fun ManuFacturingOrderDetailBodyPackaging(
     manufacturingOrderDetailModel: List<ManufacturingOrderDetailModel>,
     viewModel: ManufacturingOrderViewModel  = hiltViewModel()
 ) {
-
+    val density=viewModel.density.collectAsState()
     manufacturingOrderDetailModel.forEach {
         ListItemM3(
-            headLineContent = it.optimumWeight + " Kg. (Optimo) / " + it.maximumWeight + " Kg. (Maximo)",
+            headLineContent = it.optimumWeight + "  (Optimo) / " + it.maximumWeight + " (Maximo)",
             suportingContent = {
                 Row {
-                    Text(
+                    /*Text(
                         text = it.approbationName1,
                         color = getApprovalColor(it.approbationName1)
-                    )
-                    Text(text = " / ")
+                    )*/
+                    StatusChip(it.approbationName1)
+                    /*Text(text = " / ")
                     Text(
                         text = it.approbationName2,
                         color = getApprovalColor(it.approbationName2)
-                    )
-                    Text(text = " / ")
+                    )*/
+                    StatusChip(it.approbationName2)
+                    /*Text(text = " / ")
                     Text(
                         text = it.approbationName3,
                         color = getApprovalColor(it.approbationName3)
-                    )
+                    )*/
+                    StatusChip(it.approbationName3)
                 }
             },
             trailingContentClick = {  },
@@ -274,6 +296,7 @@ fun ManuFacturingOrderDetailBodyPackaging(
             trailingContent = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(
+                        enabled = if(it.optimumWeight.isNotEmpty() && it.optimumWeight.toFloat()>0) true else false,
                         onClick = {
                             viewModel.onStatusAprobbation1Change(it.approbationName1,"Linea1")
                             viewModel.onStatusAprobbation2Change(it.approbationName2,"Linea2")
@@ -287,14 +310,15 @@ fun ManuFacturingOrderDetailBodyPackaging(
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.baseline_mode_edit_24),
-                            tint = MaterialTheme.colorScheme.secondary,
+                            tint = if(it.optimumWeight.isNotEmpty() && it.optimumWeight.toFloat()>0) Color.Red else Color.LightGray ,
                             contentDescription = "Ver"
                         )
                     }
                 }
             }
         )
-        Spacer(modifier = Modifier.height(10.dp))
+        TextWithDivider("")
+        //Spacer(modifier = Modifier.height(10.dp))
     }
 }
 
@@ -308,6 +332,19 @@ fun ManufacturingOrderCustomDialog(
     val statusAprobbation1 = viewModel.statusAprobbation1.collectAsState()
     val statusAprobbation2 = viewModel.statusAprobbation2.collectAsState()
     val statusAprobbation3 = viewModel.statusAprobbation3.collectAsState()
+    val orderCode = viewModel.orderCode.collectAsState()
+    val density = viewModel.density.collectAsState()
+
+    var shouldRefresh by remember { mutableStateOf(false) }
+
+    // Ejecutar con retraso de 2 segundos
+    LaunchedEffect(shouldRefresh) {
+        if (shouldRefresh) {
+            delay(2000) // 2 segundos
+            viewModel.getCalculateDensity(orderCode.value, density.value)
+            shouldRefresh = false
+        }
+    }
 
     if(isVisibleDialogEditPacking.value)
     {
@@ -320,13 +357,16 @@ fun ManufacturingOrderCustomDialog(
             onConfirm = {
                 viewModel.saveStatusAprobation()
                 viewModel.onVisibleDialogEditPackingChange(false)
+                //viewModel.getManufacturingOrder(orderCode.value)
+                //viewModel.getCalculateDensity(orderCode.value, density.value)
+                shouldRefresh = true // Activar el retraso
             },
             confirmText = "Guardar",
             dismissText = "Cancelar",
             showConfirmButton = true,
             content = {
                 SpinnerM3(
-                    label = "Aprobación 1",
+                    label = "Estado de Aprobación (Muestra 1)",
                     options = listApprobation.map { it.name },
                     selectedOption = statusAprobbation1.value,
                     onOptionSelected = { result ->
@@ -336,10 +376,10 @@ fun ManufacturingOrderCustomDialog(
                     iconColor = MaterialTheme.colorScheme.secondary,
                     enabled = true,
                     isError = false,
-                    errorMessage = "Seleccione Aprobación 1",
+                    errorMessage = "Seleccione Aprobación",
                 )
                 SpinnerM3(
-                    label = "Aprobación 2",
+                    label = "Estado de Aprobación (Muestra 2 - Linea)",
                     options = listApprobation.map { it.name },
                     selectedOption = statusAprobbation2.value,
                     onOptionSelected = { result ->
@@ -349,10 +389,10 @@ fun ManufacturingOrderCustomDialog(
                     iconColor = MaterialTheme.colorScheme.secondary,
                     enabled = true,
                     isError = false,
-                    errorMessage = "Seleccione Aprobación 2",
+                    errorMessage = "Seleccione Aprobación",
                 )
                 SpinnerM3(
-                    label = "Aprobación 3",
+                    label = "Estado de Aprobación (Calidad)",
                     options = listApprobation.map { it.name },
                     selectedOption = statusAprobbation3.value,
                     onOptionSelected = { result ->
@@ -362,7 +402,7 @@ fun ManufacturingOrderCustomDialog(
                     iconColor = MaterialTheme.colorScheme.secondary,
                     enabled = true,
                     isError = false,
-                    errorMessage = "Seleccione Aprobación 3",
+                    errorMessage = "Seleccione Aprobación",
                 )
             }
         )

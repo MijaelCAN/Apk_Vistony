@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
@@ -22,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.vistony.app.ui.theme.theme.Dimensions
+import com.vistony.app.ui.theme.theme.onPrimaryLight
 
 @Composable
 fun <T, K> GroupedLazyColumn(
@@ -48,7 +50,7 @@ fun <T, K> GroupedLazyColumn(
 @Composable
 fun ListItemM3(
     headLineContent: String="",
-    suportingContent: String="",
+    suportingContent: @Composable () -> Unit = {},
     trailingContentClick: () -> Unit,
     modifier: Modifier = Modifier,
     overLineContent:String="",
@@ -81,24 +83,31 @@ fun ListItemM3(
                     Text(
                         text = overLineContent,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurface,
+                        //color = Color.Black
+
                     )
                 },
+                colors = ListItemDefaults.colors(
+                    containerColor = Color(0xFFF7F8FB),
+                    headlineColor = MaterialTheme.colorScheme.onSurface,
+                    supportingColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    overlineColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    leadingIconColor = MaterialTheme.colorScheme.onSurface,
+                    trailingIconColor = MaterialTheme.colorScheme.onSurface
+                ),
                 modifier = Modifier.padding(horizontal = paddingRes).background(Color.LightGray),
                 headlineContent = {
                     Text(
                         text = headLineContent,
                         style = MaterialTheme.typography.titleMedium,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+
                     )
                 },
                 supportingContent = {
-                    Text(
-                        text = suportingContent,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    suportingContent()
                 },
                 trailingContent = {
                     trailingContent()
@@ -114,7 +123,8 @@ fun ListItemM3(
                     Text(
                         text = overLineContent,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurface
+                        //color = Color.Black
                     )
                 },
                 modifier = Modifier.padding(horizontal = paddingRes).background(Color.LightGray), // evita que tape el fondo del Surface // evita que tape el fondo del Surface
@@ -126,12 +136,16 @@ fun ListItemM3(
                         overflow = TextOverflow.Ellipsis
                     )
                 },
+                colors = ListItemDefaults.colors(
+                    containerColor = Color(0xFFF7F8FB),
+                    headlineColor = MaterialTheme.colorScheme.onSurface,
+                    supportingColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    overlineColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    leadingIconColor = MaterialTheme.colorScheme.onSurface,
+                    trailingIconColor = MaterialTheme.colorScheme.onSurface
+                ),
                 supportingContent = {
-                    Text(
-                        text = suportingContent,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    suportingContent()
                 },
                 trailingContent = {
                     trailingContent()
@@ -143,7 +157,8 @@ fun ListItemM3(
                     Text(
                         text = overLineContent,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurface
+                        //color = Color.Black
                     )
                 },
                 modifier = Modifier.padding(horizontal = paddingRes).background(Color.LightGray), // evita que tape el fondo del Surface
@@ -156,12 +171,21 @@ fun ListItemM3(
                     )
                 },
                 supportingContent = {
-                    Text(
+                    /*Text(
                         text = suportingContent,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    )*/
+                    suportingContent()
                 },
+                colors = ListItemDefaults.colors(
+                    containerColor = Color(0xFFF7F8FB),
+                    headlineColor = MaterialTheme.colorScheme.onSurface,
+                    supportingColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    overlineColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    leadingIconColor = MaterialTheme.colorScheme.onSurface,
+                    trailingIconColor = MaterialTheme.colorScheme.onSurface
+                ),
             )
         }
     //}

@@ -121,6 +121,12 @@ fun Login2(
                         popUpTo("login") { inclusive = true }
                     }
                 }
+                "calidad" -> {
+                    // Redireccionar a lista de paradas
+                    navController.navigate("manufacturingOrder") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
                 else -> {
                     // Rol no reconocido, redireccionar por defecto
                     navController.navigate("listaInsp/${user.id}") {

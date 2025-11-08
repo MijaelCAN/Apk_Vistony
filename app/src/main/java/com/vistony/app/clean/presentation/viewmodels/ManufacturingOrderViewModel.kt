@@ -1,8 +1,6 @@
 package com.vistony.app.clean.presentation.viewmodels
 
 import android.util.Log
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vistony.app.clean.domain.model.ManufacturingOrderResponseModel
@@ -24,8 +22,8 @@ class ManufacturingOrderViewModel @Inject constructor(
     private val _manufacturingOrderResponseModel = MutableStateFlow(ManufacturingOrderResponseModel())
     val manufacturingOrderResponseModel: StateFlow<ManufacturingOrderResponseModel> get() = _manufacturingOrderResponseModel
 
-    private val _orderCode = mutableStateOf("")
-    val orderCode: State<String> get() = _orderCode
+    private val _orderCode = MutableStateFlow("")
+    val orderCode: StateFlow<String> get() = _orderCode
 
     private val _isVisibleDialogEditPacking = MutableStateFlow( false)
     val isVisibleDialogEditPacking: StateFlow<Boolean> get() = _isVisibleDialogEditPacking
@@ -56,6 +54,13 @@ class ManufacturingOrderViewModel @Inject constructor(
 
     private val _maximunWeight = MutableStateFlow("")
     val maximunWeight: StateFlow<String> get() = _maximunWeight
+
+    private val _isLoadingBody = MutableStateFlow(false)
+    val isLoadingBody: StateFlow<Boolean> get() = _isLoadingBody
+
+    private val _isLoadingBodyDetail = MutableStateFlow(false)
+    val isLoadingBodyDetail: StateFlow<Boolean> get() = _isLoadingBodyDetail
+
 
     fun onOptimalWeightChange(newValue: String) {
         _optimalWeight.value = newValue
@@ -164,13 +169,24 @@ class ManufacturingOrderViewModel @Inject constructor(
 
     fun getManufacturingOrder(orderCode: String) {
         viewModelScope.launch {
-            _manufacturingOrderResponseModel.value=getManufacturingOrderUseCase(orderCode)
+            _isLoadingBody.value = true // Iniciar carga
+            Log.e("REOS","getManufacturingOrder-orderCode: "+orderCode)
+            try {
+                _manufacturingOrderResponseModel.value = getManufacturingOrderUseCase(orderCode)
+            } finally {
+                _isLoadingBody.value = false // Finalizar carga
+            }
         }
     }
 
     fun getCalculateDensity(orderCode: String, density: String) {
         viewModelScope.launch {
-            _manufacturingOrderResponseModel.value=recalculateDensityUseCase(orderCode,density)
+            _isLoadingBodyDetail.value = true
+            try {
+                _manufacturingOrderResponseModel.value = recalculateDensityUseCase(orderCode, density)
+            } finally {
+                _isLoadingBodyDetail.value = false
+            }
         }
     }
 

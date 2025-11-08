@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -185,11 +186,16 @@ fun EditTextM3(
                         focusedLabelColor = if (isError) MaterialTheme.colorScheme.error else BlueVistony,
                         unfocusedLabelColor = if (isError) MaterialTheme.colorScheme.error else Color.Gray,
                         cursorColor = BlueVistony, // Cambia el color del cursor
+
                     ),
                     isError = isError,
                     supportingText = if (isError) {
                         { Text(errorMessage ?: "Campo requerido") }
                     } else null,
+                    textStyle = TextStyle.Default.copy(
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
                 )
             }else if(!leadingIconStatus&&trailingIconStatus){
                 OutlinedTextField(
@@ -288,6 +294,10 @@ fun EditTextM3(
                     supportingText = if (isError) {
                         { Text(errorMessage ?: "Campo requerido") }
                     } else null,
+                    textStyle = TextStyle.Default.copy(
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
                 )
             }else if(leadingIconStatus&&!trailingIconStatus){
                 OutlinedTextField(
@@ -385,6 +395,10 @@ fun EditTextM3(
                     supportingText = if (isError) {
                         { Text(errorMessage ?: "Campo requerido") }
                     } else null,
+                    textStyle = TextStyle.Default.copy(
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
                 )
             }else if(!leadingIconStatus&&!trailingIconStatus){
                 OutlinedTextField(
@@ -470,6 +484,10 @@ fun EditTextM3(
                     supportingText = if (isError) {
                         { Text(errorMessage ?: "Campo requerido") }
                     } else null,
+                    textStyle = TextStyle.Default.copy(
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
                 )
             }
 
@@ -504,7 +522,7 @@ fun EditTextM3(
     }
 }
 
-
+/*
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun TextWithDivider(text: String, modifier: Modifier = Modifier) {
@@ -535,5 +553,40 @@ fun TextWithDivider(text: String, modifier: Modifier = Modifier) {
                 .height(1.dp),
             color = MaterialTheme.colorScheme.tertiary
         )
+    }
+}*/
+
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
+@Composable
+fun TextWithDivider(text: String, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val activity = context as Activity
+    val windowSize = calculateWindowSizeClass(context)
+    val paddingRes = Dimensions.getPadding(windowSize.widthSizeClass)
+    Row(
+        modifier = modifier.padding(horizontal = paddingRes),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Divider(
+            modifier = Modifier
+                .weight(1f)
+                .height(1.dp),
+            color = MaterialTheme.colorScheme.tertiary
+        )
+
+        if (text.isNotEmpty()) {
+            Text(
+                text = text,
+                modifier = Modifier.padding(horizontal = 8.dp),
+                color = MaterialTheme.colorScheme.tertiary
+            )
+
+            Divider(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(1.dp),
+                color = MaterialTheme.colorScheme.tertiary
+            )
+        }
     }
 }

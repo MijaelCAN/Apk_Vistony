@@ -78,8 +78,8 @@ fun ManuFacturingOrderEditTextView(
         leadingiconResourceId = painterResource(id = R.drawable.outline_search_24),
         keyboardType = keyboardType,
         trailingiconResourceId = painterResource(trailingIconResourceId),
-        leadingiconColor = MaterialTheme.colorScheme.secondary,
-        trailingiconColor = MaterialTheme.colorScheme.secondary,
+        leadingiconColor = Color.Red,
+        trailingiconColor = Color.Red,
         textDownEditext = "Campo obligatorio",
         trailingIconStatus = trailingIconStatus,
         trailingIconOnClick = {
