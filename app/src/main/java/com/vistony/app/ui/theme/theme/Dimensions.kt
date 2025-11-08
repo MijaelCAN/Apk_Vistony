@@ -71,9 +71,12 @@ object Dimensions {
     // Image Sizes
     fun getImageSize(windowSize: WindowWidthSizeClass): Dp {
         return when (windowSize) {
-            WindowWidthSizeClass.Compact -> 100.dp // Móvil
-            WindowWidthSizeClass.Medium -> 150.dp // Tableta pequeña
-            WindowWidthSizeClass.Expanded -> 200.dp // Tableta grande
+            //WindowWidthSizeClass.Compact -> 100.dp // Móvil
+            //WindowWidthSizeClass.Medium -> 150.dp // Tableta pequeña
+            //WindowWidthSizeClass.Expanded -> 200.dp // Tableta grande
+            WindowWidthSizeClass.Compact -> 200.dp // Móvil
+            WindowWidthSizeClass.Medium -> 250.dp // Tableta pequeña
+            WindowWidthSizeClass.Expanded -> 300.dp // Tableta grande
             else -> 100.dp // Ancho por defecto
         }
     }

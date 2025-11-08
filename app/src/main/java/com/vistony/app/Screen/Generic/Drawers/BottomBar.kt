@@ -21,7 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.vistony.app.Entidad.ListaRequest
+import com.vistony.app.Entidad.UserResponse
+import com.vistony.app.Entidad.UserState
 import com.vistony.app.Screen.Generic.DateOutlinedTextField
+import com.vistony.app.ViewModel.ActividadViewModel
 import com.vistony.app.ViewModel.InspectionViewModel
 import com.vistony.app.ViewModel.ParadaViewModel
 import java.time.format.DateTimeFormatter
@@ -31,6 +34,8 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun BottomBar(
     type : String,
+    userResponse: UserResponse,
+    actividadViewModel: ActividadViewModel = hiltViewModel(),
     paradaViewModel: ParadaViewModel = hiltViewModel(),
     inspViewModel: InspectionViewModel = hiltViewModel()
 ) {
@@ -52,7 +57,18 @@ fun BottomBar(
                     }
                 }
             }
-            "parada"->{ paradaViewModel.obtenerParadas(ListaRequest(newfechaIni, newfechaFin, "T")) }
+            "parada"->{ paradaViewModel.obtenerParadas(
+                ListaRequest(
+                    newfechaIni,
+                    newfechaFin,
+                    "T",
+                    userResponse.dni
+                )) }
+            "mantenimiento"->{
+                selectedDateIni?.let { selectedDateFin?.let { it1 ->
+                    actividadViewModel.getAllActividades(userResponse,it, it1)
+                } }
+            }
         }
 
     }

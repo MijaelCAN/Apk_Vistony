@@ -1,6 +1,8 @@
 package com.vistony.app.Screen.Generic
 
 import android.net.Uri
+import android.os.Build
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -40,6 +42,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,12 +51,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.ImageLoader
 import coil.compose.AsyncImage
 import com.vistony.app.Entidad.FailureType
 
@@ -127,15 +132,19 @@ fun CustomSearchText(
 
 @Composable
 fun ImagePickerRow(
-    images: List<Uri>, // o List<ImageUri> o List<String> según cómo manejes las imágenes
+    //images: List<Uri>, // o List<ImageUri> o List<String> según cómo manejes las imágenes
+    images: SnapshotStateList<Uri>, // o List<ImageUri> o List<String> según cómo manejes las imágenes
     onAddClick: () -> Unit,
     onRemoveImage: (Uri) -> Unit,
     modifier: Modifier = Modifier,
     itemSize: Dp = 64.dp,
     cornerRadius: Dp = 12.dp,
-    selectedBackgroundColor: Color = Color(0xFFFC6A68),
+    selectedBackgroundColor: Color = Color(0xFF01398D),//Color(0xFFFC6A68),
     unselectedBackgroundColor: Color = Color.Transparent,
+    enabled: Boolean = true
 ) {
+
+    val context = LocalContext.current
     Row(
         modifier = modifier
             .horizontalScroll(rememberScrollState())
@@ -146,15 +155,21 @@ fun ImagePickerRow(
         Box(
             modifier = Modifier
                 .size(itemSize)
-                .background(unselectedBackgroundColor, RoundedCornerShape(cornerRadius))
-                .border(1.dp, Color.LightGray, RoundedCornerShape(cornerRadius))
-                .clickable { onAddClick() },
+                .background(
+                    if(enabled) unselectedBackgroundColor else Color.LightGray.copy(alpha = 0.3f),
+                    RoundedCornerShape(cornerRadius)
+                )
+                .border(1.dp, if(enabled) Color.LightGray.copy(alpha = 0.3f) else Color.LightGray, RoundedCornerShape(cornerRadius))
+                .clickable (
+                    enabled = enabled,
+                    onClick = { onAddClick() }
+                ),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = "Agregar imagen",
-                tint = Color.LightGray,
+                tint = if(enabled) Color.LightGray.copy(alpha = 0.3f) else Color.LightGray,
                 modifier = Modifier.size(itemSize * 0.5f)
             )
         }
@@ -175,22 +190,24 @@ fun ImagePickerRow(
                 )
 
                 // Botón para eliminar imagen
-                Box(
-                    modifier = Modifier
-                        .size(20.dp)
-                        //.offset(x = 10.dp, y = (-10).dp)
-                        //.background(Color(0x66000000), CircleShape)
-                        .background(Color(0x66606060), CircleShape)
-                        .align(Alignment.TopEnd)
-                        .clickable { onRemoveImage(uri) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Eliminar imagen",
-                        tint = Color.White,
-                        modifier = Modifier.size(12.dp)
-                    )
+                if(enabled){
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            //.offset(x = 10.dp, y = (-10).dp)
+                            //.background(Color(0x66000000), CircleShape)
+                            .background(Color(0x66606060), CircleShape)
+                            .align(Alignment.TopEnd)
+                            .clickable { onRemoveImage(uri) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Eliminar imagen",
+                            tint = Color.White,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
                 }
             }
         }
@@ -207,9 +224,9 @@ fun IconTextButton(
     modifier: Modifier = Modifier,
     size: Dp,
     cornerRadius: Dp,
-    selectedBackgroundColor: Color = Color(0xFFFC6A68),
+    selectedBackgroundColor: Color =  Color(0xFF01398D),//Color(0xFFFC6A68),
     unselectedBackgroundColor: Color = Color.Transparent,
-    selectedContentColor: Color = Color.Black,
+    selectedContentColor: Color = Color.White,
     unselectedContentColor: Color = Color.LightGray
 ) {
     val backgroundColor = if (selected) selectedBackgroundColor else unselectedBackgroundColor
@@ -242,7 +259,7 @@ fun IconTextButton(
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = text,
-            color = contentColor,
+            color = if (selected) Color(0xFF01398D) else Color.LightGray,
             style = MaterialTheme.typography.bodySmall,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -261,9 +278,11 @@ fun ThinOutlinedButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val borderColor = if (selected) Color(0xFFFC6A68) else Color.LightGray
-    val containerColor = if (selected) Color(0xFFFC6A68) else Color.Transparent
-    val contentColor = if (selected) Color.Black  else Color.LightGray
+    //val borderColor = if (selected) Color(0xFFFC6A68) else Color.LightGray
+    //val containerColor = if (selected) Color(0xFFFC6A68) else Color.Transparent
+    val borderColor = if (selected) Color(0xFF01398D) else Color.LightGray
+    val containerColor = if (selected) Color(0xFF01398D) else Color.Transparent
+    val contentColor = if (selected) Color.White  else Color.LightGray
 
     OutlinedButton(
         onClick = onClick,

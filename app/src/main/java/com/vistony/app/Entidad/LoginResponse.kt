@@ -1,9 +1,9 @@
 package com.vistony.app.Entidad
 
 data class LoginResponse(
-    val statusCode: Int = 0,
+    val success: Boolean = false,
     val message: String = "",
-    val data: Any? = null
+    val data: UserResponse = UserResponse()
 )
 
 data class Data(
@@ -15,9 +15,10 @@ data class Data(
 
 data class UserResponse(
     val id: Int = 0,
+    val dni: String = "",
     val name: String = "",
     val email: String = "",
-    val role: String = "mantenimiento",
+    val role: String = "",
     val position: String = "",
     val avatar: String = "",
     val lastLogin: String = ""

@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,12 +20,16 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.vistony.app.Screen.Generic.ImagePickerRow
 import java.io.File
+import kotlin.math.log
 
 @Composable
-fun ImagePickerExample(images: SnapshotStateList<Uri>) {
+fun ImagePickerExample(
+    images: SnapshotStateList<Uri>,
+    onAddImage: (Uri) -> Unit,
+    onRemoveImage: (Uri) -> Unit,
+    enabled: Boolean = true
+) {
     val context = LocalContext.current
-
-
     val photoFile = remember {
         File(context.cacheDir, "temp_image_${System.currentTimeMillis()}.jpg")
     }
@@ -33,8 +38,9 @@ fun ImagePickerExample(images: SnapshotStateList<Uri>) {
     }
 
     val galleryIntent = remember {
-        Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
+        Intent(Intent.ACTION_GET_CONTENT).apply {
             type = "image/*"
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         }
     }
     val cameraIntent = remember {
@@ -45,7 +51,7 @@ fun ImagePickerExample(images: SnapshotStateList<Uri>) {
     }
 
     val chooserIntent = remember {
-        Intent.createChooser(galleryIntent, "Selecciona imagen o cámara").apply {
+        Intent.createChooser(galleryIntent, "Selecciona imágenes (múltiples) o cámara").apply {
             putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(cameraIntent))
         }
     }
@@ -53,8 +59,29 @@ fun ImagePickerExample(images: SnapshotStateList<Uri>) {
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val data = result.data
-            val selectedImageUri = data?.data ?: photoUri
-            selectedImageUri?.let { images.add(it) }
+            when {
+                data?.clipData != null -> {
+                    // Múltiples imágenes seleccionadas
+                    val clipData = data.clipData!!
+                    for (i in 0 until clipData.itemCount) {
+                        val uri = clipData.getItemAt(i).uri
+                        onAddImage(uri)
+                    }
+                    Toast.makeText(context, "${clipData.itemCount} imágenes agregadas", Toast.LENGTH_SHORT).show()
+                }
+                data?.data != null -> {
+                    // Una sola imagen seleccionada
+                    onAddImage(data.data!!)
+                    Toast.makeText(context, "Imagen agregada", Toast.LENGTH_SHORT).show()
+                }
+                else -> {
+                    // Imagen de cámara
+                    photoUri?.let { 
+                        onAddImage(it)
+                        Toast.makeText(context, "Foto tomada", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         }
     }
 
@@ -72,6 +99,11 @@ fun ImagePickerExample(images: SnapshotStateList<Uri>) {
     }
     // Función para verificar y solicitar permisos
     val handleImagePickerClick = {
+
+        if (!enabled) {
+            Toast.makeText(context, "No se pueden agregar imágenes después de finalizar la actividad", Toast.LENGTH_SHORT).show()
+            //return @handleImagePickerClick
+        }
         when {
             ContextCompat.checkSelfPermission(
                 context,
@@ -92,7 +124,9 @@ fun ImagePickerExample(images: SnapshotStateList<Uri>) {
             images = images,
             itemSize = 90.dp,
             onAddClick = { handleImagePickerClick() },
-            onRemoveImage = { uri -> images.remove(uri) }
+            //onRemoveImage = { uri -> images.remove(uri) }
+            onRemoveImage = { uri -> onRemoveImage(uri) },
+            enabled = enabled
         )
     }
 }

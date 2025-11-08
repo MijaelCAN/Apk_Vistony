@@ -2,6 +2,8 @@ package com.vistony.app.Screen.Parada
 
 import android.app.Activity
 import android.os.Build
+import android.util.Log
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -71,6 +73,7 @@ import com.vistony.app.R
 import com.vistony.app.Screen.Generic.CustomAlertDialog
 import com.vistony.app.Screen.Generic.DialogType
 import com.vistony.app.Screen.Generic.GenericDropdownMenu
+import com.vistony.app.Screen.LoginScreen
 import com.vistony.app.Screen.ParadaMantenimiento.TarjetaActividad
 import com.vistony.app.ViewModel.ActividadViewModel
 import com.vistony.app.ViewModel.EstadoParada
@@ -109,7 +112,7 @@ fun DetalleParada(
     var selectedDateIni = paradaViewModel.fechaIni.value?.toLocalDate()?.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
     var selectedDateFin = paradaViewModel.fechaFin.value?.toLocalDate()?.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
 
-    var tecnico by remember { mutableStateOf(parada?.UserMantemiento ?: "") }
+    var tecnico by remember { mutableStateOf(parada?.Usuario ?: "") }
     val expandedTecnico = remember { mutableStateOf(false) }
     val listTecnicos = listOf(
         "1" to "Junior A.",
@@ -123,6 +126,7 @@ fun DetalleParada(
         "9" to "Jesus A.",
     )
 
+    Log.d("TAG", "DetalleParada: $parada")
 
     Column(
         modifier = Modifier
@@ -160,7 +164,28 @@ fun DetalleParada(
         Spacer(Modifier.height(16.dp))
 
         if (parada == null) return
-        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy   HH:mm")
+        // Formato para mostrar: "15-10-2025 08:21"
+        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")
+        
+        // Función para parsear fechas con diferentes formatos
+        fun parseDateTime(dateString: String): LocalDateTime? {
+            return try {
+                // Formato 1: "2025-10-16 07:07" (con dos puntos)
+                LocalDateTime.parse(dateString, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+            } catch (e: Exception) {
+                try {
+                    // Formato 2: "2025-10-15 1013" (sin dos puntos)
+                    LocalDateTime.parse(dateString, DateTimeFormatter.ofPattern("yyyy-MM-dd Hmm"))
+                } catch (e2: Exception) {
+                    try {
+                        // Formato 3: "2025-10-15 0821" (con cero a la izquierda)
+                        LocalDateTime.parse(dateString, DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm"))
+                    } catch (e3: Exception) {
+                        null
+                    }
+                }
+            }
+        }
 
         Box(modifier = Modifier.clip(RoundedCornerShape(20.dp))){
             Image(
@@ -201,10 +226,9 @@ fun DetalleParada(
                     modifier = Modifier.padding(24.dp)
                 ) {
                     TiempoTranscurrido(
-                        fechaInicio = LocalDateTime.parse(parada.FechaHoraInicio, formatter),
-                        fechaFin = if (parada.FechaHoraFin.isNullOrBlank()) null else LocalDateTime.parse(
-                            parada.FechaHoraFin,
-                            formatter
+                        fechaInicio = parseDateTime(parada.FechaHoraInicio) ?: LocalDateTime.now(),
+                        fechaFin = if (parada.FechaHoraFin.isNullOrBlank()) null else parseDateTime(
+                            parada.FechaHoraFin!!
                         )
                     )
                     Row(
@@ -225,8 +249,10 @@ fun DetalleParada(
         Spacer(modifier = Modifier.height(8.dp))
         InfoRow("Área:", parada.Area ?: "-")
         InfoRow("Coment.:", parada.Comentario ?: "-")
-        InfoRow("Inicio:", parada.FechaHoraInicio ?: "-")
-        InfoRow("Fin:", parada.FechaHoraFin?.takeIf { it.isNotBlank() } ?: "En curso")
+        InfoRow("Inicio:", parseDateTime(parada.FechaHoraInicio)?.format(formatter) ?: (parada.FechaHoraInicio ?: "-"))
+        InfoRow("Fin:", if (parada.FechaHoraFin.isNullOrBlank()) "En curso" else parseDateTime(
+            parada.FechaHoraFin!!
+        )?.format(formatter) ?: (parada.FechaHoraFin ?: "En curso"))
 
         val listaFiltrada = actividades.filter { it.paradaDocEntry == parada.DocEntry }
         if (role == "mantenimiento") {
@@ -345,13 +371,14 @@ fun DetalleParada(
                 onClick = {
                     if(role == "mantenimiento") {
                         if(listaFiltrada.isEmpty()){
-                            parada.UserMantemiento = tecnico
+                            parada.Usuario = tecnico
                             onClose("Asignados")
                         }else{
                             // AQUI DEBE LLAMAR A LA API DE CERRAR ACTIVIDAD, ASIMISMO CREAR UN PDF EXPORTABLE
                         }
                     }
-                    if(role == "operador") {
+                    Log.d("Role", "Rol del usuario: $role")
+                    if(role?.lowercase() == "producción") {
                         paradaViewModel.detenerParada(Integer.parseInt(parada.DocEntry))
                         showDialog = true
                     }
@@ -376,38 +403,58 @@ fun DetalleParada(
         Spacer(modifier = Modifier.height(32.dp))
     }
 
-    if (showDialog) {
-        when (estado) {
-            EstadoParada.Cargando ->
-                CustomAlertDialog(
-                    showDialog = true,
-                    title = "Cargando",
-                    message = "Espere por favor...",
-                    confirmButtonText = "",
-                    dismissButtonText = null,
-                    onDismiss = { showDialog = false },
-                    dialogType = DialogType.LOADING
-                )
+        if (showDialog) {
+            when (estado) {
+                EstadoParada.Cargando ->
+                    CustomAlertDialog(
+                        showDialog = true,
+                        title = "Cargando",
+                        message = "Espere por favor...",
+                        confirmButtonText = "",
+                        dismissButtonText = null,
+                        onDismiss = { showDialog = false },
+                        dialogType = DialogType.LOADING
+                    )
 
-            is EstadoParada.Error -> TODO()
-            EstadoParada.Exitoso -> {
-                CustomAlertDialog(
-                    showDialog = true,
-                    title = "Exitoso",
-                    message = "Parada finalizada",
-                    confirmButtonText = "Aceptar",
-                    dismissButtonText = null,
-                    onDismiss = {
-                        showDialog = false
-                        paradaViewModel.obtenerParadas(ListaRequest(selectedDateIni, selectedDateFin, "T"))
-                        onClose("Todos")
-                    },
-                    dialogType = DialogType.SUCCESS
-                )
+                is EstadoParada.Error -> {
+                    Toast.makeText(
+                        context,
+                        "Ocurrió un error: ${(estado as EstadoParada.Error).mensaje}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    showDialog = false
+                }
+                EstadoParada.Exitoso -> {
+                    CustomAlertDialog(
+                        showDialog = true,
+                        title = "Exitoso",
+                        message = "Parada finalizada",
+                        confirmButtonText = "Aceptar",
+                        dismissButtonText = null,
+                        onDismiss = {
+                            showDialog = false
+                            paradaViewModel.obtenerParadas(
+                                ListaRequest(
+                                    selectedDateIni,
+                                    selectedDateFin,
+                                    "T",
+                                    id
+                                ))
+                            onClose("Todos")
+                        },
+                        dialogType = DialogType.SUCCESS
+                    )
+                }
+                EstadoParada.Idle -> {
+                    Toast.makeText(
+                        context,
+                        "Estado inactivo",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    showDialog = false
+                }
             }
-            EstadoParada.Idle -> TODO()
         }
-    }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

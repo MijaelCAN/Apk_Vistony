@@ -14,8 +14,8 @@ android {
         applicationId = "com.vistony.app"
         minSdk = 24
         targetSdk = 33
-        versionCode = 4
-        versionName = "1.1.0"
+        versionCode = 7
+        versionName = "1.3.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
@@ -24,6 +24,7 @@ android {
 
     buildTypes {
         release {
+            isDebuggable = true
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -113,6 +114,7 @@ dependencies {
 
     // Accompanist
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.36.0")
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.32.0")
 
     // Coil
     //implementation("io.coil-kt.coil3:coil-compose:3.2.0")

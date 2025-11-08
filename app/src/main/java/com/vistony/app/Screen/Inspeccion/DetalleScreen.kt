@@ -108,9 +108,9 @@ fun DetalleScreen(
         drawerState = drawerState,
         drawerContent = { CustomDrawer(navController = navController, id = id, userState) }) {
         Scaffold(
-            topBar = { TopBar("Detalle de Inspección", navController = navController, onMenuClick = {
+            topBar = { /*TopBar("Detalle de Inspección", navController = navController, onMenuClick = {
                 scope.launch { drawerState.open() }
-            }) }
+            }) */}
         ) {
             Column(
                 modifier = Modifier

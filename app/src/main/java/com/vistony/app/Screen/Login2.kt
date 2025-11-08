@@ -1,15 +1,13 @@
 package com.vistony.app.Screen
 
 import android.app.Activity
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,7 +28,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -44,7 +41,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -81,8 +77,6 @@ fun Login2(
     val imageSize = Dimensions.getImageSize(windowSize.widthSizeClass)
 
     var stateButton by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
-    val loginState = viewModel._loginstate
     var showDialog by remember { mutableStateOf(false) }
     val isLoading by viewModel.isLoading.collectAsState()
 
@@ -99,7 +93,7 @@ fun Login2(
         }
     }*/
     // Efecto para redireccionar según el rol
-    LaunchedEffect(userData) {
+    /*LaunchedEffect(userData?.role) {
         Log.d("Login2", "userState: $userState")
         userData?.let { user ->
             when (user.role.lowercase()) {
@@ -115,7 +109,7 @@ fun Login2(
                         popUpTo("login") { inclusive = true }
                     }
                 }
-                "operador" -> {
+                "producción" -> {
                     // Redireccionar a lista de paradas
                     navController.navigate("listaParada/${user.id}") {
                         popUpTo("login") { inclusive = true }
@@ -135,7 +129,7 @@ fun Login2(
                 }
             }
         }
-    }
+    }*/
 
     BoxWithConstraints(
         modifier = Modifier
@@ -159,11 +153,11 @@ fun Login2(
                 modifier = Modifier
                     .size(imageSize)
                     .padding(bottom = 16.dp),
-                painter = painterResource(id = R.mipmap.logo),
+                painter = painterResource(id = R.mipmap.operity_core),
                 contentDescription = ""
             )
-            Text(text = "Bienvenido a la APP", color = Color.Gray, fontSize = bodyFontSize.sp)
-            Text(text = "PRODUCCIÓN", fontSize = titleFontSize.sp)
+            Text(text = "Bienvenido al centro de tu", color = Color.Gray, fontSize = bodyFontSize.sp)
+            Text(text = "OPERACIÓN", fontSize = titleFontSize.sp)
             Spacer(modifier = Modifier.height(32.dp))
             TextField(
                 modifier = Modifier
@@ -252,14 +246,22 @@ fun Login2(
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
                     //containerColor = Color(0xFFFC6A68),
-                    containerColor = Color(0xFFD6001C),
+                    //containerColor = Color(0xFFD6001C),
+                    containerColor = Color(0xFF01398D),
                     contentColor = Color.White
                 )
             ) {
                 Text(text = "Iniciar Sesion", fontSize = bodyFontSize.sp )
             }
             Spacer(modifier = Modifier.height(padding_res))
-            Text(text = "v${BuildConfig.VERSION_NAME}", color = Color.Gray, fontSize = bodyFontSize.sp)
+            Text(text = "v${BuildConfig.VERSION_NAME} *", color = Color.Gray, fontSize = bodyFontSize.sp)
+            /*Image(
+                modifier = Modifier
+                    .size(50.dp)
+                    .padding(bottom = 16.dp),
+                painter = painterResource(id = R.mipmap.logo),
+                contentDescription = ""
+            )*/
 
             when(isLoading){
                 EstadoLogin.Cargando-> {
@@ -272,7 +274,39 @@ fun Login2(
                         onDismiss = {showDialog = false}
                     )
                 }
-                EstadoLogin.Exitoso -> {}
+                EstadoLogin.Exitoso -> {
+                    userData?.let { user ->
+                        when (user.role.lowercase()) {
+                            "sistemas", "supervisor" -> {
+                                navController.navigate("dashboardAdmin") {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            }
+                            "mantenimiento" -> {
+                                navController.navigate("paradaMantenimiento") {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            }
+                            "producción" -> {
+                                navController.navigate("listaParada/${user.dni}"){
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            }
+                            "soplado", "almacen insumos" -> {
+                                navController.navigate("listaMuestra"){
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            }
+                            else -> {
+                                // Limpiar sesión/estado para evitar revalidaciones y bucles
+                                viewModel.clearUserData()
+                                navController.navigate("noModules") {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            }
+                        }
+                    }
+                }
                 is EstadoLogin.Error -> {
                     CustomAlertDialog(
                         showDialog = showDialog,
@@ -290,6 +324,27 @@ fun Login2(
                 }
                 else -> {}
             }
+        }
+
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 24.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Desarrollado por:",
+                color = Color.Gray,
+                fontSize = 10.sp,
+            )
+            Text(
+                text = "© 2025 Vistony S.A.C.",
+                color = Color.Gray,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Light
+            )
         }
     }
 }

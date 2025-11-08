@@ -78,7 +78,6 @@ class InspectionViewModel @Inject constructor() : ViewModel() {
     }
 
     fun getListInspeccion(newfechaIni: String, newfechaFin: String) {
-        Log.e("eeeeeeeee", "Entro a Funcion")
         viewModelScope.launch {
             try {
 

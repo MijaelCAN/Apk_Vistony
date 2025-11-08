@@ -1,11 +1,17 @@
 package com.vistony.app.Entidad
 
+import android.content.Context
 import android.net.Uri
 import android.os.Build
+import android.util.Base64
 import androidx.annotation.RequiresApi
-import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import coil.disk.DiskCache
+import androidx.compose.runtime.toMutableStateList
+import com.google.gson.annotations.SerializedName
+import com.vistony.app.Screen.Generic.Recursos.Data
+import java.io.File
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 
 data class Actividad(
@@ -24,6 +30,7 @@ data class Actividad(
 )
 
 data class Activity2 @RequiresApi(Build.VERSION_CODES.O) constructor(
+    val DocEntry: String = "",
     val startTime: LocalDateTime? = LocalDateTime.now(),
     val OT: String = "",
     val description_OT: String = "",
@@ -39,16 +46,113 @@ data class Activity2 @RequiresApi(Build.VERSION_CODES.O) constructor(
     val reason: FailureType = FailureType(),
     val description: String = "",
     val actionTaken: String = "",
-    val evidences: List<Uri> = emptyList(),
+    val evidences: SnapshotStateList<Uri> = mutableStateListOf(),
     val observations: String = "",
     val endTime: LocalDateTime? = null,
-    val paradaDocEntry: String = ""
+    val paradaDocEntry: String = "",
+    val lineTec: String = "",
+    val initialHour: LocalDateTime? = LocalDateTime.now(),
+    val finalHour: LocalDateTime? = LocalDateTime.now()// String momentaneo, si s etiene que cambiar a LocalDate u otro hazlo
 )
+data class Activity2Dto(
+    val u_OT: String,
+    val u_description_OT: String,
+    val u_unidad_medida_OT: String,
+    val u_cantidad_OT: String,
+    val u_userId: String,
+    val u_userName: String,
+    val u_userPosition: String,
+    val u_area: String,
+    val u_machine: String,
+    val u_equipment: String,
+    val u_reason: String,
+    val u_description: String,
+    val u_actionTaken: String,
+    val evidencia: List<Evidence>, // or appropriate type
+    val u_observations: String,
+    val u_endTime: String, // parse to LocalDateTime during mapping
+    val u_LineTec: String,
+    val u_InitialHour: String,
+    val u_FinalHour: String
+){
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun toActivity2(docEntry: String, context: Context): Activity2 {
+        val data = Data()
+        val reasonParts = u_reason.split("-", limit = 2)
+        val namePart = reasonParts[0] // la primera parte antes del "-"
+        val descriptionPart = if (reasonParts.size > 1) reasonParts[1] else ""
+
+        return Activity2(
+            DocEntry = docEntry,
+            OT = u_OT,
+            description_OT = u_description_OT,
+            unidad_medida_OT = u_unidad_medida_OT,
+            cantidad_OT = u_cantidad_OT,
+            userId = u_userId,
+            userName = u_userName,
+            userPosition = u_userPosition,
+            area = u_area,
+            machine = Machine(name = u_machine), // assuming Machine has a name property
+            equipment = Equipment(name = u_equipment), // similarly for Equipment
+            reason = if (namePart == "Otro") FailureType(id = 7, name = namePart, description = descriptionPart) else data.optionsFalla.find { it.first.name == namePart }?.first ?: FailureType(),
+            description = u_description,
+            actionTaken = u_actionTaken,
+            evidences = convertirEvidenciasAUri(context,evidencia).toMutableStateList(),
+            observations = u_observations,
+            endTime = if (u_endTime.isNotBlank()) LocalDateTime.parse(u_endTime) else null, // parse string to LocalDateTime
+            lineTec = u_LineTec,
+            initialHour = if (u_InitialHour.isNotBlank()) LocalDateTime.parse(u_InitialHour) else null,
+            finalHour = if (u_FinalHour.isNotBlank()) LocalDateTime.parse(u_FinalHour) else null
+        )
+    }
+}
+fun convertirEvidenciasAUri(context: Context, evidences: List<Evidence>): List<Uri> {
+    return evidences.mapNotNull { evidence ->
+        try {
+            /*val bytes = Base64.decode(evidence.base64, Base64.DEFAULT)
+            val file = File(context.cacheDir, evidence.fileName)
+            val fos = FileOutputStream(file)
+            fos.write(bytes)
+            fos.close()
+            Uri.fromFile(file)*/
+            Uri.parse(evidence.link)
+        } catch (e: Exception) {
+            null
+        }
+    }
+}
+
+data class Activity3 @RequiresApi(Build.VERSION_CODES.O) constructor(
+    @SerializedName("DocEntry") val DocEntry: String = "",
+    @SerializedName("u_startTime") val startTime: LocalDateTime? = LocalDateTime.now(),
+    @SerializedName("u_OT") val OT: String = "",
+    @SerializedName("u_description_OT") val description_OT: String = "",
+    @SerializedName("u_unidad_medida_OT") val unidad_medida_OT: String = "",
+    @SerializedName("u_cantidad_OT") val cantidad_OT: String = "",
+    @SerializedName("u_userId") val userId: String = "",
+    @SerializedName("u_userName") val userName: String = "",
+    @SerializedName("u_userPosition") val userPosition: String = "",
+    @SerializedName("u_area") var area: String = "",
+    @SerializedName("u_machine") val machine: Machine = Machine(),
+    @SerializedName("u_equipment") val equipment: Equipment = Equipment(),
+    @SerializedName("u_reason") val reason: FailureType = FailureType(),
+    @SerializedName("u_description") val description: String = "",
+    @SerializedName("u_actionTaken") val actionTaken: String = "",
+    @SerializedName("evidencia") val evidences: SnapshotStateList<Uri> = mutableStateListOf(),
+    @SerializedName("u_observations") val observations: String = "",
+    @SerializedName("u_endTime") val endTime: LocalDateTime? = null,
+    @SerializedName("u_paradaDocEntry") val paradaDocEntry: String = "",
+    @SerializedName("u_lineTec") val lineTec: String = "",
+    @SerializedName("u_initialHour") val initialHour: LocalDateTime? = LocalDateTime.now(),
+    @SerializedName("u_finalHour") val finalHour: LocalDateTime? = LocalDateTime.now()
+)
+
 
 
 data class FailureType(
     val id: Int = 0,
-    val name: String = ""
+    val name: String = "",
+    val description: String = ""
 )
 
 data class Equipment(
@@ -68,6 +172,110 @@ data class FailureReport(
     val equipment: String,
     val failureType: String
 )
+
+data class listActivityRequest(
+    val id: Int,
+    val role: String,
+    val fecha_inicio: String,
+    val fecha_fin: String
+)
+
+data class listActivityResponse(
+    val statusCode: Int,
+    val message: String,
+    val data: List<semiActivity>
+)
+data class DetaleResponse(
+    val success: Boolean,
+    val message: String,
+    val data: List<Activity2Dto>
+)
+
+data class semiActivity(
+    val DocEntry: String ="",
+    val U_OT: String = "",
+    val U_description_OT: String ="",
+    val U_unidad_medida_OT: String ="",
+    val U_cantidad_OT: String = "",
+    val U_userId: String = "",
+    val U_userName: String = "",
+    val U_userPosition: String = "",
+    val U_area: String = "",
+    val U_machine: String = "",
+    val U_equipment: String = "",
+    val U_LineTec: String = "",
+    val U_InitialHour: String? = null,
+    val U_FinalHour: String? = null
+)
+
+data class ResponseCreated(
+    val success: Boolean = false,
+    val message: String,
+    val data: List<Any>
+)
+
+data class ResponseUpdate(
+    val success: Boolean = false,
+    val message: String,
+    val data: String
+)
+
+data class DataCreate(
+    val DocEntry: String
+)
+
+
+data class ActivityRequest(
+    val OT: String,
+    val description_OT: String,
+    val unidad_medida_OT: String,
+    val cantidad_OT: String,
+    val userId: String,
+    val userName: String,
+    val userPosition: String,
+    val area: String,
+    val machine: String,
+    val equipment: String,
+    val initialHour: String?,
+)
+data class UpdateActividadRequest(
+    val reason: String,
+    val description: String,
+    val actionTaken: String,
+    val evidences: List<Evidence>,
+    val observations: String,
+    val endTime: String,
+    val paradaDocEntry: String,
+    val lineTec: String,
+    val finalHour: String?
+)
+
+data class Evidence(
+    val fileName: String,
+    val fileType: String,
+    val base64: String,
+    val link: String = ""
+)
+
+
+data class OTRequest(
+    val barra: String = ""
+)
+
+data class OTResponse(
+    val success: Boolean,
+    val message: String?,
+    val data: List<OTItem>
+)
+
+data class OTItem(
+    val ItemName: String = "",
+    val UomName: String = "",
+    val PlannedQty: String = ""
+)
+
+
+
 
 object StaticData {
     // Líneas de producción
