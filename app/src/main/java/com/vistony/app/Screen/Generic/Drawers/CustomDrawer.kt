@@ -126,7 +126,7 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                 subItems = listOf(
                     DrawerSubItem("Orden de Fabricación") { navController.navigate("manufacturingOrder") },
                 ),
-                visibleForRoles = setOf("calidad", "admin")
+                visibleForRoles = setOf("ASEG. CALIDAD", "admin")
             ),
             DrawerItem(
                 id = "configuracion",

@@ -399,6 +399,7 @@ fun Boton(
         /*TODO*/
             viewModel.validar(user, pass)
             showDialog = true
+            viewModel.saveCredentials(user, pass)
             if (viewModel._loginstate.state) {
                 navController.navigate("home/$user")
             }

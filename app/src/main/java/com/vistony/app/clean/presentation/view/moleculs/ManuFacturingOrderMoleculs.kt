@@ -1,6 +1,7 @@
 package com.vistony.app.clean.presentation.view.moleculs
 
 import android.app.Activity
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -153,11 +154,21 @@ fun ManuFacturingOrderDetailBody(
     val statusAprobationHeader1 = viewModel.statusAprobationHeader1.collectAsState()
     val context = LocalContext.current
     val activity = context as Activity
-    val windowSize = calculateWindowSizeClass(context)
+    val windowSize = calculateWindowSizeClass(activity)
     val density = viewModel.density.collectAsState()
     val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
-
     val isLoadingBodyDetail = viewModel.isLoadingBodyDetail.collectAsState()
+    var shouldRefresh by remember { mutableStateOf(false) }
+    val orderCode = viewModel.orderCode.collectAsState()
+
+    // Ejecutar con retraso de 2 segundos
+    LaunchedEffect(shouldRefresh) {
+        if (shouldRefresh) {
+            delay(2000) // 2 segundos
+            viewModel.getCalculateDensity(orderCode.value, density.value)
+            shouldRefresh = false
+        }
+    }
 
     when {
         isLoadingBodyDetail.value -> {
@@ -203,6 +214,7 @@ fun ManuFacturingOrderDetailBody(
                     options = listApprobation.map { it.name },
                     selectedOption = statusAprobationHeader1.value,
                     onOptionSelected = { result ->
+                        Log.e("REOS","ManuFacturingOrderMoleculs-ManuFacturingOrderDetailBody-result"+result)
                         viewModel.onOptimalWeightChange(
                             it.detail.firstOrNull()?.optimumWeight ?: "0"
                         )
@@ -210,7 +222,7 @@ fun ManuFacturingOrderDetailBody(
                             it.detail.firstOrNull()?.optimumWeight ?: "0"
                         )
                         viewModel.onStatusAprobationHeader1Change(result, "Linea1", it.batchName)
-                        //activitiesActionViewModel.updateIsErrorSpinnerTypeAction(false)
+                        shouldRefresh=true
                     },
                     iconColor = MaterialTheme.colorScheme.secondary,
                     enabled = true,
@@ -374,7 +386,7 @@ fun ManufacturingOrderCustomDialog(
                         //viewModel.onLineNumChange("Linea1")
                     },
                     iconColor = MaterialTheme.colorScheme.secondary,
-                    enabled = true,
+                    enabled = false,
                     isError = false,
                     errorMessage = "Seleccione Aprobación",
                 )

@@ -297,6 +297,11 @@ fun Login2(
                                     popUpTo("login") { inclusive = true }
                                 }
                             }
+                            "aseg. calidad" -> {
+                                navController.navigate("manufacturingOrder") {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            }
                             else -> {
                                 // Limpiar sesión/estado para evitar revalidaciones y bucles
                                 viewModel.clearUserData()
