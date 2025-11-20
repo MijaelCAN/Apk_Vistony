@@ -1,8 +1,6 @@
 package com.vistony.app.clean.domain.model
 
 import com.google.gson.annotations.SerializedName
-import com.vistony.app.clean.data.api.ManufacturingOrderDetailDto
-import com.vistony.app.clean.data.api.ManufacturingOrderDto
 
 data class ManufacturingOrderResponseModel(
     val sucess: Boolean = false,
@@ -26,6 +24,7 @@ data class ManufacturingOrderModel(
     val reason: String = "",
     val reasonAdjustment: String = "",
     val detail : List<ManufacturingOrderDetailModel> = emptyList(),
+    val qualityDisapproved: String = "",
 )
 
 data class ManufacturingOrderDetailModel(
@@ -63,6 +62,17 @@ data class ManufacturingOrderUpdateStatus(
     val approvalLine: String = "",
     val optimumWeight: String= "",
     val maximumWeight: String = "",
+)
+
+data class ReasonForRejectionsResponseModel(
+    val statusCode: Int = 0,
+    val success: Boolean = false,            // Usa `success` consistente
+    val message: String = "",
+    val data: List<ReasonForRejectionsModel> = emptyList()
+)
+data class ReasonForRejectionsModel(
+    val code: String = "",
+    val name: String = "",
 )
 
 

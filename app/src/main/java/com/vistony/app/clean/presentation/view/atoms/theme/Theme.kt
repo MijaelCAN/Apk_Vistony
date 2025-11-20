@@ -15,7 +15,7 @@ private val DarkColorPalette = darkColorScheme(
 
 private val LightColorPalette = lightColorScheme(
     primary = Color.White,
-    secondary = RedVistony,
+    secondary = BlueVistony,
     tertiary = BlueVistony,
     background = Color.White,
     surface = Color.White,

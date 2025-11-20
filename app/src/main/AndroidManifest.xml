@@ -31,13 +31,17 @@
             android:exported="true"
             android:label="@string/app_name_dev"
             android:theme="@style/Theme.Vistony"
+            android:launchMode="singleTask"
             android:screenOrientation="portrait"
             tools:replace="screenOrientation">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!--<intent-filter>
+                <action android:name="com.vistony.app.SCAN"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>-->
         </activity>
         <service
             android:name=".MyFireBaseMessagingserService"
@@ -55,7 +59,16 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
-
+        <receiver
+            android:name=".clean.core.utils.ZebraDWReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.symbol.datawedge.api.RESULT_ACTION" />
+                <action android:name="com.vistony.app.SCAN" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

@@ -8,9 +8,13 @@ class UpdateApprovalStatusUseCase (
     private val repository: ManufacturingOrderRepository
 ) {
     suspend operator fun invoke(
-        docNum: String, density: String, approvalStatus:String,approvalLine:String,optimalWeight:String,maximunWeight: String){
+        docNum: String, density: String, approvalStatus:String,approvalLine:String,optimalWeight:String,maximunWeight: String
+        ,estadoAprobacionCorreccion: String,estadoAprobacionDesaprobadoCalidad: String,motivoCorreccion: String
+    ){
         // Lógica para recalcular la densidad usando el repositorio
 
-        return repository.updateApprovalStatus(docNum, density,approvalStatus,approvalLine,optimalWeight,maximunWeight)
+        return repository.updateApprovalStatus(
+            docNum, density,approvalStatus,approvalLine,optimalWeight,maximunWeight
+        ,estadoAprobacionCorreccion,estadoAprobacionDesaprobadoCalidad,motivoCorreccion)
     }
 }

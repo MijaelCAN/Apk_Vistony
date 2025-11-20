@@ -1,12 +1,13 @@
 package com.vistony.app.clean.data.api
 
 import com.google.gson.annotations.SerializedName
+import com.vistony.app.clean.domain.model.ReasonForRejectionsModel
 
 data class ManufacturingOrderResponseDto(
     val sucess: Boolean = true,
     val message: String = "",
     @SerializedName("data")
-    val data: List<ManufacturingOrderDto> = emptyList(),
+    val data: List<ManufacturingOrderDto>? = null // Cambiar a nullable
 )
 
 data class ManufacturingOrderDto(
@@ -32,7 +33,7 @@ data class ManufacturingOrderDto(
     val density: String = "",
     @SerializedName("u_VIS_Adjustment")
     val adjustment: String = "",
-    @SerializedName("correcion")
+    @SerializedName("correccion")
     val correction: String = "",
     @SerializedName("motivo")
     val reason: String = "",
@@ -40,6 +41,8 @@ data class ManufacturingOrderDto(
     val reasonAdjustment: String = "",
     @SerializedName("listEnvace")
     val detail : List<ManufacturingOrderDetailDto> = emptyList(),
+    @SerializedName("desaprobadoCalidad")
+    val qualityDisapproved: String = "",
 )
 
 data class ManufacturingOrderDetailDto(
@@ -82,8 +85,26 @@ data class ManufacturingOrderUpdateStatus(
     val optimumWeight: String= "",
     @SerializedName("pesoMaximo")
     val maximumWeight: String = "",
+
 )
 
+data class ReasonForRejectionsResponseDto(
+    @SerializedName("statusCode")
+    val statusCode: Int = 0,
+    @SerializedName("sucess")
+    val sucess: Boolean = false,
+    @SerializedName("message")
+    val message: String?="",           // Ahora nullable
+    @SerializedName("data")
+    val data: List<ReasonForRejectionsDto> = emptyList(),
+)
+
+data class ReasonForRejectionsDto(
+    @SerializedName("FldValue")
+    val code: String = "",
+    @SerializedName("Descr")
+    val name: String = "",
+)
 
 
 

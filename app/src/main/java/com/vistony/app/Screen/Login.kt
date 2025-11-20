@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.Checkbox
+import androidx.compose.material.CheckboxDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
@@ -186,6 +188,15 @@ fun Body(navController: NavHostController, viewModel: LoginViewModel, containerS
     var passVisible by rememberSaveable { mutableStateOf(false) }
     var rememberMe by rememberSaveable { mutableStateOf(false) }
 
+    // Cargar credenciales guardadas al inicializar
+    LaunchedEffect(Unit) {
+        val (savedUser, savedPassword, shouldRemember) = viewModel.getSavedCredentials()
+        user = savedUser
+        pass = savedPassword
+        rememberMe = shouldRemember
+    }
+
+
     Column(
         modifier = Modifier
             .fillMaxHeight()
@@ -348,6 +359,7 @@ fun Boton(
     val loginState = viewModel._loginstate
     var showDialog by remember { mutableStateOf(false) }
     val isLoading by viewModel.isLoading.collectAsState()
+    var rememberPassword by remember { mutableStateOf(false) }
 
     LaunchedEffect(user, pass) {
         stateButton = user.isNotEmpty() && pass.isNotEmpty()
@@ -375,31 +387,29 @@ fun Boton(
         disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     )
 
-    /*ElevatedButton(
+    Row(
         modifier = Modifier
-            .height(buttonSize)
-            .fillMaxWidth(),
-        enabled = stateButton,
-        onClick = {
-            viewModel.validar(user, pass)
-            if (viewModel._loginstate.state) {
-                navController.navigate("home/$user")
-            }
-        },
-        colors = buttonColors,
-        shape = MaterialTheme.shapes.medium // Utiliza la forma definida en el tema
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(Icons.Filled.Login, contentDescription = "Login", tint = MaterialTheme.colorScheme.onPrimary)
-        Spacer(modifier = Modifier.width(15.dp))
-        Text(text = "INICIAR SESIÓN", style = MaterialTheme.typography.bodyMedium)
-    }*/
+        Checkbox(
+            checked = rememberPassword,
+            onCheckedChange = { rememberPassword = it },
+            colors = CheckboxDefaults.colors(checkedColor = Color.Red)
+        )
+        androidx.compose.material.Text(
+            text = "Recordar usuario y contraseña",
+            modifier = Modifier.padding(start = 8.dp)
+        )
+    }
     Button(
         enabled = stateButton,
         onClick = {
         /*TODO*/
             viewModel.validar(user, pass)
+            viewModel.saveCredentials(user, pass, rememberPassword)
             showDialog = true
-            viewModel.saveCredentials(user, pass)
             if (viewModel._loginstate.state) {
                 navController.navigate("home/$user")
             }

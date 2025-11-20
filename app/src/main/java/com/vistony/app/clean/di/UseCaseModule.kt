@@ -2,6 +2,7 @@ package com.vistony.app.clean.di
 
 import com.vistony.app.clean.domain.repository.ManufacturingOrderRepository
 import com.vistony.app.clean.domain.usecases.GetManufacturingOrderUseCase
+import com.vistony.app.clean.domain.usecases.GetReasonForRejectionsUseCase
 import com.vistony.app.clean.domain.usecases.RecalculateDensityUseCase
 import com.vistony.app.clean.domain.usecases.UpdateApprovalStatusUseCase
 import dagger.Module
@@ -30,4 +31,10 @@ object UseCaseModule {
     fun provideUpdateApprovalStatusUseCase(
         repository: ManufacturingOrderRepository
     ): UpdateApprovalStatusUseCase = UpdateApprovalStatusUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideGetReasonForRejectionsUseCase(
+        repository: ManufacturingOrderRepository
+    ): GetReasonForRejectionsUseCase = GetReasonForRejectionsUseCase(repository)
 }

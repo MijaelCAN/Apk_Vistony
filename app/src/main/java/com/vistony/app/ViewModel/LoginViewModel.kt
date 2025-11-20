@@ -1,5 +1,7 @@
 package com.vistony.app.ViewModel
 
+import android.app.Application
+import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
@@ -21,7 +23,9 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class LoginViewModel @Inject constructor() : ViewModel() {
+class LoginViewModel @Inject constructor(
+    private val application: Application
+) : ViewModel() {
 
     private val authService = RetrofitInstance.loginService
     private val gson = Gson()
@@ -37,6 +41,37 @@ class LoginViewModel @Inject constructor() : ViewModel() {
     private val _userData = MutableStateFlow<UserResponse?>(null)
     val userData: StateFlow<UserResponse?> = _userData.asStateFlow()
 
+    private val sharedPreferences = application.getSharedPreferences("login_prefs", Context.MODE_PRIVATE)
+
+    // Función para guardar credenciales
+    fun saveCredentials(username: String, password: String, remember: Boolean) {
+        if (remember) {
+            sharedPreferences.edit()
+                .putString("saved_username", username)
+                .putString("saved_password", password)
+                .putBoolean("remember_credentials", true)
+                .apply()
+        } else {
+            clearSavedCredentials()
+        }
+    }
+
+    // Función para recuperar credenciales guardadas
+    fun getSavedCredentials(): Triple<String, String, Boolean> {
+        val username = sharedPreferences.getString("saved_username", "") ?: ""
+        val password = sharedPreferences.getString("saved_password", "") ?: ""
+        val remember = sharedPreferences.getBoolean("remember_credentials", false)
+        return Triple(username, password, remember)
+    }
+
+    // Función para limpiar credenciales guardadas
+    private fun clearSavedCredentials() {
+        sharedPreferences.edit()
+            .remove("saved_username")
+            .remove("saved_password")
+            .putBoolean("remember_credentials", false)
+            .apply()
+    }
     fun onResetStateLogin(){
         _isLoading.value = EstadoLogin.Idle
     }
