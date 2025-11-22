@@ -73,6 +73,8 @@ import com.vistony.app.Screen.Generic.DialogType
 import com.vistony.app.ViewModel.EstadoLogin
 import com.vistony.app.ViewModel.EstadoParada
 import com.vistony.app.ViewModel.LoginViewModel
+import com.vistony.app.ViewModel.TemperaturaViewModel
+import com.vistony.app.clean.presentation.viewmodels.ManufacturingOrderViewModel
 import com.vistony.app.ui.theme.theme.Dimensions
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -343,6 +345,8 @@ fun Boton(
     viewModel: LoginViewModel,
     buttonSize: Dp
 ) {
+    val manufacturingOrderViewModel: ManufacturingOrderViewModel = hiltViewModel()
+
     var stateButton by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     val loginState = viewModel._loginstate
@@ -399,7 +403,7 @@ fun Boton(
         /*TODO*/
             viewModel.validar(user, pass)
             showDialog = true
-            viewModel.saveCredentials(user, pass)
+            manufacturingOrderViewModel.saveCredentials(user, pass, true)
             if (viewModel._loginstate.state) {
                 navController.navigate("home/$user")
             }

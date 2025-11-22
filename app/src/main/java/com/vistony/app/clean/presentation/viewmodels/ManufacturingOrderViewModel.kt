@@ -9,6 +9,7 @@ import com.vistony.app.clean.domain.usecases.GetManufacturingOrderUseCase
 import com.vistony.app.clean.domain.usecases.RecalculateDensityUseCase
 import com.vistony.app.clean.domain.usecases.UpdateApprovalStatusUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -18,7 +19,8 @@ import javax.inject.Inject
 class ManufacturingOrderViewModel @Inject constructor(
     private val getManufacturingOrderUseCase: GetManufacturingOrderUseCase,
     private val recalculateDensityUseCase: RecalculateDensityUseCase,
-    private val updateApprovalStatusUseCase: UpdateApprovalStatusUseCase
+    private val updateApprovalStatusUseCase: UpdateApprovalStatusUseCase,
+    @ApplicationContext private val context: Context
 ): ViewModel() {
     private val _manufacturingOrderResponseModel = MutableStateFlow(ManufacturingOrderResponseModel())
     val manufacturingOrderResponseModel: StateFlow<ManufacturingOrderResponseModel> get() = _manufacturingOrderResponseModel
