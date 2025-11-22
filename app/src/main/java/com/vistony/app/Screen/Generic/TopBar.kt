@@ -23,7 +23,7 @@ fun TopBar(
     navController: NavController,
     onMenuClick: () -> Unit,
     onBottomMenuClick: (() -> Unit)? = null,
-    viewModel: LoginViewModel = LoginViewModel()
+    viewModel: LoginViewModel
 ) {
     TopAppBar(
         title = { Text(text = title, color = colorContent) },

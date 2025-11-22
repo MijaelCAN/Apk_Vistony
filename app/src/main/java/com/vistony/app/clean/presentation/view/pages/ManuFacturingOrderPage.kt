@@ -12,6 +12,7 @@ import com.vistony.app.ViewModel.LoginViewModel
 import com.vistony.app.clean.domain.model.ManufacturingOrderModel
 import com.vistony.app.clean.presentation.view.templates.ManuFacturingOrderTemplate
 import com.vistony.app.clean.presentation.viewmodels.ManufacturingOrderViewModel
+import com.vistony.app.clean.presentation.viewmodels.ScanViewModel
 import com.vistony.app.ui.theme.theme.Dimensions
 import com.vistony.salesforce.kotlin.view.Atoms.theme.VistonyTheme
 
@@ -20,11 +21,12 @@ import com.vistony.salesforce.kotlin.view.Atoms.theme.VistonyTheme
 fun ManuFacturingOrderPage(
     navController: NavHostController,
     id: String,
-    userState: UserState
+    userState: UserState,
+    scanViewModel : ScanViewModel
 ) {
 
     //VistonyTheme(){
-        ManuFacturingOrderTemplate(navController,id,userState)
+        ManuFacturingOrderTemplate(navController,id,userState,scanViewModel)
     //}
 
 

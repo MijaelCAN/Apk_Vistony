@@ -24,6 +24,7 @@ import com.vistony.app.Screen.Generic.Drawers.CustomDrawer
 import com.vistony.app.Screen.Generic.TopBar
 import com.vistony.app.ViewModel.LoginViewModel
 import com.vistony.app.clean.presentation.view.organisms.ManuFacturingOrderSectionMain
+import com.vistony.app.clean.presentation.viewmodels.ScanViewModel
 import com.vistony.salesforce.kotlin.view.Atoms.theme.VistonyTheme
 import kotlinx.coroutines.launch
 
@@ -32,7 +33,8 @@ import kotlinx.coroutines.launch
 fun ManuFacturingOrderTemplate(
     navController: NavHostController,
     id: String,
-    userState: UserState
+    userState: UserState,
+    scanViewModel: ScanViewModel
 ) {
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -53,7 +55,7 @@ fun ManuFacturingOrderTemplate(
             Scaffold(
                 topBar = {
                     TopBar(
-                        "Orden de Fabricación"
+                        "Formulario de Calidad"
                         , navController = navController
                         , onMenuClick = {
                         scope.launch {
@@ -81,7 +83,7 @@ fun ManuFacturingOrderTemplate(
                             .padding(paddingValues)
 
                     ) {
-                        ManuFacturingOrderSectionMain()
+                        ManuFacturingOrderSectionMain(scanViewModel)
                     }
                 }
             )

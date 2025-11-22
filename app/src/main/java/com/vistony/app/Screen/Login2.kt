@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.Checkbox
+import androidx.compose.material.CheckboxDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -64,72 +66,32 @@ fun Login2(
     var usuario by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
     var passVisible by rememberSaveable { mutableStateOf(false) }
-
     val context = LocalContext.current
     val activity = context as Activity
     val windowSize = calculateWindowSizeClass(context)
-
     val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
     val buttonHeight = Dimensions.getButtonHeight(windowSize.widthSizeClass)
     val textFieldHeight = Dimensions.getTextFieldHeight(windowSize.widthSizeClass)
     val titleFontSize = Dimensions.getTitleFontSize(windowSize.widthSizeClass)
     val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
     val imageSize = Dimensions.getImageSize(windowSize.widthSizeClass)
-
     var stateButton by remember { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf(false) }
     val isLoading by viewModel.isLoading.collectAsState()
-
     val userData by viewModel.userData.collectAsState()
+    var rememberPassword by remember { mutableStateOf(false) }
 
     LaunchedEffect(usuario, pass) {
         stateButton = usuario.isNotEmpty() && pass.isNotEmpty()
     }
-    /*LaunchedEffect(loginState) {
-        if (loginState.state) {
-            navController.navigate("listaInsp/$usuario")
-        } else {
-            errorMessage = loginState.message ?: ""
-        }
-    }*/
-    // Efecto para redireccionar según el rol
-    /*LaunchedEffect(userData?.role) {
-        Log.d("Login2", "userState: $userState")
-        userData?.let { user ->
-            when (user.role.lowercase()) {
-                "admin", "supervisor" -> {
-                    // Redireccionar a dashboard administrativo
-                    navController.navigate("dashboardAdmin/${user.id}") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                }
-                "mantenimiento" -> {
-                    // Redireccionar a lista de inspecciones
-                    navController.navigate("paradaMantenimiento") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                }
-                "producción" -> {
-                    // Redireccionar a lista de paradas
-                    navController.navigate("listaParada/${user.id}") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                }
-                "calidad" -> {
-                    // Redireccionar a lista de paradas
-                    navController.navigate("manufacturingOrder") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                }
-                else -> {
-                    // Rol no reconocido, redireccionar por defecto
-                    navController.navigate("listaInsp/${user.id}") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                }
-            }
-        }
-    }*/
+
+    // Cargar credenciales guardadas al inicializar
+    LaunchedEffect(Unit) {
+        val (savedUser, savedPassword, shouldRemember) = viewModel.getSavedCredentials()
+        usuario = savedUser
+        pass = savedPassword
+        rememberPassword = shouldRemember
+    }
 
     BoxWithConstraints(
         modifier = Modifier
@@ -233,10 +195,28 @@ fun Login2(
                 )
             )
             Spacer(modifier = Modifier.height(padding_res))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = padding_res),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = rememberPassword,
+                    onCheckedChange = { rememberPassword = it },
+                    colors = CheckboxDefaults.colors(checkedColor = Color(0xFF01398D))
+                )
+                androidx.compose.material.Text(
+                    text = "Recordar usuario y contraseña",
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+            Spacer(modifier = Modifier.height(padding_res))
             Button(
                 enabled = stateButton,
                 onClick = {
                     viewModel.validar(usuario,pass)
+                    viewModel.saveCredentials(usuario, pass, rememberPassword)
                     showDialog = true },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -254,7 +234,7 @@ fun Login2(
                 Text(text = "Iniciar Sesion", fontSize = bodyFontSize.sp )
             }
             Spacer(modifier = Modifier.height(padding_res))
-            Text(text = "v${BuildConfig.VERSION_NAME} *", color = Color.Gray, fontSize = bodyFontSize.sp)
+            Text(text = "v${BuildConfig.VERSION_NAME} **", color = Color.Gray, fontSize = bodyFontSize.sp)
             /*Image(
                 modifier = Modifier
                     .size(50.dp)

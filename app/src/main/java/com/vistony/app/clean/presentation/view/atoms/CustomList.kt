@@ -21,7 +21,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.vistony.app.ui.theme.theme.Dimensions
 import com.vistony.app.ui.theme.theme.onPrimaryLight
 
@@ -58,7 +60,8 @@ fun ListItemM3(
     isUsedLeadingContent: Boolean = true,
     isUsedTrailingContent: Boolean = true,
     leadingContent: @Composable () -> Unit = {},
-    trailingContent: @Composable () -> Unit = {}
+    trailingContent: @Composable () -> Unit = {},
+    textSize: TextUnit = 14.sp,
 ) {
     val context = LocalContext.current
     val activity = context as Activity
@@ -67,16 +70,7 @@ fun ListItemM3(
     val textFieldHeight = Dimensions.getTextFieldHeight(windowSize.widthSizeClass)
     val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
 
-    /*Card (
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = paddingRes).background(Color.Transparent) // evita que tape el fondo del Surface
-        ,shape = RoundedCornerShape(8.dp)
-        //, border = BorderStroke(1.dp, Color.LightGray) // evita que tape el fondo del Surface
-        , elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
-        , colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.44f), contentColor = Color.Black)
 
-    ){*/
         if (isUsedLeadingContent&&isUsedTrailingContent) {
             ListItem(
                 overlineContent = {
@@ -84,7 +78,7 @@ fun ListItemM3(
                         text = overLineContent,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface,
-                        //color = Color.Black
+                        fontSize = textSize
 
                     )
                 },
@@ -103,7 +97,7 @@ fun ListItemM3(
                         style = MaterialTheme.typography.titleMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-
+                        fontSize = textSize
                     )
                 },
                 supportingContent = {
@@ -123,8 +117,8 @@ fun ListItemM3(
                     Text(
                         text = overLineContent,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface
-                        //color = Color.Black
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = textSize
                     )
                 },
                 modifier = Modifier.padding(horizontal = paddingRes).background(Color.LightGray), // evita que tape el fondo del Surface // evita que tape el fondo del Surface
@@ -133,7 +127,8 @@ fun ListItemM3(
                         text = headLineContent,
                         style = MaterialTheme.typography.titleMedium,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        fontSize = textSize
                     )
                 },
                 colors = ListItemDefaults.colors(
@@ -166,7 +161,7 @@ fun ListItemM3(
                     Text(
                         text = headLineContent,
                         style = MaterialTheme.typography.titleMedium,
-                        //maxLines = 1,
+                        fontSize = textSize,
                         overflow = TextOverflow.Ellipsis
                     )
                 },
@@ -188,5 +183,4 @@ fun ListItemM3(
                 ),
             )
         }
-    //}
 }

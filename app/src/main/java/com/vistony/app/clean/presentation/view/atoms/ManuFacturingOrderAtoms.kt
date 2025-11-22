@@ -1,6 +1,9 @@
 package com.vistony.app.clean.presentation.view.atoms
 
 import android.app.Activity
+import android.content.Context
+import android.util.Log
+import android.widget.AdapterView
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -78,8 +81,8 @@ fun ManuFacturingOrderEditTextView(
         leadingiconResourceId = painterResource(id = R.drawable.outline_search_24),
         keyboardType = keyboardType,
         trailingiconResourceId = painterResource(trailingIconResourceId),
-        leadingiconColor = Color.Red,
-        trailingiconColor = Color.Red,
+        leadingiconColor = MaterialTheme.colorScheme.secondary,
+        trailingiconColor = MaterialTheme.colorScheme.secondary,
         textDownEditext = "Campo obligatorio",
         trailingIconStatus = trailingIconStatus,
         trailingIconOnClick = {
@@ -104,5 +107,89 @@ fun ManuFacturingOrderEditTextView(
         },
         isError = false,
         errorMessage = "Seleccione el Telefono de la llamada",
+        textSize = bodyFontSize.sp,
+        statusMaxCharacter= false
+    )
+}
+
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
+@Composable
+fun ManuFacturingOrderTextView(
+    status: Boolean,
+    text: String,
+    label: String
+) {
+    val context = LocalContext.current
+    val activity = context as Activity
+    val windowSize = calculateWindowSizeClass(context)
+    val paddingRes = Dimensions.getPadding(windowSize.widthSizeClass)
+    val textFieldHeight = Dimensions.getTextFieldHeight(windowSize.widthSizeClass)
+    val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
+
+    TextM3(
+        id = 0,
+        status = status,
+        text = text,
+        placeholder = "placeholder",
+        label = label,
+        leadingiconResourceId = painterResource(id = R.drawable.outline_search_24),
+        keyboardType = KeyboardType.Text,
+        trailingiconResourceId = painterResource(id = R.drawable.outline_search_24),
+        leadingiconColor = Color.Black,
+        trailingiconColor = Color.Black,
+        textDownEditext = "Campo obligatorio",
+        trailingiconStatus = false,
+        trailingIconOnClick = {
+
+        },
+        countMaxCharacter = 254,
+        resultEditText = { result ->
+        },
+        statusMaxCharacter = false,
+        leadingiconStatus = false,
+        readOnly = true,
+        leadingIconOnClick = {
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            //.height(textFieldHeight)
+            .padding(horizontal = paddingRes),
+        textSize = bodyFontSize.sp
+    )
+}
+
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
+@Composable
+fun ManuFacturingOrderSpinnerView(
+    status: Boolean,
+    selectedOption: String,
+    label: String,
+    onOptionSelected: (String) -> Unit,
+    options: List<String>,
+    activity: Activity = (LocalContext.current as Activity)
+) {
+    //val context = LocalContext.current
+    //val activity = context as Activity
+    val windowSize = calculateWindowSizeClass(activity)
+    val paddingRes = Dimensions.getPadding(windowSize.widthSizeClass)
+    val textFieldHeight = Dimensions.getTextFieldHeight(windowSize.widthSizeClass)
+    val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
+
+    SpinnerM3(
+        label = label,
+        options = options,
+        selectedOption = selectedOption,
+        onOptionSelected = { result ->
+            onOptionSelected(result)
+        },
+        iconColor = MaterialTheme.colorScheme.secondary,
+        enabled = status,
+        isError = false,
+        errorMessage = "Seleccione Aprobación 2",
+        textSize = bodyFontSize.sp,
+        modifier = Modifier
+            .fillMaxWidth()
+            //.height(textFieldHeight)
+            .padding(horizontal = paddingRes)
     )
 }

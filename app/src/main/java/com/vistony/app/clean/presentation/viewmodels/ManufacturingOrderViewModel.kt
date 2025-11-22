@@ -4,59 +4,31 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.vistony.app.clean.domain.model.ApprobationDefaults
 import com.vistony.app.clean.domain.model.ManufacturingOrderResponseModel
+import com.vistony.app.clean.domain.model.ReasonForRejectionsResponseModel
 import com.vistony.app.clean.domain.usecases.GetManufacturingOrderUseCase
+import com.vistony.app.clean.domain.usecases.GetReasonForRejectionsUseCase
 import com.vistony.app.clean.domain.usecases.RecalculateDensityUseCase
 import com.vistony.app.clean.domain.usecases.UpdateApprovalStatusUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.code
+import kotlin.invoke
+import kotlin.sequences.ifEmpty
 
 @HiltViewModel
 class ManufacturingOrderViewModel @Inject constructor(
     private val getManufacturingOrderUseCase: GetManufacturingOrderUseCase,
     private val recalculateDensityUseCase: RecalculateDensityUseCase,
     private val updateApprovalStatusUseCase: UpdateApprovalStatusUseCase,
-    @ApplicationContext private val context: Context
+    private val getReasonForRejectionsUseCase: GetReasonForRejectionsUseCase
 ): ViewModel() {
     private val _manufacturingOrderResponseModel = MutableStateFlow(ManufacturingOrderResponseModel())
     val manufacturingOrderResponseModel: StateFlow<ManufacturingOrderResponseModel> get() = _manufacturingOrderResponseModel
-
-    private val sharedPreferences = context.getSharedPreferences("login_prefs", Context.MODE_PRIVATE)
-
-    // Función para guardar credenciales
-    fun saveCredentials(username: String, password: String, remember: Boolean) {
-        if (remember) {
-            sharedPreferences.edit()
-                .putString("saved_username", username)
-                .putString("saved_password", password)
-                .putBoolean("remember_credentials", true)
-                .apply()
-        } else {
-            clearSavedCredentials()
-        }
-    }
-
-    // Función para recuperar credenciales guardadas
-    fun getSavedCredentials(): Triple<String, String, Boolean> {
-        val username = sharedPreferences.getString("saved_username", "") ?: ""
-        val password = sharedPreferences.getString("saved_password", "") ?: ""
-        val remember = sharedPreferences.getBoolean("remember_credentials", false)
-        return Triple(username, password, remember)
-    }
-
-    // Función para limpiar credenciales guardadas
-    private fun clearSavedCredentials() {
-        sharedPreferences.edit()
-            .remove("saved_username")
-            .remove("saved_password")
-            .putBoolean("remember_credentials", false)
-            .apply()
-    }
-
     private val _orderCode = MutableStateFlow("")
     val orderCode: StateFlow<String> get() = _orderCode
 
@@ -72,7 +44,7 @@ class ManufacturingOrderViewModel @Inject constructor(
     private val _statusAprobbation3 = MutableStateFlow( "")
     val statusAprobbation3: StateFlow<String> get() = _statusAprobbation3
 
-    private val _statusAprobationHeader1 = MutableStateFlow("Pendiente")
+    private val _statusAprobationHeader1 = MutableStateFlow("")
     val statusAprobationHeader1: StateFlow<String> get() = _statusAprobationHeader1
 
     private val _docNum = MutableStateFlow("")
@@ -84,10 +56,10 @@ class ManufacturingOrderViewModel @Inject constructor(
     private val _lineNum = MutableStateFlow("")
     val lineNum: StateFlow<String> get() = _lineNum
 
-    private val _optimalWeight = MutableStateFlow("")
+    private val _optimalWeight = MutableStateFlow("0")
     val optimalWeight: StateFlow<String> get() = _optimalWeight
 
-    private val _maximunWeight = MutableStateFlow("")
+    private val _maximunWeight = MutableStateFlow("0")
     val maximunWeight: StateFlow<String> get() = _maximunWeight
 
     private val _isLoadingBody = MutableStateFlow(false)
@@ -96,8 +68,53 @@ class ManufacturingOrderViewModel @Inject constructor(
     private val _isLoadingBodyDetail = MutableStateFlow(false)
     val isLoadingBodyDetail: StateFlow<Boolean> get() = _isLoadingBodyDetail
 
+    private val _isStatusApprobationContainer1 = MutableStateFlow(true)
+    val isStatusApprobationContainer1: StateFlow<Boolean> get() = _isStatusApprobationContainer1
 
-    fun onOptimalWeightChange(newValue: String) {
+    private val _isStatusApprobationContainer2 = MutableStateFlow(false)
+    val isStatusApprobationContainer2: StateFlow<Boolean> get() = _isStatusApprobationContainer2
+
+    private val _isStatusApprobationContainer3 = MutableStateFlow(false)
+    val isStatusApprobationContainer3: StateFlow<Boolean> get() = _isStatusApprobationContainer3
+
+    val _statusCorrection = MutableStateFlow("Pendiente")
+    val statusCorrection: StateFlow<String> get() = _statusCorrection
+
+    val _statusDesaprobation = MutableStateFlow("Pendiente")
+    val statusDesaprobation: StateFlow<String> get() = _statusDesaprobation
+
+    private val _reasonForRejectionsResponseModel = MutableStateFlow(ReasonForRejectionsResponseModel())
+    val reasonForRejectionsResponseModel: StateFlow<ReasonForRejectionsResponseModel> get() = _reasonForRejectionsResponseModel
+
+    val _reasonDesaprobation = MutableStateFlow("")
+    val reasonDesaprobation: StateFlow<String> get() = _reasonDesaprobation
+
+    fun onReasonDesaprobationChange(newValue: String) {
+        _reasonDesaprobation.value = newValue
+    }
+
+    fun onStatusCorrectionChange(newValue: String) {
+        _statusCorrection.value = newValue
+    }
+
+    fun onStatusDesaprobationChange(newValue: String) {
+        _statusDesaprobation.value = newValue
+    }
+
+    fun statusApprobationContainer1Change(newValue: Boolean) {
+        _isStatusApprobationContainer1.value = newValue
+    }
+
+    fun statusApprobationContainer2Change(newValue: Boolean) {
+        _isStatusApprobationContainer2.value = newValue
+    }
+
+    fun statusApprobationContainer3Change(newValue: Boolean) {
+        _isStatusApprobationContainer3.value = newValue
+    }
+
+
+   fun onOptimalWeightChange(newValue: String) {
         _optimalWeight.value = newValue
     }
 
@@ -117,7 +134,7 @@ class ManufacturingOrderViewModel @Inject constructor(
         _docNum.value = newValue
     }
 
-
+/*
     fun onStatusAprobationHeader1Change(newValue: String,approvalLine: String,docNum:String) {
         Log.e("REOS","onStatusAprobationHeader1Change-newValue: "+newValue)
         Log.e("REOS","onStatusAprobationHeader1Change-approvalLine: "+approvalLine)
@@ -137,7 +154,11 @@ class ManufacturingOrderViewModel @Inject constructor(
                     if(newValue.equals("Pendiente")) "*" else if (newValue.equals("Aprobado")) "S" else if (newValue.equals("Rechazado")) "N" else "*",
                     approvalLine,
                     optimalWeight.value,
-                    maximunWeight.value
+                    maximunWeight.value,
+                    if(_statusCorrection.value.equals("Pendiente")) "*" else if (_statusCorrection.value.equals("Aprobado")) "S" else if (_statusCorrection.value.equals("Rechazado")) "N" else "*",
+                    if(_statusDesaprobation.value.equals("Pendiente")) "*" else if (_statusDesaprobation.value.equals("Aprobado")) "S" else if (_statusDesaprobation.value.equals("Rechazado")) "N" else "*",
+                            _reasonForRejectionsResponseModel.value.data.first { it.name == _reasonDesaprobation.value }.code
+                    //_reasonDesaprobation.value
                 )
                 _manufacturingOrderResponseModel.value.data.firstOrNull()?.detail?.forEach {
                     updateApprovalStatusUseCase(
@@ -146,61 +167,99 @@ class ManufacturingOrderViewModel @Inject constructor(
                         if(newValue.equals("Pendiente")) "*" else if (newValue.equals("Aprobado")) "S" else if (newValue.equals("Rechazado")) "N" else "*",
                         "Linea1",
                         optimalWeight.value,
-                        maximunWeight.value
+                        maximunWeight.value,
+                        if(_statusCorrection.value.equals("Pendiente")) "*" else if (_statusCorrection.value.equals("Aprobado")) "S" else if (_statusCorrection.value.equals("Rechazado")) "N" else "*",
+                        if(_statusDesaprobation.value.equals("Pendiente")) "*" else if (_statusDesaprobation.value.equals("Aprobado")) "S" else if (_statusDesaprobation.value.equals("Rechazado")) "N" else "*",
+                        _reasonForRejectionsResponseModel.value.data.first { it.name == _reasonDesaprobation.value }.code
+                        //reasonDesaprobation.value
                     )
                 }
             }
         }
+    }*/
+// Kotlin
+fun onStatusAprobationHeader1Change(newValue: String, approvalLine: String, docNum: String) {
+    Log.e("REOS", "onStatusAprobationHeader1Change-newValue: $newValue")
+    Log.e("REOS", "onStatusAprobationHeader1Change-approvalLine: $approvalLine")
+    Log.e("REOS", "onStatusAprobationHeader1Change-docNum: $docNum")
+    Log.e("REOS", "onStatusAprobationHeader1Change-density: ${_density.value}")
+    Log.e("REOS", "onStatusAprobationHeader1Change-optimalWeight: ${_optimalWeight.value}")
+    Log.e("REOS", "onStatusAprobationHeader1Change-maximunWeight: ${_maximunWeight.value}")
+
+    _statusAprobationHeader1.value = newValue
+
+    // Buscar aprobación de forma segura
+    val approval = ApprobationDefaults.DEFAULT_APPROBATIONS.firstOrNull { it.name == newValue }
+    if (approval == null) {
+        Log.e("REOS", "onStatusAprobationHeader1Change: aprobación '$newValue' no encontrada. Abortando.")
+        return
     }
+
+    // Proteger acceso a motivos de rechazo
+    val reasonSelectedName = _reasonDesaprobation.value
+    val reasonSelected = _reasonForRejectionsResponseModel.value.data.firstOrNull { it.name == reasonSelectedName }
+    val reasonCode = reasonSelected?.code ?: -1
+
+    viewModelScope.launch {
+        try {
+            _isLoadingBodyDetail.value = true
+            // Corregir nombres de parámetros según los errores
+            updateApprovalStatusUseCase.invoke(
+                docNum = docNum,
+                approvalLine = approvalLine,                           // Cambiar 'line' por 'approvalLine'
+                approvalStatus = if(newValue.equals("Pendiente")) "*" else if (newValue.equals("Aprobado")) "S" else if (newValue.equals("Rechazado")) "N" else "*",
+                density = _density.value.ifEmpty { "0" },
+                optimalWeight = _optimalWeight.value.ifEmpty { "0" },
+                maximunWeight = _maximunWeight.value.ifEmpty { "0" },
+                //estadoAprobacionCorreccion = _statusCorrection.value,   // Agregar parámetro faltante
+                //estadoAprobacionDesaprobadoCalidad = _statusDesaprobation.value, // Agregar parámetro faltante
+                estadoAprobacionCorreccion=if(_statusCorrection.value.equals("Pendiente")) "*" else if (_statusCorrection.value.equals("Aprobado")) "S" else if (_statusCorrection.value.equals("Rechazado")) "N" else "*",
+                estadoAprobacionDesaprobadoCalidad=if(_statusDesaprobation.value.equals("Pendiente")) "*" else if (_statusDesaprobation.value.equals("Aprobado")) "S" else if (_statusDesaprobation.value.equals("Rechazado")) "N" else "*",
+                motivoCorreccion = reasonCode.toString(),                  // Agregar parámetro faltante (nombre del motivo)
+                //rejectionReasonCode = reasonCode                        // Mantener código del motivo
+            )
+            // Refrescar datos
+            getManufacturingOrder(docNum)
+            _manufacturingOrderResponseModel.value.data.firstOrNull()?.detail?.forEach {
+                updateApprovalStatusUseCase(
+                    it.batchName,
+                    density.value,
+                    if(newValue.equals("Pendiente")) "*" else if (newValue.equals("Aprobado")) "S" else if (newValue.equals("Rechazado")) "N" else "*",
+                    "Linea1",
+                    optimalWeight.value,
+                    maximunWeight.value,
+                    "",
+                    "",
+                    ""
+                    //if(_statusCorrection.value.equals("Pendiente")) "*" else if (_statusCorrection.value.equals("Aprobado")) "S" else if (_statusCorrection.value.equals("Rechazado")) "N" else "*",
+                    //if(_statusDesaprobation.value.equals("Pendiente")) "*" else if (_statusDesaprobation.value.equals("Aprobado")) "S" else if (_statusDesaprobation.value.equals("Rechazado")) "N" else "*",
+                    //_reasonForRejectionsResponseModel.value.data.first { it.name == _reasonDesaprobation.value }.code
+                    //reasonDesaprobation.value
+                )
+            }
+        } catch (e: Exception) {
+            Log.e("REOS", "onStatusAprobationHeader1Change-error: ${e.message}", e)
+        } finally {
+            _isLoadingBodyDetail.value = false
+        }
+    }
+}
+
+
 
     fun onStatusAprobbation1Change(newValue: String,approvalLine: String) {
         _statusAprobbation1.value = newValue
-        /*viewModelScope.launch {
-            if(!docNum.value.equals("")&&!density.value.equals("")&&!approvalLine.equals("")&&!optimalWeight.value.equals("")&&!maximunWeight.value.equals("") ){
-                updateApprovalStatusUseCase(
-                    docNum.value,
-                    density.value,
-                    if(newValue.equals("Pendiente")) "*" else if (newValue.equals("Aprobado")) "S" else if (newValue.equals("Rechazado")) "N" else "*",
-                    approvalLine,
-                    optimalWeight.value,
-                    maximunWeight.value
-
-                )
-            }
-        }*/
     }
 
     fun onStatusAprobbation2Change(newValue: String,approvalLine: String) {
         _statusAprobbation2.value = newValue
         viewModelScope.launch {
-            /*if(!docNum.value.equals("")&&!density.value.equals("")&&!approvalLine.equals("")&&!optimalWeight.value.equals("")&&!maximunWeight.value.equals("") ) {
-                updateApprovalStatusUseCase(
-                    docNum.value,
-                    density.value,
-                    if (newValue.equals("Pendiente")) "*" else if (newValue.equals("Aprobado")) "S" else if (newValue.equals("Rechazado")) "N" else "*",
-                    approvalLine,
-                    optimalWeight.value,
-                    maximunWeight.value
-
-                )
-            }*/
         }
     }
 
     fun onStatusAprobbation3Change(newValue: String,approvalLine: String) {
         _statusAprobbation3.value = newValue
         viewModelScope.launch {
-            /*if(!docNum.value.equals("")&&!density.value.equals("")&&!approvalLine.equals("")&&!optimalWeight.value.equals("")&&!maximunWeight.value.equals("") ) {
-                updateApprovalStatusUseCase(
-                    docNum.value,
-                    density.value,
-                    if (newValue.equals("Pendiente")) "*" else if (newValue.equals("Aprobado")) "S" else if (newValue.equals("Rechazado")) "N" else "*",
-                    approvalLine,
-                    optimalWeight.value,
-                    maximunWeight.value
-
-                )
-            }*/
         }
     }
 
@@ -218,6 +277,15 @@ class ManufacturingOrderViewModel @Inject constructor(
             Log.e("REOS","getManufacturingOrder-orderCode: "+orderCode)
             try {
                 _manufacturingOrderResponseModel.value = getManufacturingOrderUseCase(orderCode)
+                _manufacturingOrderResponseModel.value.data.firstOrNull()?.let { order ->
+                    Log.e("REOS","getManufacturingOrder-order.approbationName1: "+order.approbationName1)
+                    Log.e("REOS","getManufacturingOrder-order.correction: "+order.correction)
+                    _statusAprobationHeader1.value = order.approbationName1
+                    _statusCorrection.value=if(order.correction.equals("NO")) "Rechazado" else if (order.correction.equals("SI")) "Aprobado" else "Pendiente"
+                    _reasonDesaprobation.value=order.reason
+                    _statusDesaprobation.value=if(order.qualityDisapproved.equals("N")) "Rechazado" else if (order.qualityDisapproved.equals("S")) "Aprobado" else "Pendiente"
+                    _density.value=order.density
+                }
             } finally {
                 _isLoadingBody.value = false // Finalizar carga
             }
@@ -229,6 +297,15 @@ class ManufacturingOrderViewModel @Inject constructor(
             _isLoadingBodyDetail.value = true
             try {
                 _manufacturingOrderResponseModel.value = recalculateDensityUseCase(orderCode, density)
+                _manufacturingOrderResponseModel.value.data.firstOrNull()?.let { order ->
+                    Log.e("REOS","recalculateDensityUseCase-order.approbationName1: "+order.approbationName1)
+                    Log.e("REOS","recalculateDensityUseCase-order.correction: "+order.correction)
+                    _statusAprobationHeader1.value = order.approbationName1
+                    _statusCorrection.value=if(order.correction.equals("NO")) "Rechazado" else if (order.correction.equals("S")) "Aprobado" else "Pendiente"
+                    _reasonDesaprobation.value=order.reason
+                    _statusDesaprobation.value=if(order.qualityDisapproved.equals("N")) "Rechazado" else if (order.qualityDisapproved.equals("S")) "Aprobado" else "Pendiente"
+                    //_density.value=order.density
+                }
             } finally {
                 _isLoadingBodyDetail.value = false
             }
@@ -244,7 +321,10 @@ class ManufacturingOrderViewModel @Inject constructor(
                     if(statusAprobbation1.value.equals("Pendiente")) "*" else if (statusAprobbation1.value.equals("Aprobado")) "S" else if (statusAprobbation1.value.equals("Rechazado")) "N" else "*",
                     "Linea1",
                     optimalWeight.value,
-                    maximunWeight.value
+                    maximunWeight.value,
+                    "",
+                    "",
+                ""
 
                 )
                 if(!docNum.value.equals("")&&!density.value.equals("")&&!optimalWeight.value.equals("")&&!maximunWeight.value.equals("") ) {
@@ -254,7 +334,10 @@ class ManufacturingOrderViewModel @Inject constructor(
                         if (statusAprobbation2.value.equals("Pendiente")) "*" else if (statusAprobbation2.value.equals("Aprobado")) "S" else if (statusAprobbation2.value.equals("Rechazado")) "N" else "*",
                         "Linea2",
                         optimalWeight.value,
-                        maximunWeight.value
+                        maximunWeight.value,
+                        "",
+                        "",
+                        ""
 
                     )
                 }
@@ -265,10 +348,25 @@ class ManufacturingOrderViewModel @Inject constructor(
                             if (statusAprobbation3.value.equals("Pendiente")) "*" else if (statusAprobbation3.value.equals("Aprobado")) "S" else if (statusAprobbation3.value.equals("Rechazado")) "N" else "*",
                             "Linea3",
                             optimalWeight.value,
-                            maximunWeight.value
+                            maximunWeight.value,
+                            "",
+                            "",
+                            ""
 
                         )
                     }
+            }
+        }
+    }
+
+    fun getReasonForRejections() {
+        viewModelScope.launch {
+            _isLoadingBody.value = true // Iniciar carga
+            Log.e("REOS","getManufacturingOrder-orderCode: "+orderCode)
+            try {
+                _reasonForRejectionsResponseModel.value = getReasonForRejectionsUseCase()
+            } finally {
+                _isLoadingBody.value = false // Finalizar carga
             }
         }
     }

@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.sp
 import com.vistony.app.ui.theme.theme.Dimensions
 import com.vistony.salesforce.kotlin.view.Atoms.theme.BlueVistony
 import android.content.ContextWrapper
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.TextUnit
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class,ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
@@ -44,40 +46,21 @@ fun SpinnerM3(
     enabled: Boolean = true,
     iconColor:Color,
     isError: Boolean = false,
-    errorMessage: String? = null
+    errorMessage: String? = null,
+    textSize: TextUnit = 14.sp,
+    modifier: Modifier = Modifier,
 
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var textFieldWidth by remember { mutableStateOf(0) }
-    val context = LocalContext.current
-    //val activity = context as Activity
-
-
-// Buscar la Activity de forma segura
-    val activity = remember(context) {
-        var ctx = context
-        while (ctx is ContextWrapper) {
-            if (ctx is Activity) {
-                return@remember ctx
-            }
-            ctx = ctx.baseContext
-        }
-        null
-    }
-
-// Si no se encuentra Activity, usar valores por defecto
-    val windowSize = activity?.let { calculateWindowSizeClass(it) }
-    val paddingRes = windowSize?.let { Dimensions.getPadding(it.widthSizeClass) } ?: 8.dp
-    val textFieldHeight = windowSize?.let { Dimensions.getTextFieldHeight(it.widthSizeClass) } ?: 56.dp
-    val bodyFontSize = windowSize?.let { Dimensions.getBodyFontSize(it.widthSizeClass) } ?: 14.sp
 
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier
+        /*modifier = Modifier
             .padding(horizontal = //8.dp
                 paddingRes
             )
-            .fillMaxWidth()
+            .fillMaxWidth()*/
+        modifier = modifier
     ) {
         OutlinedTextField(
             colors = TextFieldDefaults.outlinedTextFieldColors(
@@ -90,7 +73,7 @@ fun SpinnerM3(
             onValueChange = {},
             readOnly = true,
             enabled = enabled,
-            label = { Text(label, fontSize = 14.sp) },
+            label = { Text(label, fontSize = textSize) },
             isError = isError,
             supportingText = if (isError) {
                 { Text(errorMessage ?: "Campo requerido") }
@@ -105,7 +88,11 @@ fun SpinnerM3(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { if(enabled) {expanded = true} }
+                .clickable { if(enabled) {expanded = true} },
+            textStyle = TextStyle.Default.copy(
+                fontSize = textSize,
+                color = Color.Black
+            )
         )
 
         DropdownMenu(
@@ -117,7 +104,9 @@ fun SpinnerM3(
         ) {
             options.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(option) },
+                    text = { Text(option
+                        , fontSize = textSize
+                    ) },
                     onClick = {
                         onOptionSelected(option)
                         expanded = false
