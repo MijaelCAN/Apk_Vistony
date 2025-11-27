@@ -49,6 +49,19 @@ class MuestraRepository @Inject constructor() {
         }
     }
 
+    suspend fun crearInspeccionDimensional(docEntry: String, request: InspeccionDimensionalCreateRequest): Result<InspeccionDimensionalCreateResponse> {
+        return try {
+            val response = muestraService.crearInspeccionDimensional(docEntry, request)
+            if (response.isSuccessful) {
+                Result.success(response.body() ?: InspeccionDimensionalCreateResponse(400, false, "Error desconocido", null))
+            } else {
+                Result.failure(Exception("Error del servidor: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun registrarMuestra(request: MuestraRequest): Result<PostMuestraResponse> {
         return try {
             val response = muestraService.registrarMuestra(request)

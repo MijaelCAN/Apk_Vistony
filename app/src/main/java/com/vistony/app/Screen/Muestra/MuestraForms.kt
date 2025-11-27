@@ -297,8 +297,17 @@ fun InspeccionDimensionalForm(
             }
             
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // Temperaturas
+
+            // Medidas de Diámetro de Rosca
+            Text(
+                text = "Parametros de Máquina",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF111827)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -435,6 +444,112 @@ fun InspeccionDimensionalForm(
                     keyboardType = KeyboardType.Decimal
                 )
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Altura de Boca
+            Text(
+                text = "Diametro de Precinto",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF111827)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                MuestraTextField(
+                    value = formState.diametroPrecintoMedida1,
+                    onValueChange = { muestraViewModel.updateInspeccion("diametroPrecintoMedida1", it) },
+                    label = "M1",
+                    modifier = Modifier.weight(1f),
+                    keyboardType = KeyboardType.Decimal
+                )
+
+                MuestraTextField(
+                    value = formState.diametroPrecintoMedida2,
+                    onValueChange = { muestraViewModel.updateInspeccion("diametroPrecintoMedida2", it) },
+                    label = "M2",
+                    modifier = Modifier.weight(1f),
+                    keyboardType = KeyboardType.Decimal
+                )
+
+                MuestraTextField(
+                    value = formState.diametroPrecintoMedida3,
+                    onValueChange = { muestraViewModel.updateInspeccion("diametroPrecintoMedida3", it) },
+                    label = "M3",
+                    modifier = Modifier.weight(1f),
+                    keyboardType = KeyboardType.Decimal
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Altura Total
+            Text(
+                text = "Altura Total",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF111827)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ){
+                MuestraTextField(
+                    value = formState.alturaTotalMedida1,
+                    onValueChange = { muestraViewModel.updateInspeccion("alturaTotalMedida1", it) },
+                    label = "M1",
+                    modifier = Modifier.weight(1f),
+                    keyboardType = KeyboardType.Decimal
+                )
+
+                MuestraTextField(
+                    value = formState.alturaTotalMedida2,
+                    onValueChange = { muestraViewModel.updateInspeccion("alturaTotalMedida2", it) },
+                    label = "M2",
+                    modifier = Modifier.weight(1f),
+                    keyboardType = KeyboardType.Decimal
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Diametro Interno
+            Text(
+                text = "Diametro Interno",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF111827),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                MuestraTextField(
+                    value = formState.diametroInternoMedida1,
+                    onValueChange = { muestraViewModel.updateInspeccion("diametroInternoMedida1", it) },
+                    label = "M1",
+                    modifier = Modifier.weight(1f),
+                    keyboardType = KeyboardType.Decimal
+                )
+
+                MuestraTextField(
+                    value = formState.diametroInternoMedida2,
+                    onValueChange = { muestraViewModel.updateInspeccion("diametroInternoMedida2", it) },
+                    label = "M2",
+                    modifier = Modifier.weight(1f),
+                    keyboardType = KeyboardType.Decimal
+                )
+            }
+
             
             Spacer(modifier = Modifier.height(16.dp))
             

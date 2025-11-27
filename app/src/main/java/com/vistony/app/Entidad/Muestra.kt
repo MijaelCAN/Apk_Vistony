@@ -172,6 +172,38 @@ data class CheckListCreateResponse(
     @SerializedName("data") val data: Any?
 )
 
+// Request para crear Inspeccion Dimensional
+data class InspeccionDimensionalCreateRequest(
+    @SerializedName("muestraId") val muestraId: String,
+    @SerializedName("horaInspeccion") val horaInspeccion: String,
+    @SerializedName("temperaturaChiller") val temperaturaChiller: String,
+    @SerializedName("temperaturaCiclo") val temperaturaCiclo: String,
+    @SerializedName("numeroCavidad") val numeroCavidad: String,
+    @SerializedName("peso") val peso: String,
+    @SerializedName("diametroRoscaMedida1") val diametroRoscaMedida1: String,
+    @SerializedName("diametroRoscaMedida2") val diametroRoscaMedida2: String,
+    @SerializedName("alturaBocaMedida1") val alturaBocaMedida1: String,
+    @SerializedName("alturaBocaMedida2") val alturaBocaMedida2: String,
+    @SerializedName("alturaBocaMedida3") val alturaBocaMedida3: String,
+    @SerializedName("alturaBocaMedida4") val alturaBocaMedida4: String,
+    @SerializedName("diametroPrecintoMedida1") val diametroPrecintoMedida1: String,
+    @SerializedName("diametroPrecintoMedida2") val diametroPrecintoMedida2: String,
+    @SerializedName("diametroPrecintoMedida3") val diametroPrecintoMedida3: String,
+    @SerializedName("alturaTotalMedida1") val alturaTotalMedida1: String,
+    @SerializedName("alturaTotalMedida2") val alturaTotalMedida2: String,
+    @SerializedName("diametroInternoMedida1") val diametroInternoMedida1: String,
+    @SerializedName("diametroInternoMedida2") val diametroInternoMedida2: String,
+    @SerializedName("observacion") val observacion: String
+)
+
+// Response para crear Inspeccion Dimensional
+data class InspeccionDimensionalCreateResponse(
+    @SerializedName("statusCode") val statusCode: Int,
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String,
+    @SerializedName("data") val data: Any?
+)
+
 // Requests para API
 data class MuestraRequest(
     @SerializedName("cabecera") val cabecera: MuestraCabecera,

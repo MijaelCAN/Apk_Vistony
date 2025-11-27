@@ -20,6 +20,12 @@ interface MuestraService {
         @Body request: CheckListCreateRequest
     ): Response<CheckListCreateResponse>
 
+    @POST("Inspeccion/inspeccionDimensional_create")
+    suspend fun crearInspeccionDimensional(
+        @Query("DocEntry") docEntry: String,
+        @Body request: InspeccionDimensionalCreateRequest
+    ): Response<InspeccionDimensionalCreateResponse>
+
     @POST("muestra/create")
     suspend fun registrarMuestra(@Body request: MuestraRequest): Response<PostMuestraResponse>
 

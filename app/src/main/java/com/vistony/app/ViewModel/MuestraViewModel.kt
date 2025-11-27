@@ -473,6 +473,110 @@ class MuestraViewModel @Inject constructor(
         }
     }
 
+    // Función para crear una Inspección Dimensional
+    fun crearInspeccionDimensional(muestraId: String) {
+        viewModelScope.launch {
+            android.util.Log.d("MuestraViewModel", "=== CREANDO INSPECCION DIMENSIONAL ===")
+            android.util.Log.d("MuestraViewModel", "DocEntry (currentMuestraId): $_currentMuestraId.value")
+            
+            _isCreating.value = true
+            _errorMessage.value = null
+            
+            try {
+                val inspeccion = _inspeccionFormState.value
+                val fechaHora = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
+                
+                // Usar el docEntry de la muestra actual
+                val docEntry = _currentMuestraId.value ?: muestraId
+                android.util.Log.d("MuestraViewModel", "DocEntry a usar: $docEntry")
+                
+                val request = InspeccionDimensionalCreateRequest(
+                    muestraId = muestraId,
+                    horaInspeccion = fechaHora,
+                    temperaturaChiller = inspeccion.temperaturaChiller,
+                    temperaturaCiclo = inspeccion.temperaturaCiclo,
+                    numeroCavidad = inspeccion.numeroCavidad,
+                    peso = inspeccion.peso,
+                    diametroRoscaMedida1 = inspeccion.diametroRoscaMedida1,
+                    diametroRoscaMedida2 = inspeccion.diametroRoscaMedida2,
+                    alturaBocaMedida1 = inspeccion.alturaBocaMedida1,
+                    alturaBocaMedida2 = inspeccion.alturaBocaMedida2,
+                    alturaBocaMedida3 = inspeccion.alturaBocaMedida3,
+                    alturaBocaMedida4 = inspeccion.alturaBocaMedida4,
+                    diametroPrecintoMedida1 = inspeccion.diametroPrecintoMedida1,
+                    diametroPrecintoMedida2 = inspeccion.diametroPrecintoMedida2,
+                    diametroPrecintoMedida3 = inspeccion.diametroPrecintoMedida3,
+                    alturaTotalMedida1 = inspeccion.alturaTotalMedida1,
+                    alturaTotalMedida2 = inspeccion.alturaTotalMedida2,
+                    diametroInternoMedida1 = inspeccion.diametroInternoMedida1,
+                    diametroInternoMedida2 = inspeccion.diametroInternoMedida2,
+                    observacion = inspeccion.observacion
+                )
+                
+                val result = muestraRepository.crearInspeccionDimensional(docEntry, request)
+                
+                android.util.Log.d("MuestraViewModel", "Request enviado al repository")
+                
+                result.fold(
+                    onSuccess = { response ->
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Response.success: ${response.success}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Message: ${response.message}")
+                        
+                        if (response.success) {
+                            _successMessage.value = response.message
+                            // Limpiar el formulario después de crear
+                            resetInspeccionForm()
+                            // Agregar a la lista temporal
+                            val nuevaInspeccion = InspeccionDimensional(
+                                id = UUID.randomUUID().toString(),
+                                muestraId = muestraId,
+                                horaInspeccion = request.horaInspeccion,
+                                temperaturaChiller = request.temperaturaChiller,
+                                temperaturaCiclo = request.temperaturaCiclo,
+                                numeroCavidad = request.numeroCavidad,
+                                peso = request.peso,
+                                diametroRoscaMedida1 = request.diametroRoscaMedida1,
+                                diametroRoscaMedida2 = request.diametroRoscaMedida2,
+                                alturaBocaMedida1 = request.alturaBocaMedida1,
+                                alturaBocaMedida2 = request.alturaBocaMedida2,
+                                alturaBocaMedida3 = request.alturaBocaMedida3,
+                                alturaBocaMedida4 = request.alturaBocaMedida4,
+                                diametroPrecintoMedida1 = request.diametroPrecintoMedida1,
+                                diametroPrecintoMedida2 = request.diametroPrecintoMedida2,
+                                diametroPrecintoMedida3 = request.diametroPrecintoMedida3,
+                                alturaTotalMedida1 = request.alturaTotalMedida1,
+                                alturaTotalMedida2 = request.alturaTotalMedida2,
+                                diametroInternoMedida1 = request.diametroInternoMedida1,
+                                diametroInternoMedida2 = request.diametroInternoMedida2,
+                                observacion = request.observacion
+                            )
+                            val listaActual = _inspeccionesTemporales.value.toMutableList()
+                            listaActual.add(nuevaInspeccion)
+                            _inspeccionesTemporales.value = listaActual
+                            
+                            // Refrescar el detalle de la muestra
+                            android.util.Log.d("MuestraViewModel", "Refrescando detalle de muestra")
+                            obtenerMuestraCompletaPorId(docEntry)
+                        } else {
+                            android.util.Log.e("MuestraViewModel", "ERROR - Response.message: ${response.message}")
+                            _errorMessage.value = response.message
+                        }
+                    },
+                    onFailure = { exception ->
+                        android.util.Log.e("MuestraViewModel", "FAILURE - Excepción: ${exception.message}", exception)
+                        _errorMessage.value = "Error al crear Inspección Dimensional: ${exception.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("MuestraViewModel", "EXCEPCIÓN INESPERADA", e)
+                _errorMessage.value = "Error inesperado: ${e.message}"
+            }
+            
+            _isCreating.value = false
+            android.util.Log.d("MuestraViewModel", "=== FIN CREAR INSPECCION DIMENSIONAL ===")
+        }
+    }
+
     // Funciones para agregar elementos a las listas temporales
     fun agregarMaterial() {
         val material = MaterialEmpleado(
@@ -493,36 +597,15 @@ class MuestraViewModel @Inject constructor(
     }
 
     fun agregarInspeccion() {
-        val inspeccion = InspeccionDimensional(
-            id = UUID.randomUUID().toString(),
-            muestraId = "",
-            horaInspeccion = _inspeccionFormState.value.horaInspeccion,
-            temperaturaChiller = _inspeccionFormState.value.temperaturaChiller,
-            temperaturaCiclo = _inspeccionFormState.value.temperaturaCiclo,
-            numeroCavidad = _inspeccionFormState.value.numeroCavidad,
-            peso = _inspeccionFormState.value.peso,
-            diametroRoscaMedida1 = _inspeccionFormState.value.diametroRoscaMedida1,
-            diametroRoscaMedida2 = _inspeccionFormState.value.diametroRoscaMedida2,
-            alturaBocaMedida1 = _inspeccionFormState.value.alturaBocaMedida1,
-            alturaBocaMedida2 = _inspeccionFormState.value.alturaBocaMedida2,
-            alturaBocaMedida3 = _inspeccionFormState.value.alturaBocaMedida3,
-            alturaBocaMedida4 = _inspeccionFormState.value.alturaBocaMedida4,
-            diametroPrecintoMedida1 = _inspeccionFormState.value.diametroPrecintoMedida1,
-            diametroPrecintoMedida2 = _inspeccionFormState.value.diametroPrecintoMedida2,
-            diametroPrecintoMedida3 = _inspeccionFormState.value.diametroPrecintoMedida3,
-            alturaTotalMedida1 = _inspeccionFormState.value.alturaTotalMedida1,
-            alturaTotalMedida2 = _inspeccionFormState.value.alturaTotalMedida2,
-            diametroInternoMedida1 = _inspeccionFormState.value.diametroInternoMedida1,
-            diametroInternoMedida2 = _inspeccionFormState.value.diametroInternoMedida2,
-            observacion = _inspeccionFormState.value.observacion
-        )
-        val listaActual = _inspeccionesTemporales.value.toMutableList()
-        listaActual.add(inspeccion)
-        _inspeccionesTemporales.value = listaActual
-        resetInspeccionForm()
+        // Validar que tenemos un muestraId
+        val muestraId = _currentMuestraId.value
+        if (muestraId.isNullOrEmpty()) {
+            _errorMessage.value = "Error: No se encontró el ID de la muestra"
+            return
+        }
         
-        // Guardar automáticamente si está en modo edición
-        guardarCambiosAutomaticamente()
+        // Llamar a la función que usa el API
+        crearInspeccionDimensional(muestraId)
     }
 
     fun agregarCheckList() {

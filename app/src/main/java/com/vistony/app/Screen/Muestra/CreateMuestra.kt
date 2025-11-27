@@ -191,10 +191,10 @@ fun MuestraWizardSteps(
     
     val steps = listOf(
         StepInfo("Información General", Icons.Default.Info, true),      // Paso 1 - Activo
-        StepInfo("Material Empleado", Icons.Default.Build, false),     // Paso 2 - Inactivo
-        StepInfo("Inspección Dimensional", Icons.Default.Straighten, false), // Paso 3 - Inactivo
+        StepInfo("Material Empleado", Icons.Default.Build, true),     // Paso 2 - Inactivo
+        StepInfo("Inspección Dimensional", Icons.Default.Straighten, true), // Paso 3 - Inactivo
         StepInfo("Check List", Icons.Default.Checklist, true),         // Paso 4 - Activo
-        StepInfo("Evaluación", Icons.Default.Assessment, false)        // Paso 5 - Inactivo
+        StepInfo("Evaluación", Icons.Default.Assessment, true)        // Paso 5 - Inactivo
     )
     val scrollState = rememberScrollState()
 
