@@ -1,5 +1,6 @@
 package com.vistony.app.clean.presentation.view.templates
 
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraints

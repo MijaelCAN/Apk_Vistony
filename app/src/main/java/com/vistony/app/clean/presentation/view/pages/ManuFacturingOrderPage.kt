@@ -26,7 +26,7 @@ fun ManuFacturingOrderPage(
 ) {
 
     //VistonyTheme(){
-        ManuFacturingOrderTemplate(navController,id,userState,scanViewModel)
+        ManuFacturingOrderTemplate(navController,userState.currentUser.id.toString(),userState,scanViewModel)
     //}
 
 
