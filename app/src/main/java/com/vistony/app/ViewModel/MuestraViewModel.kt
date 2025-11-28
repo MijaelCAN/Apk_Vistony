@@ -118,6 +118,7 @@ class MuestraViewModel @Inject constructor(
 
     // Estado del formulario de evaluación
     data class EvaluacionFormState(
+        var equipo: String = "",
         var estado: String = "",
         var paletas: String = "",
         var bolsas: String = "",
@@ -165,6 +166,35 @@ class MuestraViewModel @Inject constructor(
                 val fechaInicio = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
                 val fechaFin = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
                 
+                val result = muestraRepository.obtenerMuestras(dni, fechaInicio, fechaFin, role)
+                
+                result.fold(
+                    onSuccess = { response ->
+                        if (response.success) {
+                            _muestras.value = response.data
+                        } else {
+                            _errorMessage.value = response.message
+                        }
+                    },
+                    onFailure = { exception ->
+                        _errorMessage.value = "Error al obtener muestras: ${exception.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                _errorMessage.value = "Error inesperado: ${e.message}"
+            }
+            
+            _isLoading.value = false
+        }
+    }
+
+    // Función para obtener muestras con fechas personalizadas
+    fun obtenerMuestrasConFechas(dni: String, fechaInicio: String, fechaFin: String, role: String? = "soplado") {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            
+            try {
                 val result = muestraRepository.obtenerMuestras(dni, fechaInicio, fechaFin, role)
                 
                 result.fold(
@@ -283,7 +313,7 @@ class MuestraViewModel @Inject constructor(
     fun updateEvaluacion(field: String, value: String) {
         val current = _evaluacionFormState.value
         val newState = when (field) {
-            "estado" -> current.copy(estado = value)
+            "equipo" -> current.copy(equipo = value)
             "paletas" -> current.copy(paletas = value)
             "bolsas" -> current.copy(bolsas = value)
             "criteriosEvaluacion" -> current.copy(criteriosEvaluacion = value)
@@ -381,7 +411,7 @@ class MuestraViewModel @Inject constructor(
         val isValid = if (_isEditMode.value) {
             true // En modo edición, siempre es válido para agregar items
         } else {
-            current.estado.isNotEmpty() &&
+            current.equipo.isNotEmpty() &&
             current.paletas.isNotEmpty() &&
             current.bolsas.isNotEmpty()
         }
@@ -577,23 +607,160 @@ class MuestraViewModel @Inject constructor(
         }
     }
 
+    // Función para crear un Material Empleado
+    fun crearMaterialEmpleado(muestraId: String) {
+        viewModelScope.launch {
+            android.util.Log.d("MuestraViewModel", "=== CREANDO MATERIAL EMPLEADO ===")
+            android.util.Log.d("MuestraViewModel", "DocEntry (currentMuestraId): $_currentMuestraId.value")
+            
+            _isCreating.value = true
+            _errorMessage.value = null
+            
+            try {
+                val material = _materialFormState.value
+                val fechaHora = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
+                
+                // Usar el docEntry de la muestra actual
+                val docEntry = _currentMuestraId.value ?: muestraId
+                android.util.Log.d("MuestraViewModel", "DocEntry a usar: $docEntry")
+                
+                val request = MaterialEmpleadoCreateRequest(
+                    material = material.material,
+                    marca = material.marca,
+                    codigo = material.codigo,
+                    lote = material.lote,
+                    fecReg = fechaHora
+                )
+                
+                val result = muestraRepository.crearMaterialEmpleado(docEntry, request)
+                
+                android.util.Log.d("MuestraViewModel", "Request enviado al repository")
+                
+                result.fold(
+                    onSuccess = { response ->
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Response.success: ${response.success}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Message: ${response.message}")
+                        
+                        if (response.success) {
+                            _successMessage.value = response.message
+                            // Limpiar el formulario después de crear
+                            resetMaterialForm()
+                            // Agregar a la lista temporal
+                            val nuevoMaterial = MaterialEmpleado(
+                                id = UUID.randomUUID().toString(),
+                                muestraId = muestraId,
+                                material = request.material,
+                                marca = request.marca,
+                                codigo = request.codigo,
+                                lote = request.lote
+                            )
+                            val listaActual = _materialesTemporales.value.toMutableList()
+                            listaActual.add(nuevoMaterial)
+                            _materialesTemporales.value = listaActual
+                            
+                            // Refrescar el detalle de la muestra
+                            android.util.Log.d("MuestraViewModel", "Refrescando detalle de muestra")
+                            obtenerMuestraCompletaPorId(docEntry)
+                        } else {
+                            android.util.Log.e("MuestraViewModel", "ERROR - Response.message: ${response.message}")
+                            _errorMessage.value = response.message
+                        }
+                    },
+                    onFailure = { exception ->
+                        android.util.Log.e("MuestraViewModel", "FAILURE - Excepción: ${exception.message}", exception)
+                        _errorMessage.value = "Error al crear Material Empleado: ${exception.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("MuestraViewModel", "EXCEPCIÓN INESPERADA", e)
+                _errorMessage.value = "Error inesperado: ${e.message}"
+            }
+            
+            _isCreating.value = false
+            android.util.Log.d("MuestraViewModel", "=== FIN CREAR MATERIAL EMPLEADO ===")
+        }
+    }
+
+    // Función para crear una Evaluación de Producción
+    fun crearEvaluacionProduccion(muestraId: String) {
+        viewModelScope.launch {
+            android.util.Log.d("MuestraViewModel", "=== CREANDO EVALUACION PRODUCCION ===")
+            android.util.Log.d("MuestraViewModel", "DocEntry (currentMuestraId): $_currentMuestraId.value")
+            
+            _isCreating.value = true
+            _errorMessage.value = null
+            
+            try {
+                // Validar que tenemos un muestraId
+                val docEntry = _currentMuestraId.value ?: muestraId
+                if (docEntry.isEmpty()) {
+                    _errorMessage.value = "Error: No se encontró el ID de la muestra"
+                    _isCreating.value = false
+                    return@launch
+                }
+                
+                val evaluacion = _evaluacionFormState.value
+                val fechaHora = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
+                
+                android.util.Log.d("MuestraViewModel", "DocEntry a usar: $docEntry")
+                
+                val request = EvaluacionProduccionCreateRequest(
+                    equipo = evaluacion.equipo,
+                    estado = "", // Dejar vacío según requerimiento
+                    paletas = evaluacion.paletas,
+                    bolsas = evaluacion.bolsas,
+                    criteriosEvaluacion = evaluacion.criteriosEvaluacion,
+                    fecReg = fechaHora
+                )
+                
+                val result = muestraRepository.crearEvaluacionProduccion(docEntry, request)
+                
+                android.util.Log.d("MuestraViewModel", "Request enviado al repository")
+                
+                result.fold(
+                    onSuccess = { response ->
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Response.success: ${response.success}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Message: ${response.message}")
+                        
+                        if (response.success) {
+                            _successMessage.value = response.message ?: "Evaluación registrada exitosamente"
+                            // Limpiar el formulario después de crear
+                            resetEvaluacionForm()
+                            
+                            // Refrescar el detalle de la muestra
+                            android.util.Log.d("MuestraViewModel", "Refrescando detalle de muestra")
+                            obtenerMuestraCompletaPorId(docEntry)
+                        } else {
+                            android.util.Log.e("MuestraViewModel", "ERROR - Response.message: ${response.message}")
+                            _errorMessage.value = response.message
+                        }
+                    },
+                    onFailure = { exception ->
+                        android.util.Log.e("MuestraViewModel", "FAILURE - Excepción: ${exception.message}", exception)
+                        _errorMessage.value = "Error al crear Evaluación de Producción: ${exception.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("MuestraViewModel", "EXCEPCIÓN INESPERADA", e)
+                _errorMessage.value = "Error inesperado: ${e.message}"
+            }
+            
+            _isCreating.value = false
+            android.util.Log.d("MuestraViewModel", "=== FIN CREAR EVALUACION PRODUCCION ===")
+        }
+    }
+
     // Funciones para agregar elementos a las listas temporales
     fun agregarMaterial() {
-        val material = MaterialEmpleado(
-            id = UUID.randomUUID().toString(),
-            muestraId = "",
-            material = _materialFormState.value.material,
-            marca = _materialFormState.value.marca,
-            codigo = _materialFormState.value.codigo,
-            lote = _materialFormState.value.lote
-        )
-        val listaActual = _materialesTemporales.value.toMutableList()
-        listaActual.add(material)
-        _materialesTemporales.value = listaActual
-        resetMaterialForm()
+        // Validar que tenemos un muestraId
+        val muestraId = _currentMuestraId.value
+        if (muestraId.isNullOrEmpty()) {
+            _errorMessage.value = "Error: No se encontró el ID de la muestra"
+            return
+        }
         
-        // Guardar automáticamente si está en modo edición
-        guardarCambiosAutomaticamente()
+        // Llamar a la función que usa el API
+        crearMaterialEmpleado(muestraId)
     }
 
     fun agregarInspeccion() {
@@ -791,6 +958,7 @@ class MuestraViewModel @Inject constructor(
             // Cargar evaluación existente
             muestra.evaluacionProduccion?.let { evaluacion ->
                 _evaluacionFormState.value = EvaluacionFormState(
+                    equipo = evaluacion.equipo,
                     estado = evaluacion.estado,
                     paletas = evaluacion.paletas,
                     bolsas = evaluacion.bolsas,

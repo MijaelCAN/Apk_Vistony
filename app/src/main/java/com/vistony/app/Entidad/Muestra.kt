@@ -71,6 +71,7 @@ data class CheckListInspeccion(
 data class EvaluacionProduccion(
     @SerializedName("id") val id: String = "",
     @SerializedName("muestraId") val muestraId: String = "",
+    @SerializedName("equipo") val equipo: String = "",
     @SerializedName("estado") val estado: String = "",
     @SerializedName("paletas") val paletas: String = "", // Aprobado, Observado, Rechazado
     @SerializedName("bolsas") val bolsas: String = "",
@@ -198,6 +199,41 @@ data class InspeccionDimensionalCreateRequest(
 
 // Response para crear Inspeccion Dimensional
 data class InspeccionDimensionalCreateResponse(
+    @SerializedName("statusCode") val statusCode: Int,
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String,
+    @SerializedName("data") val data: Any?
+)
+
+// Request para crear Material Empleado
+data class MaterialEmpleadoCreateRequest(
+    @SerializedName("material") val material: String,
+    @SerializedName("marca") val marca: String,
+    @SerializedName("codigo") val codigo: String,
+    @SerializedName("lote") val lote: String,
+    @SerializedName("fec_reg") val fecReg: String
+)
+
+// Response para crear Material Empleado
+data class MaterialEmpleadoCreateResponse(
+    @SerializedName("statusCode") val statusCode: Int,
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String,
+    @SerializedName("data") val data: Any?
+)
+
+// Request para crear Evaluación de Producción
+data class EvaluacionProduccionCreateRequest(
+    @SerializedName("equipo") val equipo: String,
+    @SerializedName("estado") val estado: String = "",
+    @SerializedName("paletas") val paletas: String,
+    @SerializedName("bolsas") val bolsas: String,
+    @SerializedName("criteriosEvaluacion") val criteriosEvaluacion: String,
+    @SerializedName("fec_reg") val fecReg: String
+)
+
+// Response para crear Evaluación de Producción
+data class EvaluacionProduccionCreateResponse(
     @SerializedName("statusCode") val statusCode: Int,
     @SerializedName("success") val success: Boolean,
     @SerializedName("message") val message: String,

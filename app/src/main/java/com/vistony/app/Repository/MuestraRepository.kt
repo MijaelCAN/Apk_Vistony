@@ -62,6 +62,32 @@ class MuestraRepository @Inject constructor() {
         }
     }
 
+    suspend fun crearMaterialEmpleado(docEntry: String, request: MaterialEmpleadoCreateRequest): Result<MaterialEmpleadoCreateResponse> {
+        return try {
+            val response = muestraService.crearMaterialEmpleado(docEntry, request)
+            if (response.isSuccessful) {
+                Result.success(response.body() ?: MaterialEmpleadoCreateResponse(400, false, "Error desconocido", null))
+            } else {
+                Result.failure(Exception("Error del servidor: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun crearEvaluacionProduccion(docEntry: String, request: EvaluacionProduccionCreateRequest): Result<EvaluacionProduccionCreateResponse> {
+        return try {
+            val response = muestraService.crearEvaluacionProduccion(docEntry, request)
+            if (response.isSuccessful) {
+                Result.success(response.body() ?: EvaluacionProduccionCreateResponse(400, false, "Error desconocido", null))
+            } else {
+                Result.failure(Exception("Error del servidor: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun registrarMuestra(request: MuestraRequest): Result<PostMuestraResponse> {
         return try {
             val response = muestraService.registrarMuestra(request)

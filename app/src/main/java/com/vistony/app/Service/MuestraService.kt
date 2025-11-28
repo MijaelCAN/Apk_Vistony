@@ -26,6 +26,18 @@ interface MuestraService {
         @Body request: InspeccionDimensionalCreateRequest
     ): Response<InspeccionDimensionalCreateResponse>
 
+    @POST("Inspeccion/materialEmpleado_create")
+    suspend fun crearMaterialEmpleado(
+        @Query("DocEntry") docEntry: String,
+        @Body request: MaterialEmpleadoCreateRequest
+    ): Response<MaterialEmpleadoCreateResponse>
+
+    @POST("Inspeccion/evaluacionProduccion_create")
+    suspend fun crearEvaluacionProduccion(
+        @Query("DocEntry") docEntry: String,
+        @Body request: EvaluacionProduccionCreateRequest
+    ): Response<EvaluacionProduccionCreateResponse>
+
     @POST("muestra/create")
     suspend fun registrarMuestra(@Body request: MuestraRequest): Response<PostMuestraResponse>
 

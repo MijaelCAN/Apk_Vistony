@@ -16,6 +16,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.clickable
 import com.vistony.app.Entidad.MaterialEmpleado
 import com.vistony.app.Entidad.InspeccionDimensional
 import com.vistony.app.Entidad.CheckListInspeccion
@@ -884,12 +885,18 @@ fun CheckListItemCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EvaluacionForm(
     muestraViewModel: MuestraViewModel,
     padding: androidx.compose.ui.unit.Dp
 ) {
     val formState by muestraViewModel.evaluacionFormState.collectAsState()
+    val currentMuestraId by muestraViewModel.currentMuestraId.collectAsState()
+    
+    // Lista de equipos disponibles
+    val equipos = listOf("SOP 1", "SOP 2", "SOP 3", "SOP 4")
+    var expandedEquipo by remember { mutableStateOf(false) }
     
     MuestraSectionTitle(
         title = "Evaluación de la Producción",
@@ -899,67 +906,138 @@ fun EvaluacionForm(
     
     Spacer(modifier = Modifier.height(24.dp))
     
-    // Estado general
-    MuestraTextField(
-        value = formState.estado,
-        onValueChange = { muestraViewModel.updateEvaluacion("estado", it) },
-        label = "Estado General",
-        placeholder = "Ej: Aprobado, Observado, Rechazado",
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Default.Assessment,
-                contentDescription = null,
-                tint = Color(0xFF9CA3AF),
-                modifier = Modifier.size(20.dp)
-            )
-        }
-    )
-    
-    Spacer(modifier = Modifier.height(16.dp))
-    
-    // Criterios de evaluación
-    Text(
-        text = "Criterios de Evaluación",
-        fontSize = 16.sp,
-        fontWeight = FontWeight.Bold,
-        color = Color(0xFF111827)
-    )
-    
-    Spacer(modifier = Modifier.height(12.dp))
-    
-    Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+    // Formulario de evaluación
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF9FAFB)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        MuestraCriterioSelector(
-            label = "Paletas",
-            selectedValue = formState.paletas,
-            onValueChange = { muestraViewModel.updateEvaluacion("paletas", it) }
-        )
-        
-        MuestraCriterioSelector(
-            label = "Bolsas",
-            selectedValue = formState.bolsas,
-            onValueChange = { muestraViewModel.updateEvaluacion("bolsas", it) }
-        )
-    }
-    
-    Spacer(modifier = Modifier.height(16.dp))
-    
-    // Criterios de evaluación detallados
-    MuestraTextField(
-        value = formState.criteriosEvaluacion,
-        onValueChange = { muestraViewModel.updateEvaluacion("criteriosEvaluacion", it) },
-        label = "Criterios de Evaluación Detallados",
-        placeholder = "Describa los criterios específicos utilizados",
-        minLines = 3,
-        maxLines = 5,
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Default.Notes,
-                contentDescription = null,
-                tint = Color(0xFF9CA3AF),
-                modifier = Modifier.size(20.dp)
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "Cerrar Registro",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF111827)
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Selector de Equipo
+            ExposedDropdownMenuBox(
+                expanded = expandedEquipo,
+                onExpandedChange = { expandedEquipo = !expandedEquipo }
+            ) {
+                OutlinedTextField(
+                    value = formState.equipo,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Equipo") },
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedEquipo)
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Build,
+                            contentDescription = null,
+                            tint = Color(0xFF9CA3AF),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor = Color(0xFF4F46E5),
+                        unfocusedBorderColor = Color(0xFFE5E7EB)
+                    )
+                )
+                
+                ExposedDropdownMenu(
+                    expanded = expandedEquipo,
+                    onDismissRequest = { expandedEquipo = false }
+                ) {
+                    equipos.forEach { equipo ->
+                        DropdownMenuItem(
+                            text = { Text(equipo) },
+                            onClick = {
+                                muestraViewModel.updateEvaluacion("equipo", equipo)
+                                expandedEquipo = false
+                            }
+                        )
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Criterios de evaluación
+            Text(
+                text = "Criterios de Evaluación",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF111827)
+            )
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                MuestraCriterioSelector(
+                    label = "Paletas",
+                    selectedValue = formState.paletas,
+                    onValueChange = { muestraViewModel.updateEvaluacion("paletas", it) }
+                )
+                
+                MuestraCriterioSelector(
+                    label = "Bolsas",
+                    selectedValue = formState.bolsas,
+                    onValueChange = { muestraViewModel.updateEvaluacion("bolsas", it) }
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Criterios de evaluación detallados
+            MuestraTextField(
+                value = formState.criteriosEvaluacion,
+                onValueChange = { muestraViewModel.updateEvaluacion("criteriosEvaluacion", it) },
+                label = "Criterios de Evaluación Detallados",
+                placeholder = "Describa los criterios específicos utilizados",
+                minLines = 3,
+                maxLines = 5,
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Notes,
+                        contentDescription = null,
+                        tint = Color(0xFF9CA3AF),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Botón para cerrar registro
+            MuestraButton(
+                text = "Cerrar Registro",
+                onClick = {
+                    if (currentMuestraId.isNullOrEmpty()) {
+                        // El error se manejará en la función crearEvaluacionProduccion
+                        muestraViewModel.crearEvaluacionProduccion("")
+                    } else {
+                        muestraViewModel.crearEvaluacionProduccion(currentMuestraId!!)
+                    }
+                },
+                icon = Icons.Default.CheckCircle,
+                enabled = formState.isFormValid,
+                modifier = Modifier.fillMaxWidth()
             )
         }
-    )
+    }
 }
