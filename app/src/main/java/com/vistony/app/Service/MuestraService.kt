@@ -20,6 +20,24 @@ interface MuestraService {
         @Body request: CheckListCreateRequest
     ): Response<CheckListCreateResponse>
 
+    @POST("Inspeccion/inspeccionDimensional_create")
+    suspend fun crearInspeccionDimensional(
+        @Query("DocEntry") docEntry: String,
+        @Body request: InspeccionDimensionalCreateRequest
+    ): Response<InspeccionDimensionalCreateResponse>
+
+    @POST("Inspeccion/materialEmpleado_create")
+    suspend fun crearMaterialEmpleado(
+        @Query("DocEntry") docEntry: String,
+        @Body request: MaterialEmpleadoCreateRequest
+    ): Response<MaterialEmpleadoCreateResponse>
+
+    @POST("Inspeccion/evaluacionProduccion_create")
+    suspend fun crearEvaluacionProduccion(
+        @Query("DocEntry") docEntry: String,
+        @Body request: EvaluacionProduccionCreateRequest
+    ): Response<EvaluacionProduccionCreateResponse>
+
     @POST("muestra/create")
     suspend fun registrarMuestra(@Body request: MuestraRequest): Response<PostMuestraResponse>
 
@@ -27,13 +45,16 @@ interface MuestraService {
     suspend fun obtenerMuestraPorId(@Query("id") id: String): Response<MuestraCompletaResponse>
     
     @GET("Inspeccion/muestra/detalle")
-    suspend fun obtenerMuestraDetalle(@Query("DocEntry") docEntry: String): Response<com.vistony.app.Entidad.MuestraDetalleResponse>
+    suspend fun obtenerMuestraDetalle(@Query("DocEntry") docEntry: String): Response<MuestraDetalleResponse>
     
     @GET("Inspeccion/muestra/productos")
     suspend fun obtenerProductos(): Response<ProductoResponseTemp>
     
     @GET("Inspeccion/consultaProducto")
     suspend fun consultarProducto(@Query("Code") code: String): Response<ConsultaProductoResponse>
+    
+    @GET("Inspeccion/EspecificacionSoplado")
+    suspend fun obtenerEspecificacionSoplado(@Query("CodProducto") codProducto: String): Response<EspecificacionSopladoResponse>
 }
 
 
