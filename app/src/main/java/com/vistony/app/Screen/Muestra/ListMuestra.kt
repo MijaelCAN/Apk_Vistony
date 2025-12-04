@@ -330,7 +330,7 @@ fun ListMuestra(
                                         //onNavigateToEdit(muestra)
                                         muestraViewModel.activarModoEdicion(muestra.id)
                                         onNavigateToCreate()
-                                        muestraViewModel.irAPaso(4)
+                                        muestraViewModel.irAPaso(1)
                                     },
                                     bodyFontSize = bodyFontSize
                                 )
@@ -493,10 +493,10 @@ fun MuestraIcon(
 fun MuestraStatusChip(
     estado: String,
 ) {
-    val (backgroundColor, contentColor) = when (estado) {
-        "Completado" -> Color(0xFF10B981) to Color.White
-        "En Proceso" -> Color(0xFFF59E0B) to Color.White
-        "Cancelado" -> Color(0xFFEF4444) to Color.White
+    val (backgroundColor, contentColor) = when (estado.lowercase()) {
+        "completado" -> Color(0xFF10B981) to Color.White
+        "en proceso" -> Color(0xFFF59E0B) to Color.White
+        "nuevo" -> Color(0xFFEF4444) to Color.White
         else -> Color(0xFF6B7280) to Color.White
     }
     

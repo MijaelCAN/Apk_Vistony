@@ -45,13 +45,16 @@ interface MuestraService {
     suspend fun obtenerMuestraPorId(@Query("id") id: String): Response<MuestraCompletaResponse>
     
     @GET("Inspeccion/muestra/detalle")
-    suspend fun obtenerMuestraDetalle(@Query("DocEntry") docEntry: String): Response<com.vistony.app.Entidad.MuestraDetalleResponse>
+    suspend fun obtenerMuestraDetalle(@Query("DocEntry") docEntry: String): Response<MuestraDetalleResponse>
     
     @GET("Inspeccion/muestra/productos")
     suspend fun obtenerProductos(): Response<ProductoResponseTemp>
     
     @GET("Inspeccion/consultaProducto")
     suspend fun consultarProducto(@Query("Code") code: String): Response<ConsultaProductoResponse>
+    
+    @GET("Inspeccion/EspecificacionSoplado")
+    suspend fun obtenerEspecificacionSoplado(@Query("CodProducto") codProducto: String): Response<EspecificacionSopladoResponse>
 }
 
 

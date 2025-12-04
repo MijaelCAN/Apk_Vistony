@@ -129,7 +129,7 @@ class MuestraRepository @Inject constructor() {
             
             if (response.isSuccessful) {
                 val body = response.body()
-                android.util.Log.d("MuestraRepository", "Body - Success: ${body?.success}, DocEntry: ${body?.data?.docEntry}")
+                //android.util.Log.d("MuestraRepository", "Body - Success: ${body?.success}, DocEntry: ${body?.data[0]?.docEntry}")
                 Result.success(body ?: MuestraDetalleResponse())
             } else {
                 val errorMessage = "Error del servidor: ${response.message()}"
@@ -184,6 +184,29 @@ class MuestraRepository @Inject constructor() {
             }
         } catch (e: Exception) {
             android.util.Log.e("MuestraRepository", "Excepción al consultar producto", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun obtenerEspecificacionSoplado(codProducto: String): Result<EspecificacionSopladoResponse> {
+        return try {
+            android.util.Log.d("MuestraRepository", "Obteniendo especificación soplado - CodProducto: $codProducto")
+            
+            val response = muestraService.obtenerEspecificacionSoplado(codProducto)
+            
+            android.util.Log.d("MuestraRepository", "Respuesta - Código: ${response.code()}, Éxito: ${response.isSuccessful}")
+            
+            if (response.isSuccessful) {
+                val body = response.body()
+                android.util.Log.d("MuestraRepository", "Body - Success: ${body?.success}")
+                Result.success(body ?: EspecificacionSopladoResponse(400, false, "Error desconocido", null))
+            } else {
+                val errorMessage = "Error del servidor: ${response.message()}"
+                android.util.Log.e("MuestraRepository", "Error obteniendo especificación: $errorMessage")
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MuestraRepository", "Excepción al obtener especificación", e)
             Result.failure(e)
         }
     }

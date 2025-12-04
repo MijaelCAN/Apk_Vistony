@@ -151,6 +151,56 @@ class MuestraViewModel @Inject constructor(
 
     private val _checkListsTemporales = MutableStateFlow<List<CheckListInspeccion>>(emptyList())
     val checkListsTemporales: StateFlow<List<CheckListInspeccion>> = _checkListsTemporales.asStateFlow()
+    
+    // Especificaciones de soplado
+    private val _especificacionSoplado = MutableStateFlow<EspecificacionSopladoData?>(null)
+    val especificacionSoplado: StateFlow<EspecificacionSopladoData?> = _especificacionSoplado.asStateFlow()
+    
+    private val _codigoProductoActual = MutableStateFlow<String?>(null)
+    
+    // Función para obtener especificaciones de soplado
+    fun obtenerEspecificacionSoplado(codProducto: String) {
+        viewModelScope.launch {
+            // Solo obtener si el código de producto cambió
+            if (_codigoProductoActual.value != codProducto) {
+                _codigoProductoActual.value = codProducto
+                
+                try {
+                    val result = muestraRepository.obtenerEspecificacionSoplado(codProducto)
+                    result.fold(
+                        onSuccess = { response ->
+                            if (response.success) {
+                                _especificacionSoplado.value = response.data
+                            } else {
+                                android.util.Log.e("MuestraViewModel", "Error obteniendo especificación: ${response.message}")
+                                _especificacionSoplado.value = null
+                            }
+                        },
+                        onFailure = { exception ->
+                            android.util.Log.e("MuestraViewModel", "Error obteniendo especificación", exception)
+                            _especificacionSoplado.value = null
+                        }
+                    )
+                } catch (e: Exception) {
+                    android.util.Log.e("MuestraViewModel", "Excepción obteniendo especificación", e)
+                    _especificacionSoplado.value = null
+                }
+            }
+        }
+    }
+    
+    // Función para validar si un valor está dentro del rango
+    fun validarRango(valor: String, min: String, max: String): Boolean {
+        if (valor.isBlank()) return true // Si está vacío, no validar
+        return try {
+            val valorNum = valor.toDouble()
+            val minNum = min.toDoubleOrNull() ?: return true
+            val maxNum = max.toDoubleOrNull() ?: return true
+            valorNum >= minNum && valorNum <= maxNum
+        } catch (e: Exception) {
+            false
+        }
+    }
 
     // Estado del paso actual del wizard
     private val _pasoActual = MutableStateFlow(1)
@@ -554,9 +604,8 @@ class MuestraViewModel @Inject constructor(
                         
                         if (response.success) {
                             _successMessage.value = response.message
-                            // Limpiar el formulario después de crear
-                            resetInspeccionForm()
-                            // Agregar a la lista temporal
+                            
+                            // Agregar a la lista temporal primero
                             val nuevaInspeccion = InspeccionDimensional(
                                 id = UUID.randomUUID().toString(),
                                 muestraId = muestraId,
@@ -583,6 +632,9 @@ class MuestraViewModel @Inject constructor(
                             val listaActual = _inspeccionesTemporales.value.toMutableList()
                             listaActual.add(nuevaInspeccion)
                             _inspeccionesTemporales.value = listaActual
+                            
+                            // Limpiar el formulario después de crear (esto calculará el siguiente número de cavidad)
+                            resetInspeccionForm()
                             
                             // Refrescar el detalle de la muestra
                             android.util.Log.d("MuestraViewModel", "Refrescando detalle de muestra")
@@ -821,7 +873,19 @@ class MuestraViewModel @Inject constructor(
     }
 
     fun resetInspeccionForm() {
+        // No resetear numeroCavidad si hay inspecciones previas
+        val numeroCavidadActual = _inspeccionFormState.value.numeroCavidad
         _inspeccionFormState.value = InspeccionDimensionalFormState()
+        
+        // Si hay inspecciones, mantener el siguiente número de cavidad
+        if (_inspeccionesTemporales.value.isNotEmpty()) {
+            val ultimoNumero = _inspeccionesTemporales.value.lastOrNull()?.numeroCavidad?.toIntOrNull()
+            if (ultimoNumero != null) {
+                _inspeccionFormState.value = _inspeccionFormState.value.copy(
+                    numeroCavidad = (ultimoNumero + 1).toString()
+                )
+            }
+        }
     }
 
     fun resetCheckListForm() {
@@ -851,13 +915,13 @@ class MuestraViewModel @Inject constructor(
     // Navegación del wizard
     fun siguientePaso() {
         if (_pasoActual.value < 5) {
-            _pasoActual.value = _pasoActual.value + 3 // HASTA HABILITAR LOS MODULOS
+            _pasoActual.value = _pasoActual.value + 1 // HASTA HABILITAR LOS MODULOS
         }
     }
 
     fun pasoAnterior() {
         if (_pasoActual.value > 1) {
-            _pasoActual.value = _pasoActual.value - 3 // HASTA HABILITAR LOS MODULOS
+            _pasoActual.value = _pasoActual.value - 1 // HASTA HABILITAR LOS MODULOS
         }
     }
 
@@ -924,6 +988,7 @@ class MuestraViewModel @Inject constructor(
         android.util.Log.d("MuestraViewModel", "Activando modo edición para muestra: $muestraId")
         _isEditMode.value = true
         _currentMuestraId.value = muestraId
+        // El estado se cargará cuando se obtenga el detalle
     }
     
     // Función para cargar una muestra para edición
@@ -1100,12 +1165,15 @@ class MuestraViewModel @Inject constructor(
                 result.fold(
                     onSuccess = { response ->
                         android.util.Log.d("MuestraViewModel", "SUCCESS - Response.success: ${response.success}")
-                        android.util.Log.d("MuestraViewModel", "SUCCESS - DocEntry: ${response.data.docEntry}")
-                        android.util.Log.d("MuestraViewModel", "SUCCESS - CheckLists: ${response.data.checkList.size}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - DocEntry: ${response.data[0].docEntry}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - CheckLists: ${response.data[0].checkList.size}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Materiales: ${response.data[0].materialEmpleado.size}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Inspecciones: ${response.data[0].inspeccionDimencional.size}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Evaluaciones: ${response.data[0].evaluacion.size}")
                         
                         if (response.success) {
                             // Mapear la respuesta del API a MuestraCompleta
-                            val muestraDetalle = response.data
+                            val muestraDetalle = response.data[0]
                             
                             // Crear la cabecera
                             val cabecera = MuestraCabecera(
@@ -1123,7 +1191,7 @@ class MuestraViewModel @Inject constructor(
                             )
                             
                             // Mapear checkLists
-                                val checkLists = muestraDetalle.checkList.map { checkListAPI ->
+                            val checkLists = muestraDetalle.checkList.map { checkListAPI ->
                                 CheckListInspeccion(
                                     id = "", // No viene del API
                                     muestraId = id,
@@ -1139,26 +1207,80 @@ class MuestraViewModel @Inject constructor(
                                 )
                             }
                             
+                            // Mapear Materiales Empleados
+                            val materiales = muestraDetalle.materialEmpleado.map { materialAPI ->
+                                MaterialEmpleado(
+                                    id = UUID.randomUUID().toString(),
+                                    muestraId = id,
+                                    material = materialAPI.material ?: "",
+                                    marca = materialAPI.marca ?: "",
+                                    codigo = materialAPI.codigo ?: "",
+                                    lote = materialAPI.lote ?: ""
+                                )
+                            }
+                            
+                            // Mapear Inspecciones Dimensionales
+                            val inspecciones = muestraDetalle.inspeccionDimencional.map { inspeccionAPI ->
+                                InspeccionDimensional(
+                                    id = UUID.randomUUID().toString(),
+                                    muestraId = id,
+                                    horaInspeccion = inspeccionAPI.horaInspeccion ?: "",
+                                    temperaturaChiller = inspeccionAPI.temperaturaChiller ?: "",
+                                    temperaturaCiclo = inspeccionAPI.temperaturaCiclo ?: "",
+                                    numeroCavidad = inspeccionAPI.numeroCavidad ?: "",
+                                    peso = inspeccionAPI.peso ?: "",
+                                    diametroRoscaMedida1 = inspeccionAPI.diametroRoscaMedida1 ?: "",
+                                    diametroRoscaMedida2 = inspeccionAPI.diametroRoscaMedida2 ?: "",
+                                    alturaBocaMedida1 = inspeccionAPI.alturaBocaMedida1 ?: "",
+                                    alturaBocaMedida2 = inspeccionAPI.alturaBocaMedida2 ?: "",
+                                    alturaBocaMedida3 = inspeccionAPI.alturaBocaMedida3 ?: "",
+                                    alturaBocaMedida4 = inspeccionAPI.alturaBocaMedida4 ?: "",
+                                    diametroPrecintoMedida1 = inspeccionAPI.diametroPrecintoMedida1 ?: "",
+                                    diametroPrecintoMedida2 = inspeccionAPI.diametroPrecintoMedida2 ?: "",
+                                    diametroPrecintoMedida3 = inspeccionAPI.diametroPrecintoMedida3 ?: "",
+                                    alturaTotalMedida1 = inspeccionAPI.alturaTotalMedida1 ?: "",
+                                    alturaTotalMedida2 = inspeccionAPI.alturaTotalMedida2 ?: "",
+                                    diametroInternoMedida1 = inspeccionAPI.diametroInternoMedida1 ?: "",
+                                    diametroInternoMedida2 = inspeccionAPI.diametroInternoMedida2 ?: "",
+                                    observacion = inspeccionAPI.observacion ?: ""
+                                )
+                            }
+                            
+                            // Mapear Evaluación (tomar solo el primero)
+                            val evaluacion = muestraDetalle.evaluacion.firstOrNull()?.let { evaluacionAPI ->
+                                EvaluacionProduccion(
+                                    id = UUID.randomUUID().toString(),
+                                    muestraId = id,
+                                    equipo = evaluacionAPI.equipo ?: "",
+                                    estado = evaluacionAPI.estado ?: "",
+                                    paletas = evaluacionAPI.paletas ?: "",
+                                    bolsas = evaluacionAPI.bolsas ?: "",
+                                    criteriosEvaluacion = evaluacionAPI.criteriosEvaluacion ?: ""
+                                )
+                            }
+                            
                             // Crear MuestraCompleta
                             val muestraCompleta = MuestraCompleta(
                                 cabecera = cabecera,
-                                materiales = emptyList(), // Por ahora vacío
-                                inspeccionesDimensionales = emptyList(), // Por ahora vacío
+                                materiales = materiales,
+                                inspeccionesDimensionales = inspecciones,
                                 checkLists = checkLists,
-                                evaluacionProduccion = null,
-                                materialesCompletado = false,
-                                inspeccionesCompletado = false,
+                                evaluacionProduccion = evaluacion,
+                                materialesCompletado = materiales.isNotEmpty(),
+                                inspeccionesCompletado = inspecciones.isNotEmpty(),
                                 checkListsCompletado = checkLists.isNotEmpty(),
-                                evaluacionCompletado = false,
+                                evaluacionCompletado = evaluacion != null,
                                 fechaUltimaActualizacion = muestraDetalle.fecRegister
                             )
                             
                             // Guardar el docEntry para usar en checkList
                             _currentMuestraId.value = muestraDetalle.docEntry
                             
-                            // Si está en modo edición, cargar los datos en el formulario de cabecera
+                            // Si está en modo edición, cargar los datos en los formularios
                             if (_isEditMode.value) {
-                                android.util.Log.d("MuestraViewModel", "Cargando datos en formulario de cabecera para edición")
+                                android.util.Log.d("MuestraViewModel", "Cargando datos en formularios para edición")
+                                
+                                // Cargar cabecera
                                 _cabeceraFormState.value = CabeceraFormState(
                                     fechaRegistro = cabecera.fechaRegistro,
                                     codigo = cabecera.codigo,
@@ -1173,10 +1295,28 @@ class MuestraViewModel @Inject constructor(
                                     isFormValid = true // En modo edición siempre es válido
                                 )
 
-                                val listaActual = checkLists.toMutableList()
-                                _checkListsTemporales.value = listaActual
+                                // Cargar materiales
+                                _materialesTemporales.value = materiales
+                                
+                                // Cargar inspecciones
+                                _inspeccionesTemporales.value = inspecciones
 
-                                android.util.Log.d("MuestraViewModel", "Datos de cabecera cargados en el formulario")
+                                // Cargar checkLists
+                                _checkListsTemporales.value = checkLists.toMutableList()
+                                
+                                // Cargar evaluación (solo el primero, en el formulario)
+                                evaluacion?.let { eval ->
+                                    _evaluacionFormState.value = EvaluacionFormState(
+                                        equipo = eval.equipo,
+                                        estado = eval.estado,
+                                        paletas = eval.paletas,
+                                        bolsas = eval.bolsas,
+                                        criteriosEvaluacion = eval.criteriosEvaluacion,
+                                        isFormValid = true
+                                    )
+                                }
+
+                                android.util.Log.d("MuestraViewModel", "Datos cargados en todos los formularios")
                             }
                             
                             // Agregar o actualizar en el cache
