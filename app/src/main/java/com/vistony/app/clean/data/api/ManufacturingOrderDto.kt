@@ -43,6 +43,8 @@ data class ManufacturingOrderDto(
     val detail : List<ManufacturingOrderDetailDto> = emptyList(),
     @SerializedName("desaprobadoCalidad")
     val qualityDisapproved: String = "",
+    @SerializedName("comentario")
+    val observations: String = "",
 )
 
 data class ManufacturingOrderDetailDto(
@@ -104,6 +106,18 @@ data class ReasonForRejectionsDto(
     val code: String = "",
     @SerializedName("Descr")
     val name: String = "",
+)
+
+
+data class DensityResponseDto(
+    @SerializedName("statusCode")
+    val statusCode: Int = 0,
+    @SerializedName("success")
+    val success: Boolean = false,
+    @SerializedName("message")
+    val message: String? = "",
+    @SerializedName("data")
+    val data: String = "",
 )
 
 

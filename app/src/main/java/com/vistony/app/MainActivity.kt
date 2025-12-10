@@ -76,13 +76,6 @@ class MainActivity : ComponentActivity() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
-        /*val activity = this
-        val intentFilter = IntentFilter()
-
-        intentFilter.addAction(ZebraDWComunication.DATAWEDGE_RETURN_ACTION)
-        intentFilter.addCategory(ZebraDWComunication.DATAWEDGE_RETURN_CATEGORY)
-        zebraDW.createDataWedgeProfile(activity)*/
-
         // Registrar receiver dinámicamente
         val intentFilter = IntentFilter(ZebraDW.PROFILE_INTENT_ACTION).apply {
             addCategory(Intent.CATEGORY_DEFAULT)

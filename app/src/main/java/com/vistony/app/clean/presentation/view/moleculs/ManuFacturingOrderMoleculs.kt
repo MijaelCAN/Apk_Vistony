@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -57,6 +58,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.unit.sp
 import com.vistony.app.clean.presentation.view.atoms.ManuFacturingOrderSpinnerView
 import com.vistony.app.clean.presentation.view.atoms.ManuFacturingOrderTextView
@@ -114,7 +116,12 @@ fun ManuFacturingOrderHead(
                         viewModel.getManufacturingOrder(it)
                         viewModel.onDensityChange("0")
                     },
-                    leadingIconStatus = true
+                    leadingIconStatus = true,
+                    isUsedKeyboardGO = true,
+                    eventKeyboardGO = { result ->
+                        viewModel.getManufacturingOrder(result)
+                        viewModel.onDensityChange("0")
+                    }
                 )
             }
 
@@ -202,6 +209,8 @@ fun ManuFacturingOrderDetailBody(
     val statusDesaprobation = viewModel.statusDesaprobation.collectAsState()
     val reasonForRejectionsResponseModel = viewModel.reasonForRejectionsResponseModel.collectAsState()
     val reasonDesaprobation = viewModel.reasonDesaprobation.collectAsState()
+    val observation = viewModel.observation.collectAsState()
+    val isVisibleObservation = viewModel.isVisibleObservation.collectAsState()
     // Ejecutar con retraso de 2 segundos
     LaunchedEffect(shouldRefresh) {
         if (shouldRefresh) {
@@ -294,7 +303,6 @@ fun ManuFacturingOrderDetailBody(
                     selectedOption = reasonDesaprobation.value,
                     label = "Motivo Corrección (Listado)",
                     onOptionSelected = { result ->
-                        //viewModel.onReasonDesaprobationChange(reasonForRejectionsResponseModel.value.data.first { it.name == result }.code)
                         viewModel.onReasonDesaprobationChange( result )
                         viewModel.onStatusAprobationHeader1Change(statusAprobationHeader1.value, "Linea1", it.batchName)
                         shouldRefresh=true
@@ -302,9 +310,34 @@ fun ManuFacturingOrderDetailBody(
                     options = reasonForRejectionsResponseModel.value.data.map { it.name },
                     )
                 Spacer(modifier = Modifier.padding(top = 10.dp))
+                ManuFacturingOrderEditTextView(
+                    status = true,
+                    text = observation.value,
+                    label = "Observaciones",
+                    onClick = { result ->
+                        viewModel.onObservationChange( result )
+                        //viewModel.onStatusAprobationHeader1Change(statusAprobationHeader1.value, "Linea1", it.batchName)
+                        //shouldRefresh=true
+                    },
+                    countMaxCharacter = 254,
+                    keyboardType = KeyboardType.Text,
+                    onClickLeadingIcon = {
 
+                    },
+                    trailingIconStatus = false,
+                    onClickTrailingIcon = { result ->
+
+                    },
+                    trailingIconResourceId = R.drawable.baseline_verified_24,
+                    isUsedKeyboardGO = true,
+                    eventKeyboardGO = { result ->
+                        //viewModel.onObservationChange( result )
+                        viewModel.onStatusAprobationHeader1Change(statusAprobationHeader1.value, "Linea1", it.batchName)
+                        shouldRefresh=true
+                    },
+                )
+                Spacer(modifier = Modifier.padding(top = 10.dp))
                 TextWithDivider("Envases")
-                //(Spacer(modifier = Modifier.padding(top = 10.dp))
                 ManuFacturingOrderDetailBodyPackaging(it.detail)
 
             }
@@ -355,7 +388,7 @@ fun ManuFacturingOrderDetailBodyPackaging(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(padding_res),
+                .padding( horizontal =  padding_res),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(
@@ -392,8 +425,8 @@ fun ManuFacturingOrderDetailBodyPackaging(
                                 }
                         ) {
 
+                            }
                         }
-                    }
 
                 },
                 trailingContent = {
@@ -420,7 +453,9 @@ fun ManuFacturingOrderDetailBodyPackaging(
                     }
                 }
             )
+
         }
+        Spacer(modifier= Modifier.height(10.dp))
     }
     
 }

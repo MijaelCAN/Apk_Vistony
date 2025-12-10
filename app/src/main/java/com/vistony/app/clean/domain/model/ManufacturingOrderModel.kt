@@ -25,6 +25,7 @@ data class ManufacturingOrderModel(
     val reasonAdjustment: String = "",
     val detail : List<ManufacturingOrderDetailModel> = emptyList(),
     val qualityDisapproved: String = "",
+    val observations: String = "",
 )
 
 data class ManufacturingOrderDetailModel(
@@ -75,4 +76,15 @@ data class ReasonForRejectionsModel(
     val name: String = "",
 )
 
+data class DensityResponseModel(
+    val statusCode: Int = 0,
+    val success: Boolean = false,
+    val message: String? = "",
+    val data: String = "",
+)
 
+data class DensityGroupResponseModel(
+    val sucess: Boolean = false,
+    val message: String = "",
+    val data: List<DensityResponseModel> = emptyList(),
+)

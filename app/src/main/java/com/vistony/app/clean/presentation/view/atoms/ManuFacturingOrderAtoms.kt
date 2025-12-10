@@ -64,6 +64,8 @@ fun ManuFacturingOrderEditTextView(
     trailingIconStatus: Boolean = false,
     onClickTrailingIcon: (String) -> Unit = { _ -> },
     trailingIconResourceId: Int = R.drawable.outline_search_24,
+    isUsedKeyboardGO: Boolean = false,
+    eventKeyboardGO: (String) -> Unit = { }
 ) {
     val context = LocalContext.current
     val activity = context as Activity
@@ -108,7 +110,12 @@ fun ManuFacturingOrderEditTextView(
         isError = false,
         errorMessage = "Seleccione el Telefono de la llamada",
         textSize = bodyFontSize.sp,
-        statusMaxCharacter= false
+        statusMaxCharacter= false,
+        isUsedKeyboardGO = isUsedKeyboardGO,
+        eventKeyboardGO = { result ->
+            eventKeyboardGO(result)
+        }
+
     )
 }
 

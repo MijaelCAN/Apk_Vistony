@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -62,18 +63,25 @@ fun ManuFacturingOrderSectionMain(
     }
 
 
-    Column(
+    /*Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(padding_res)
             .clip(RoundedCornerShape(24.dp))
             .background(Color.White.copy(alpha = 0.44f)),
+    ) {*/
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = padding_res),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Spacer(modifier = Modifier.padding(10.dp))
-        //TuPantallaConScanner(viewModel = scanViewModel)
-                ManufacturingOrderCustomDialog()
-                ManuFacturingOrderHead(scanViewModel=scanViewModel)
-                ManuFacturingOrderDetail()
-
+        item(){
+            Spacer(modifier = Modifier.padding(10.dp))
+            //TuPantallaConScanner(viewModel = scanViewModel)
+            ManufacturingOrderCustomDialog()
+            ManuFacturingOrderHead(scanViewModel=scanViewModel)
+            ManuFacturingOrderDetail()
         }
+    }
 }
