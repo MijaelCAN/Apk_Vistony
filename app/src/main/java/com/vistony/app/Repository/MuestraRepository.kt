@@ -49,6 +49,45 @@ class MuestraRepository @Inject constructor() {
         }
     }
 
+    suspend fun crearInspeccionDimensional(docEntry: String, request: InspeccionDimensionalCreateRequest): Result<InspeccionDimensionalCreateResponse> {
+        return try {
+            val response = muestraService.crearInspeccionDimensional(docEntry, request)
+            if (response.isSuccessful) {
+                Result.success(response.body() ?: InspeccionDimensionalCreateResponse(400, false, "Error desconocido", null))
+            } else {
+                Result.failure(Exception("Error del servidor: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun crearMaterialEmpleado(docEntry: String, request: MaterialEmpleadoCreateRequest): Result<MaterialEmpleadoCreateResponse> {
+        return try {
+            val response = muestraService.crearMaterialEmpleado(docEntry, request)
+            if (response.isSuccessful) {
+                Result.success(response.body() ?: MaterialEmpleadoCreateResponse(400, false, "Error desconocido", null))
+            } else {
+                Result.failure(Exception("Error del servidor: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun crearEvaluacionProduccion(docEntry: String, request: EvaluacionProduccionCreateRequest): Result<EvaluacionProduccionCreateResponse> {
+        return try {
+            val response = muestraService.crearEvaluacionProduccion(docEntry, request)
+            if (response.isSuccessful) {
+                Result.success(response.body() ?: EvaluacionProduccionCreateResponse(400, false, "Error desconocido", null))
+            } else {
+                Result.failure(Exception("Error del servidor: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun registrarMuestra(request: MuestraRequest): Result<PostMuestraResponse> {
         return try {
             val response = muestraService.registrarMuestra(request)
@@ -90,7 +129,7 @@ class MuestraRepository @Inject constructor() {
             
             if (response.isSuccessful) {
                 val body = response.body()
-                android.util.Log.d("MuestraRepository", "Body - Success: ${body?.success}, DocEntry: ${body?.data?.docEntry}")
+                //android.util.Log.d("MuestraRepository", "Body - Success: ${body?.success}, DocEntry: ${body?.data[0]?.docEntry}")
                 Result.success(body ?: MuestraDetalleResponse())
             } else {
                 val errorMessage = "Error del servidor: ${response.message()}"
@@ -145,6 +184,29 @@ class MuestraRepository @Inject constructor() {
             }
         } catch (e: Exception) {
             android.util.Log.e("MuestraRepository", "Excepción al consultar producto", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun obtenerEspecificacionSoplado(codProducto: String): Result<EspecificacionSopladoResponse> {
+        return try {
+            android.util.Log.d("MuestraRepository", "Obteniendo especificación soplado - CodProducto: $codProducto")
+            
+            val response = muestraService.obtenerEspecificacionSoplado(codProducto)
+            
+            android.util.Log.d("MuestraRepository", "Respuesta - Código: ${response.code()}, Éxito: ${response.isSuccessful}")
+            
+            if (response.isSuccessful) {
+                val body = response.body()
+                android.util.Log.d("MuestraRepository", "Body - Success: ${body?.success}")
+                Result.success(body ?: EspecificacionSopladoResponse(400, false, "Error desconocido", null))
+            } else {
+                val errorMessage = "Error del servidor: ${response.message()}"
+                android.util.Log.e("MuestraRepository", "Error obteniendo especificación: $errorMessage")
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MuestraRepository", "Excepción al obtener especificación", e)
             Result.failure(e)
         }
     }

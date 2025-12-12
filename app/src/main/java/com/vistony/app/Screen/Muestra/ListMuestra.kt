@@ -19,6 +19,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
@@ -44,9 +46,13 @@ import com.vistony.app.Screen.Generic.MuestraCard
 import com.vistony.app.Screen.Generic.MuestraEmptyState
 import com.vistony.app.Screen.Generic.MuestraHeader
 import com.vistony.app.Screen.Generic.MuestraLoadingCard
+import com.vistony.app.Screen.Generic.DateOutlinedTextField
 import com.vistony.app.ViewModel.MuestraViewModel
 import com.vistony.app.ui.theme.theme.Dimensions
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class, ExperimentalMaterialApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
@@ -77,9 +83,38 @@ fun ListMuestra(
     val bottomSheetState =
         rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
 
+    // Estados para filtros
+    var fechaInicio by remember { mutableStateOf<LocalDateTime?>(LocalDateTime.now()) }
+    var fechaFin by remember { mutableStateOf<LocalDateTime?>(LocalDateTime.now()) }
+    var showDialogDateIni by remember { mutableStateOf(false) }
+    var showDialogDateFin by remember { mutableStateOf(false) }
+    var searchText by remember { mutableStateOf("") }
+
+    // Filtrar muestras localmente por búsqueda
+    val muestrasFiltradas = remember(muestras, searchText) {
+        if (searchText.isBlank()) {
+            muestras
+        } else {
+            muestras.filter { muestra ->
+                muestra.lote.contains(searchText, ignoreCase = true) ||
+                muestra.codigo.contains(searchText, ignoreCase = true) ||
+                muestra.auxiliar.contains(searchText, ignoreCase = true)
+            }
+        }
+    }
+
     // Cargar muestras al iniciar
     LaunchedEffect(Unit) {
         muestraViewModel.obtenerMuestras(currentUser.dni)
+    }
+
+    // Cargar muestras cuando cambien las fechas
+    LaunchedEffect(fechaInicio, fechaFin) {
+        if (fechaInicio != null && fechaFin != null) {
+            val fechaInicioStr = fechaInicio!!.toLocalDate().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+            val fechaFinStr = fechaFin!!.toLocalDate().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+            muestraViewModel.obtenerMuestrasConFechas(currentUser.dni, fechaInicioStr, fechaFinStr)
+        }
     }
 
 
@@ -160,6 +195,89 @@ fun ListMuestra(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Filtros: Selector de fechas y búsqueda
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = padding_res),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        // Selector de fechas
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            DateOutlinedTextField(
+                                modifier = Modifier.weight(1f),
+                                texto = "Fecha Inicio",
+                                readonly = true,
+                                selectedDate = fechaInicio,
+                                onDateChange = { fechaInicio = it },
+                                showDialog = showDialogDateIni,
+                                onShowDialogChange = { showDialogDateIni = it }
+                            )
+                            DateOutlinedTextField(
+                                modifier = Modifier.weight(1f),
+                                texto = "Fecha Fin",
+                                readonly = true,
+                                selectedDate = fechaFin,
+                                onDateChange = { fechaFin = it },
+                                showDialog = showDialogDateFin,
+                                onShowDialogChange = { showDialogDateFin = it }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Campo de búsqueda
+                        OutlinedTextField(
+                            value = searchText,
+                            onValueChange = { searchText = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = {
+                                Text(
+                                    text = "Buscar por lote, código o auxiliar (DNI)",
+                                    color = Color(0xFF9CA3AF),
+                                    fontSize = 14.sp
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = "Buscar",
+                                    tint = Color(0xFF9CA3AF)
+                                )
+                            },
+                            trailingIcon = {
+                                if (searchText.isNotEmpty()) {
+                                    IconButton(onClick = { searchText = "" }) {
+                                        Icon(
+                                            imageVector = Icons.Default.FilterList,
+                                            contentDescription = "Limpiar",
+                                            tint = Color(0xFF9CA3AF)
+                                        )
+                                    }
+                                }
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color(0xFFF9FAFB),
+                                unfocusedContainerColor = Color(0xFFF9FAFB),
+                                focusedBorderColor = Color(0xFF4F46E5),
+                                unfocusedBorderColor = Color(0xFFE5E7EB)
+                            )
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 when {
                     isLoading -> {
                         Box(
@@ -171,7 +289,7 @@ fun ListMuestra(
                             )
                         }
                     }
-                    muestras.isEmpty() -> {
+                    muestrasFiltradas.isEmpty() -> {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
@@ -198,7 +316,7 @@ fun ListMuestra(
                                 .padding(horizontal = padding_res),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(muestras) { muestra ->
+                            items(muestrasFiltradas) { muestra ->
                                 MuestraItemCard(
                                     muestra = muestra,
                                     onViewClick = {
@@ -212,7 +330,7 @@ fun ListMuestra(
                                         //onNavigateToEdit(muestra)
                                         muestraViewModel.activarModoEdicion(muestra.id)
                                         onNavigateToCreate()
-                                        muestraViewModel.irAPaso(4)
+                                        muestraViewModel.irAPaso(1)
                                     },
                                     bodyFontSize = bodyFontSize
                                 )
@@ -375,10 +493,10 @@ fun MuestraIcon(
 fun MuestraStatusChip(
     estado: String,
 ) {
-    val (backgroundColor, contentColor) = when (estado) {
-        "Completado" -> Color(0xFF10B981) to Color.White
-        "En Proceso" -> Color(0xFFF59E0B) to Color.White
-        "Cancelado" -> Color(0xFFEF4444) to Color.White
+    val (backgroundColor, contentColor) = when (estado.lowercase()) {
+        "completado" -> Color(0xFF10B981) to Color.White
+        "en proceso" -> Color(0xFFF59E0B) to Color.White
+        "nuevo" -> Color(0xFFEF4444) to Color.White
         else -> Color(0xFF6B7280) to Color.White
     }
     
