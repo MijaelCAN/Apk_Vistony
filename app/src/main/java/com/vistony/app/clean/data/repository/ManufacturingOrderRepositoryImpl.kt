@@ -29,6 +29,7 @@ class ManufacturingOrderRepositoryImpl  @Inject constructor(
         docNum: String, density: String, approvalStatus:String,approvalLine:String,optimalWeight:String,maximunWeight: String
         ,estadoAprobacionCorreccion: String,estadoAprobacionDesaprobadoCalidad: String,motivoCorreccion: String,observations:String
     ) {
+
         return  remote.updateApprovalStatus(docNum, density, approvalStatus,approvalLine,optimalWeight,maximunWeight,
             estadoAprobacionCorreccion,estadoAprobacionDesaprobadoCalidad,motivoCorreccion,observations)
     }

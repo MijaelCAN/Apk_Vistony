@@ -116,10 +116,15 @@ fun ManuFacturingOrderHead(
                         viewModel.getManufacturingOrder(it)
                         viewModel.onDensityChange("0")
                     },
-                    leadingIconStatus = true,
+                    leadingIconStatus = false,
                     isUsedKeyboardGO = true,
                     eventKeyboardGO = { result ->
                         viewModel.getManufacturingOrder(result)
+                        viewModel.onDensityChange("0")
+                    },
+                    trailingIconStatus = true,
+                    onClickTrailingIcon = {
+                        viewModel.getManufacturingOrder(it)
                         viewModel.onDensityChange("0")
                     }
                 )
@@ -195,6 +200,7 @@ fun ManuFacturingOrderDetailBody(
     viewModel: ManufacturingOrderViewModel  = hiltViewModel()
 ) {
     val listApprobation = ApprobationDefaults.DEFAULT_APPROBATIONS
+    val listApprobationHeader = ApprobationDefaults.DEFAULT_APPROBATIONS_HEADER
     val data = viewModel.manufacturingOrderResponseModel.collectAsState()
     val statusAprobationHeader1 = viewModel.statusAprobationHeader1.collectAsState()
     val context = LocalContext.current
@@ -234,32 +240,13 @@ fun ManuFacturingOrderDetailBody(
                     label="Descripción de la Orden de Fabricación"
                 )
                 Spacer(modifier = Modifier.padding(top = 10.dp))
-                ManuFacturingOrderEditTextView(
-                    status = true,
-                    text = density.value,
-                    label = "Nueva Densidad",
-                    onClick = { result ->
-                        viewModel.onDensityChange(result)
-                    },
-                    countMaxCharacter = 254,
-                    keyboardType = KeyboardType.Decimal,
-                    onClickLeadingIcon = {
-                    },
-                    trailingIconStatus = true,
-                    onClickTrailingIcon = { result ->
-
-                        viewModel.getCalculateDensity(it.batchName, result)
-
-                    },
-                    trailingIconResourceId = R.drawable.baseline_verified_24
-                )
-                Spacer(modifier = Modifier.padding(top = 10.dp))
                 ManuFacturingOrderSpinnerView(
                     status = true,
                     selectedOption = statusAprobationHeader1.value,
-                    label = "Aprobación de Lote",
+                    label = "Resultado de Análisis Muestra 1 - Tanque",
                     onOptionSelected = { result ->
                         Log.e("REOS","ManuFacturingOrderMoleculs-ManuFacturingOrderDetailBody-result"+result)
+                        viewModel.onDocNumChange(it.batchName)
                         viewModel.onOptimalWeightChange(
                             it.detail.firstOrNull()?.optimumWeight ?: "0"
                         )
@@ -269,11 +256,11 @@ fun ManuFacturingOrderDetailBody(
                         viewModel.onStatusAprobationHeader1Change(result, "Linea1", it.batchName)
                         shouldRefresh=true
                     },
-                    options = listApprobation.map { it.name },
+                    options = listApprobationHeader.map { it.name },
 
                 )
                 Spacer(modifier = Modifier.padding(top = 10.dp))
-                ManuFacturingOrderSpinnerView(
+                /*ManuFacturingOrderSpinnerView(
                     status = true,
                     selectedOption = statusDesaprobation.value,
                     label = "Estado Aprobación (Desaprobado Calidad)",
@@ -284,11 +271,11 @@ fun ManuFacturingOrderDetailBody(
                     },
                     options = listApprobation.map { it.name }
                 )
-                Spacer(modifier = Modifier.padding(top = 10.dp))
+                Spacer(modifier = Modifier.padding(top = 10.dp))*/
                 ManuFacturingOrderSpinnerView(
                     status = true,
                     selectedOption = statusCorrection.value,
-                    label = "Estado Aprobación (Corrección)",
+                    label = "¿Se ha realizado corrección?",
                     onOptionSelected = { result ->
                         viewModel.onStatusCorrectionChange(result)
                         viewModel.onStatusAprobationHeader1Change(statusAprobationHeader1.value, "Linea1", it.batchName)
@@ -335,6 +322,26 @@ fun ManuFacturingOrderDetailBody(
                         viewModel.onStatusAprobationHeader1Change(statusAprobationHeader1.value, "Linea1", it.batchName)
                         shouldRefresh=true
                     },
+                )
+                Spacer(modifier = Modifier.padding(top = 10.dp))
+                ManuFacturingOrderEditTextView(
+                    status = true,
+                    text = density.value,
+                    label = "Introduce la densidad",
+                    onClick = { result ->
+                        viewModel.onDensityChange(result)
+                    },
+                    countMaxCharacter = 254,
+                    keyboardType = KeyboardType.Decimal,
+                    onClickLeadingIcon = {
+                    },
+                    trailingIconStatus = true,
+                    onClickTrailingIcon = { result ->
+
+                        viewModel.getCalculateDensity(it.batchName, result)
+
+                    },
+                    trailingIconResourceId = R.drawable.baseline_verified_24
                 )
                 Spacer(modifier = Modifier.padding(top = 10.dp))
                 TextWithDivider("Envases")
@@ -384,6 +391,9 @@ fun ManuFacturingOrderDetailBodyPackaging(
     val density = viewModel.density.collectAsState()
     val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
     val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
+    val statusAprobationHeader1= viewModel.statusAprobationHeader1.collectAsState()
+    Log.e("REOS","ManuFacturingOrderMoleculs-ManuFacturingOrderDetailBodyPackaging-statusAprobationHeader1"+statusAprobationHeader1.value)
+
     manufacturingOrderDetailModel.forEach {
         Card(
             modifier = Modifier
@@ -432,7 +442,8 @@ fun ManuFacturingOrderDetailBodyPackaging(
                 trailingContent = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(
-                            enabled = if (it.optimumWeight.isNotEmpty() && it.optimumWeight.toFloat() > 0) true else false,
+                            //enabled = if (it.optimumWeight.isNotEmpty() && it.optimumWeight.toFloat() > 0) true else false,
+                            enabled = if (statusAprobationHeader1.value.equals("Aprobado", ignoreCase = true)) true else false,
                             onClick = {
                                 viewModel.onStatusAprobbation1Change(it.approbationName1, "Linea1")
                                 viewModel.onStatusAprobbation2Change(it.approbationName2, "Linea2")
@@ -446,7 +457,10 @@ fun ManuFacturingOrderDetailBodyPackaging(
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.baseline_mode_edit_24),
-                                tint = if (it.optimumWeight.isNotEmpty() && it.optimumWeight.toFloat() > 0) MaterialTheme.colorScheme.secondary else Color.LightGray,
+                                tint =
+                                    //if (it.optimumWeight.isNotEmpty() && it.optimumWeight.toFloat() > 0)
+                                    if (statusAprobationHeader1.value.equals("Aprobado", ignoreCase = true))
+                                    MaterialTheme.colorScheme.secondary else Color.LightGray,
                                 contentDescription = "Ver"
                             )
                         }
@@ -478,6 +492,7 @@ fun ManufacturingOrderCustomDialog(
     val isStatusApprobationContainer1 = viewModel.isStatusApprobationContainer1.collectAsState()
     val isStatusApprobationContainer2 = viewModel.isStatusApprobationContainer2.collectAsState()
     val isStatusApprobationContainer3 = viewModel.isStatusApprobationContainer3.collectAsState()
+    val statusAprobationHeader1 = viewModel.statusAprobationHeader1.collectAsState()
 
     // Ejecutar con retraso de 2 segundos
     LaunchedEffect(shouldRefresh) {
@@ -518,21 +533,22 @@ fun ManufacturingOrderCustomDialog(
                     )
                 Spacer(modifier = Modifier.height(10.dp))
                 ManuFacturingOrderSpinnerView(
-                    status = true,
+                    status = statusAprobationHeader1.value.equals("Aprobado", ignoreCase = true),
                     selectedOption = statusAprobbation2.value,
-                    label = "Estado de Aprobación (Muestra 2 - Linea)",
+                    label = "Muestra 2 - Inicio de envasado",
                     onOptionSelected = { result ->
                         viewModel.onStatusAprobbation2Change(result,"Linea2")
-                        viewModel.statusApprobationContainer3Change(true)
+                        //viewModel.statusApprobationContainer3Change(true)
                     },
                     options = listApprobation.map { it.name },
                     activity = activity
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 ManuFacturingOrderSpinnerView(
-                    status = isStatusApprobationContainer3.value,
+                    //status = isStatusApprobationContainer3.value,
+                    status = statusAprobationHeader1.value.equals("Aprobado", ignoreCase = true),
                     selectedOption = statusAprobbation3.value,
-                    label = "Estado de Aprobación (Calidad)",
+                    label = "Muestra 3 - Final de envasado",
                     onOptionSelected = { result ->
                         viewModel.onStatusAprobbation3Change(result,"Linea3")
                     },

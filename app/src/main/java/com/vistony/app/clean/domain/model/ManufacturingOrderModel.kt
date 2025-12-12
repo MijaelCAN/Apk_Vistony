@@ -53,6 +53,13 @@ object ApprobationDefaults {
         ApprobationModel(code = "S", name = "Aprobado"),
         ApprobationModel(code = "*", name = "Pendiente")
     )
+
+    val DEFAULT_APPROBATIONS_HEADER = listOf(
+        ApprobationModel(code = "N", name = "Rechazado"),
+        ApprobationModel(code = "S", name = "Aprobado"),
+        ApprobationModel(code = "*", name = "Pendiente"),
+        ApprobationModel(code = "N", name = "No Conforme")
+    )
 }
 
 data class ManufacturingOrderUpdateStatus(

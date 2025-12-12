@@ -62,14 +62,6 @@ fun ManuFacturingOrderSectionMain(
         }
     }
 
-
-    /*Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(padding_res)
-            .clip(RoundedCornerShape(24.dp))
-            .background(Color.White.copy(alpha = 0.44f)),
-    ) {*/
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
