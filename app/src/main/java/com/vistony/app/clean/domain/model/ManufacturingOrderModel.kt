@@ -25,6 +25,7 @@ data class ManufacturingOrderModel(
     val reasonAdjustment: String = "",
     val detail : List<ManufacturingOrderDetailModel> = emptyList(),
     val qualityDisapproved: String = "",
+    val observations: String = "",
 )
 
 data class ManufacturingOrderDetailModel(
@@ -52,6 +53,13 @@ object ApprobationDefaults {
         ApprobationModel(code = "S", name = "Aprobado"),
         ApprobationModel(code = "*", name = "Pendiente")
     )
+
+    val DEFAULT_APPROBATIONS_HEADER = listOf(
+        ApprobationModel(code = "N", name = "Rechazado"),
+        ApprobationModel(code = "S", name = "Aprobado"),
+        ApprobationModel(code = "*", name = "Pendiente"),
+        ApprobationModel(code = "N", name = "No Conforme")
+    )
 }
 
 data class ManufacturingOrderUpdateStatus(
@@ -75,4 +83,15 @@ data class ReasonForRejectionsModel(
     val name: String = "",
 )
 
+data class DensityResponseModel(
+    val statusCode: Int = 0,
+    val success: Boolean = false,
+    val message: String? = "",
+    val data: String = "",
+)
 
+data class DensityGroupResponseModel(
+    val sucess: Boolean = false,
+    val message: String = "",
+    val data: List<DensityResponseModel> = emptyList(),
+)

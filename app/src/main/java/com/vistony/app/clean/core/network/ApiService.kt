@@ -1,5 +1,6 @@
 package com.vistony.app.clean.core.network
 
+import com.vistony.app.clean.data.api.DensityResponseDto
 import com.vistony.app.clean.data.api.ManufacturingOrderResponseDto
 import com.vistony.app.clean.data.api.ReasonForRejectionsResponseDto
 import okhttp3.RequestBody

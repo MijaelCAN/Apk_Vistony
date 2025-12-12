@@ -9,12 +9,10 @@ class UpdateApprovalStatusUseCase (
 ) {
     suspend operator fun invoke(
         docNum: String, density: String, approvalStatus:String,approvalLine:String,optimalWeight:String,maximunWeight: String
-        ,estadoAprobacionCorreccion: String,estadoAprobacionDesaprobadoCalidad: String,motivoCorreccion: String
+        ,estadoAprobacionCorreccion: String,estadoAprobacionDesaprobadoCalidad: String,motivoCorreccion: String,observations:String
     ){
-        // Lógica para recalcular la densidad usando el repositorio
-
         return repository.updateApprovalStatus(
             docNum, density,approvalStatus,approvalLine,optimalWeight,maximunWeight
-        ,estadoAprobacionCorreccion,estadoAprobacionDesaprobadoCalidad,motivoCorreccion)
+        ,estadoAprobacionCorreccion,estadoAprobacionDesaprobadoCalidad,motivoCorreccion,observations)
     }
 }

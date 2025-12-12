@@ -72,7 +72,9 @@ fun EditTextM3(
     isError: Boolean = false,
     errorMessage: String? = null,
     leadingIconOnClick: (String) -> Unit,
-    textSize: TextUnit = 14.sp
+    textSize: TextUnit = 14.sp,
+    isUsedKeyboardGO: Boolean = false,
+    eventKeyboardGO: (String) -> Unit = { }
 ){
     val keyboardController = LocalSoftwareKeyboardController.current
     var text = remember { mutableStateOf(value) }
@@ -177,6 +179,9 @@ fun EditTextM3(
                     keyboardActions = KeyboardActions(
                         onGo = {
                             keyboardController?.hide()
+                            if(isUsedKeyboardGO){
+                                eventKeyboardGO(text.value)
+                            }
                         },
                     ),
                     modifier = modifier,
@@ -280,6 +285,9 @@ fun EditTextM3(
                     keyboardActions = KeyboardActions(
                         onGo = {
                             keyboardController?.hide()
+                            if(isUsedKeyboardGO){
+                                eventKeyboardGO(text.value)
+                            }
                         },
                     ),
                     modifier = modifier,
@@ -381,6 +389,9 @@ fun EditTextM3(
                     keyboardActions = KeyboardActions(
                         onGo = {
                             keyboardController?.hide()
+                            if(isUsedKeyboardGO){
+                                eventKeyboardGO(text.value)
+                            }
                         },
                     ),
                     modifier = modifier,
@@ -470,6 +481,9 @@ fun EditTextM3(
                     keyboardActions = KeyboardActions(
                         onGo = {
                             keyboardController?.hide()
+                            if(isUsedKeyboardGO){
+                                eventKeyboardGO(text.value)
+                            }
                         },
                     ),
                     modifier = modifier,

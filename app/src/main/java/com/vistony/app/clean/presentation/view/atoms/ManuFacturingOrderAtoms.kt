@@ -64,6 +64,9 @@ fun ManuFacturingOrderEditTextView(
     trailingIconStatus: Boolean = false,
     onClickTrailingIcon: (String) -> Unit = { _ -> },
     trailingIconResourceId: Int = R.drawable.outline_search_24,
+    isUsedKeyboardGO: Boolean = false,
+    eventKeyboardGO: (String) -> Unit = { },
+    leadingiconResourceId: Int = R.drawable.outline_search_24,
 ) {
     val context = LocalContext.current
     val activity = context as Activity
@@ -78,7 +81,7 @@ fun ManuFacturingOrderEditTextView(
         value = text,
         placeholder = "placeholder",
         label = label,
-        leadingiconResourceId = painterResource(id = R.drawable.outline_search_24),
+        leadingiconResourceId = painterResource(leadingiconResourceId),
         keyboardType = keyboardType,
         trailingiconResourceId = painterResource(trailingIconResourceId),
         leadingiconColor = MaterialTheme.colorScheme.secondary,
@@ -108,7 +111,12 @@ fun ManuFacturingOrderEditTextView(
         isError = false,
         errorMessage = "Seleccione el Telefono de la llamada",
         textSize = bodyFontSize.sp,
-        statusMaxCharacter= false
+        statusMaxCharacter= false,
+        isUsedKeyboardGO = isUsedKeyboardGO,
+        eventKeyboardGO = { result ->
+            eventKeyboardGO(result)
+        }
+
     )
 }
 

@@ -1,10 +1,12 @@
 package com.vistony.app.clean.data.mappers
 
+import com.vistony.app.clean.data.api.DensityResponseDto
 import com.vistony.app.clean.data.api.ManufacturingOrderDetailDto
 import com.vistony.app.clean.data.api.ManufacturingOrderDto
 import com.vistony.app.clean.data.api.ManufacturingOrderResponseDto
 import com.vistony.app.clean.data.api.ReasonForRejectionsDto
 import com.vistony.app.clean.data.api.ReasonForRejectionsResponseDto
+import com.vistony.app.clean.domain.model.DensityResponseModel
 import com.vistony.app.clean.domain.model.ManufacturingOrderDetailModel
 import com.vistony.app.clean.domain.model.ManufacturingOrderModel
 import com.vistony.app.clean.domain.model.ManufacturingOrderResponseModel
@@ -35,7 +37,8 @@ fun ManufacturingOrderDto.toModel() = ManufacturingOrderModel(
     reason = this.reason ?: "",
     reasonAdjustment = this.reasonAdjustment ?: "",
     detail = this.detail?.map { it.toModel() } ?: emptyList(), // Validar null
-    qualityDisapproved = this.qualityDisapproved ?: ""
+    qualityDisapproved = this.qualityDisapproved ?: "",
+    observations = this.observations ?: ""
 )
 
 fun ManufacturingOrderDetailDto.toModel() = ManufacturingOrderDetailModel(
@@ -61,4 +64,11 @@ fun ReasonForRejectionsResponseDto.toModel() = ReasonForRejectionsResponseModel(
 fun ReasonForRejectionsDto.toModel() = ReasonForRejectionsModel(
     code = this.code ?: "",
     name = this.name ?: ""
+)
+
+fun DensityResponseDto.toModel() = DensityResponseModel(
+    statusCode = statusCode ?: 0,
+    success = success ?: false,     // usa el valor de la API
+    message = message ?: "",
+    data = data ?: ""
 )

@@ -8,9 +8,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 private val DarkColorPalette = darkColorScheme(
-    primary = RedVistony,
-    secondary = WhiteVistony,
+    primary = Color.White,
+    secondary = BlueVistony,
+    tertiary = BlueVistony,
+    background = Color.White,
+    surface = Color.White,
+    surfaceVariant = Color(0xFFF2F2F2), // Gris claro
+    onSurface = Color.Black,
     onPrimary = RedVistony,
+    primaryContainer = RedVistony,
+    onPrimaryContainer = RedVistony,
+    errorContainer = RedVistony,
+    onErrorContainer = RedVistony
 )
 
 private val LightColorPalette = lightColorScheme(
