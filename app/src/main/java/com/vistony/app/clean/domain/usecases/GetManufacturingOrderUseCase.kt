@@ -9,7 +9,7 @@ class GetManufacturingOrderUseCase(
 ) {
     suspend operator fun invoke(formCode: String): ManufacturingOrderResponseModel {
         Log.e("REOS", "GetManufacturingOrderUseCases-invoke-Obteniendo orden de fabricación para el código: $formCode")
-        Log.e("REOS", "GetManufacturingOrderUseCases-invoke-response:" +repository.getManufacturingOrder(formCode))
+        //Log.e("REOS", "GetManufacturingOrderUseCases-invoke-response:" +repository.getManufacturingOrder(formCode))
         return repository.getManufacturingOrder(formCode)
     }
 }

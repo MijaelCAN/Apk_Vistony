@@ -42,6 +42,7 @@ fun ManuFacturingOrderTemplate(
     val scope = rememberCoroutineScope()
     val bottomSheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
     val loginViewModel = hiltViewModel<LoginViewModel>(LocalContext.current as ComponentActivity)
+    Log.e("UserState ManuFactoring", userState.toString())
     VistonyTheme() {
         ModalNavigationDrawer(
             drawerState = drawerState,
