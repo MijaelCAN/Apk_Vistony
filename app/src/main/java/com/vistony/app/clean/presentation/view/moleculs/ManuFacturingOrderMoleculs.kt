@@ -73,6 +73,7 @@ fun ManuFacturingOrderHead(
     val orderCode = viewModel.orderCode.collectAsState()
     val scanData by scanViewModel.scanData.collectAsState()
 
+    Log.e("REOS", "ManufacturingOrderMoleculs-ManuFacturingOrderHead")
     LaunchedEffect(scanData) {
         scanData?.let { data ->
             Log.e("REOS", "ManuFacturingOrderHead - Actualizando orderCode con: ${data}")
@@ -96,13 +97,6 @@ fun ManuFacturingOrderHead(
                 Spacer(modifier = Modifier.height(8.dp))
                 TextWithDivider("Datos de Orden de Fabricación")
                 Spacer(modifier = Modifier.height(8.dp))
-                /*Row(modifier = Modifier.fillMaxWidth()) {
-                    ManuFacturingOrderTextFieldView(
-                        value = "Digite o escanee el Nro. de Orden de Fabricación",
-                        textAlign = TextAlign.Start,
-                        //color = Color.Black
-                    )
-                }*/
                 ManuFacturingOrderEditTextView(
                     status = true,
                     text = orderCode.value,
@@ -493,6 +487,7 @@ fun ManufacturingOrderCustomDialog(
     val isStatusApprobationContainer2 = viewModel.isStatusApprobationContainer2.collectAsState()
     val isStatusApprobationContainer3 = viewModel.isStatusApprobationContainer3.collectAsState()
     val statusAprobationHeader1 = viewModel.statusAprobationHeader1.collectAsState()
+
 
     // Ejecutar con retraso de 2 segundos
     LaunchedEffect(shouldRefresh) {

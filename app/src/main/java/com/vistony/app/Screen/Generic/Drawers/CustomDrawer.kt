@@ -81,7 +81,7 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                     DrawerSubItem("Lista Inspecciones") { navController.navigate("listaInsp/$id") },
                 ),
                 // Solo visible para ciertos roles
-                visibleForRoles = setOf("PRODUCCIÓN", "SISTEMAS","ASEG. CALIDAD")
+                visibleForRoles = setOf("PRODUCCIÓN", "SISTEMAS")
             ),
             DrawerItem(
                 id = "parada_maquina",
@@ -90,7 +90,7 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                 subItems = listOf(
                     DrawerSubItem("Lista de Paradas") { navController.navigate("listaParada/$id") },
                 ),
-                visibleForRoles = setOf("PRODUCCIÓN", "SISTEMAS","ASEG. CALIDAD")
+                visibleForRoles = setOf("PRODUCCIÓN", "SISTEMAS")
             ),
             DrawerItem(
                 id = "mantenimiento",
@@ -108,7 +108,7 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                 subItems = listOf(
                     DrawerSubItem("Lista de Temperaturas") { navController.navigate("listaTemperatura") },
                 ),
-                visibleForRoles = setOf("PRODUCCIÓN", "SISTEMAS", "SOPLADO", "ALMACEN INSUMOS","ASEG. CALIDAD")
+                visibleForRoles = setOf("PRODUCCIÓN", "SISTEMAS", "SOPLADO", "ALMACEN INSUMOS")
             ),
             DrawerItem(
                 id = "soplado",
@@ -117,7 +117,7 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                 subItems = listOf(
                     DrawerSubItem("Lista de Muestras") { navController.navigate("listaMuestra") },
                 ),
-                visibleForRoles = setOf("PRODUCCIÓN", "SISTEMAS", "SOPLADO", "ALMACEN INSUMOS","ASEG. CALIDAD") // CAMBIAR POR EL AREA
+                visibleForRoles = setOf("PRODUCCIÓN", "SISTEMAS", "SOPLADO", "ALMACEN INSUMOS") // CAMBIAR POR EL AREA
             ),
             DrawerItem(
                 id = "calidad",
