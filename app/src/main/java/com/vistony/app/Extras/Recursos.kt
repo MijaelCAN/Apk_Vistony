@@ -2,14 +2,12 @@ package com.vistony.app.Extras
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.ui.graphics.Color
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-/*
-@RequiresApi(Build.VERSION_CODES.O)
-fun formatoFecha(fechaHora: LocalDateTime): LocalDateTime {
-    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
-    return LocalDateTime.parse(fechaHora, formatter)
-}*/
+import kotlin.random.Random
+
 @RequiresApi(Build.VERSION_CODES.O)
 fun formatoFecha(fechaHora: LocalDateTime): LocalDateTime{
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
@@ -17,9 +15,9 @@ fun formatoFecha(fechaHora: LocalDateTime): LocalDateTime{
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-fun formatoServidor(fechaHora: LocalDateTime): String {
+fun formatoServidor(fechaHora: LocalDateTime?): String {
     val formatter = DateTimeFormatter.ofPattern("yyyyMMdd")
-    return fechaHora.format(formatter)
+    return fechaHora?.format(formatter) ?: ""
 }
 @RequiresApi(Build.VERSION_CODES.O)
 fun formatoUsuario(fechaHora: LocalDateTime): String {
@@ -60,4 +58,20 @@ fun convertirFecha2(fechaOriginal: String): LocalDateTime {
     val formateadorEntrada = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")
     // Parseamos la cadena a LocalDateTime
     return LocalDateTime.parse(fechaLimpia, formateadorEntrada)
+}
+
+
+fun randomMutedColor(): Color {
+    // Genera valores RGB entre 80 y 180 para evitar colores muy claros u oscuros
+    val red = Random.nextInt(256)
+    val green = Random.nextInt(256)
+    val blue = Random.nextInt(256)
+
+    // Opcional: para un efecto más mate, mezcla con gris (128,128,128) en proporción 0.5
+    val mixFactor = 0.8f
+    val r = (red * (1 - mixFactor) + 255  * mixFactor).toInt()
+    val g = (green * (1 - mixFactor) + 255  * mixFactor).toInt()
+    val b = (blue * (1 - mixFactor) + 255  * mixFactor).toInt()
+
+    return Color(r, g, b)
 }

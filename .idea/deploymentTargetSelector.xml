@@ -4,10 +4,21 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-01-09T20:01:25.282498900Z">
+        <DropdownSelection timestamp="2025-12-12T18:44:24.501815300Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\mcano\.android\avd\Nuevo_Pixel_7.avd" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=23333524700386" />
+            </handle>
+          </Target>
+        </DropdownSelection>
+        <DialogSelection />
+      </SelectionState>
+      <SelectionState runConfigName="app">
+        <option name="selectionMode" value="DROPDOWN" />
+        <DropdownSelection timestamp="2025-12-12T18:44:24.501815300Z">
+          <Target type="DEFAULT_BOOT">
+            <handle>
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=23333524700386" />
             </handle>
           </Target>
         </DropdownSelection>

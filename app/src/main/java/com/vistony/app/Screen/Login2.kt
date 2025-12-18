@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,15 +15,24 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.Checkbox
+import androidx.compose.material.CheckboxDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,32 +40,58 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
+import com.vistony.app.BuildConfig
+import com.vistony.app.Entidad.UserState
 import com.vistony.app.R
+import com.vistony.app.Screen.Generic.CustomAlertDialog
+import com.vistony.app.Screen.Generic.DialogType
+import com.vistony.app.ViewModel.EstadoLogin
+import com.vistony.app.ViewModel.LoginViewModel
 import com.vistony.app.ui.theme.theme.Dimensions
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
-fun Login2() {
+fun Login2(
+    navController: NavHostController,
+    viewModel: LoginViewModel = hiltViewModel(),
+    userState: UserState
+) {
     var usuario by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
-
+    var passVisible by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
     val activity = context as Activity
     val windowSize = calculateWindowSizeClass(context)
-
     val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
     val buttonHeight = Dimensions.getButtonHeight(windowSize.widthSizeClass)
-    val buttonWidth = Dimensions.getButtonWidth(windowSize.widthSizeClass)
     val textFieldHeight = Dimensions.getTextFieldHeight(windowSize.widthSizeClass)
     val titleFontSize = Dimensions.getTitleFontSize(windowSize.widthSizeClass)
     val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
     val imageSize = Dimensions.getImageSize(windowSize.widthSizeClass)
-    val cardHeight = Dimensions.getCardHeight(windowSize.widthSizeClass)
-    val cardPadding = Dimensions.getCardPadding(windowSize.widthSizeClass)
+    var stateButton by remember { mutableStateOf(false) }
+    var showDialog by remember { mutableStateOf(false) }
+    val isLoading by viewModel.isLoading.collectAsState()
+    val userData by viewModel.userData.collectAsState()
+    var rememberPassword by remember { mutableStateOf(false) }
 
+    LaunchedEffect(usuario, pass) {
+        stateButton = usuario.isNotEmpty() && pass.isNotEmpty()
+    }
+
+    // Cargar credenciales guardadas al inicializar
+    LaunchedEffect(Unit) {
+        val (savedUser, savedPassword, shouldRemember) = viewModel.getSavedCredentials()
+        usuario = savedUser
+        pass = savedPassword
+        rememberPassword = shouldRemember
+    }
 
     BoxWithConstraints(
         modifier = Modifier
@@ -79,11 +115,11 @@ fun Login2() {
                 modifier = Modifier
                     .size(imageSize)
                     .padding(bottom = 16.dp),
-                painter = painterResource(id = R.mipmap.logo),
+                painter = painterResource(id = R.mipmap.operity_core),
                 contentDescription = ""
             )
-            Text(text = "Bienvenido a la APP", color = Color.Gray, fontSize = bodyFontSize.sp)
-            Text(text = "PRODUCCIÓN", fontSize = titleFontSize.sp)
+            Text(text = "Bienvenido al centro de tu", color = Color.Gray, fontSize = bodyFontSize.sp)
+            Text(text = "OPERACIÓN", fontSize = titleFontSize.sp)
             Spacer(modifier = Modifier.height(32.dp))
             TextField(
                 modifier = Modifier
@@ -93,12 +129,12 @@ fun Login2() {
                     .clip(RoundedCornerShape(12.dp))
                     .border(1.dp, Color.White, RoundedCornerShape(12.dp)),
                 value = usuario,
-                placeholder = {
+                label = {
                     Text(
-                        text = "Enter username",
-                        color = Color.LightGray,
+                        text = "Usuario",
+                        color = if( usuario.isNotEmpty())Color.Gray else Color.LightGray,
                         fontWeight = FontWeight.Bold,
-                        fontSize = bodyFontSize.sp
+                        fontSize = if( usuario.isNotEmpty()) 12.sp else bodyFontSize.sp
                     )
                 },
                 onValueChange = { usuario = it },
@@ -110,7 +146,8 @@ fun Login2() {
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                     cursorColor = Color.Gray
-                )
+                ),
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
             )
             Spacer(modifier = Modifier.height(padding_res/2))
             TextField(
@@ -120,12 +157,12 @@ fun Login2() {
                     .padding(horizontal = padding_res)
                     .clip(RoundedCornerShape(12.dp)),
                 value = pass,
-                placeholder = {
+                label = {
                     Text(
-                        text = "password",
-                        color = Color.LightGray,
+                        text = "Contraseña",
+                        color = if( pass.isNotEmpty())Color.Gray else Color.LightGray,
                         fontWeight = FontWeight.Bold,
-                        fontSize = bodyFontSize.sp
+                        fontSize = if( pass.isNotEmpty()) 12.sp else bodyFontSize.sp
                     )
                 },
                 onValueChange = { pass = it },
@@ -137,11 +174,50 @@ fun Login2() {
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                     cursorColor = Color.Gray
+                ),
+                trailingIcon = {
+                    val image = if (passVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    IconButton(onClick = { passVisible = !passVisible }) {
+                        Icon(
+                            imageVector = image,
+                            contentDescription = "Contraseña",
+                            tint = Color.Gray
+                        )
+                    }
+                },
+                visualTransformation = if (passVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        viewModel.validar(usuario,pass)
+                        showDialog = true
+                    }
                 )
             )
             Spacer(modifier = Modifier.height(padding_res))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = padding_res),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = rememberPassword,
+                    onCheckedChange = { rememberPassword = it },
+                    colors = CheckboxDefaults.colors(checkedColor = Color(0xFF01398D))
+                )
+                androidx.compose.material.Text(
+                    text = "Recordar usuario y contraseña",
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+            Spacer(modifier = Modifier.height(padding_res))
             Button(
-                onClick = { /*TODO*/ },
+                enabled = stateButton,
+                onClick = {
+                    viewModel.validar(usuario,pass)
+                    viewModel.saveCredentials(usuario, pass, rememberPassword)
+                    showDialog = true },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(buttonHeight)
@@ -149,20 +225,111 @@ fun Login2() {
                     .clip(RoundedCornerShape(0.dp)),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFC6A68),
+                    //containerColor = Color(0xFFFC6A68),
+                    //containerColor = Color(0xFFD6001C),
+                    containerColor = Color(0xFF01398D),
                     contentColor = Color.White
                 )
             ) {
-                Text(text = "Sign in", fontSize = bodyFontSize.sp )
+                Text(text = "Iniciar Sesion", fontSize = bodyFontSize.sp )
             }
+            Spacer(modifier = Modifier.height(padding_res))
+            Text(text = "v${BuildConfig.VERSION_NAME}", color = Color.Gray, fontSize = bodyFontSize.sp)
+            /*Image(
+                modifier = Modifier
+                    .size(50.dp)
+                    .padding(bottom = 16.dp),
+                painter = painterResource(id = R.mipmap.logo),
+                contentDescription = ""
+            )*/
+
+            when(isLoading){
+                EstadoLogin.Cargando-> {
+                    CustomAlertDialog(
+                        showDialog = showDialog,
+                        title = "Cargando",
+                        message = "Validando...",
+                        confirmButtonText = "",
+                        dismissButtonText = null,
+                        onDismiss = {showDialog = false}
+                    )
+                }
+                EstadoLogin.Exitoso -> {
+                    userData?.let { user ->
+                        when (user.role.lowercase()) {
+                            "sistemas", "supervisor" -> {
+                                navController.navigate("dashboardAdmin") {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            }
+                            "mantenimiento" -> {
+                                navController.navigate("paradaMantenimiento") {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            }
+                            "producción" -> {
+                                navController.navigate("listaParada/${user.dni}"){
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            }
+                            "soplado", "almacen insumos" -> {
+                                navController.navigate("listaMuestra"){
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            }
+                            "aseg. calidad" -> {
+                                navController.navigate("manufacturingOrder") {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            }
+                            else -> {
+                                // Limpiar sesión/estado para evitar revalidaciones y bucles
+                                viewModel.clearUserData()
+                                navController.navigate("noModules") {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            }
+                        }
+                    }
+                }
+                is EstadoLogin.Error -> {
+                    CustomAlertDialog(
+                        showDialog = showDialog,
+                        title = "Error",
+                        message = (isLoading as EstadoLogin.Error).mensaje,
+                        confirmButtonText = "OK",
+                        dismissButtonText = null,
+                        //onConfirm = { viewModel.actualizarEstadoLogin(EstadoLogin.Idle) },
+                        onDismiss = {
+                            showDialog = false
+                            //viewModel.actualizarEstadoLogin(EstadoLogin.Idle)
+                        },
+                        dialogType = DialogType.ERROR,
+                    )
+                }
+                else -> {}
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 24.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Desarrollado por:",
+                color = Color.Gray,
+                fontSize = 10.sp,
+            )
+            Text(
+                text = "© 2025 Vistony S.A.C.",
+                color = Color.Gray,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Light
+            )
         }
     }
 }
-
-
-/*
-@Composable
-@Preview
-fun Prueba() {
-    Login2()
-}*/

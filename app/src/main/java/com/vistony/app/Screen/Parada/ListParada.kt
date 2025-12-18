@@ -2,456 +2,529 @@ package com.vistony.app.Screen.Parada
 
 import android.os.Build
 import android.util.Log
+import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+//import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.ModalBottomSheetLayout
+import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CheckCircleOutline
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.filled.TurnLeft
+import androidx.compose.material.rememberModalBottomSheetState
+import androidx.compose.material.Card
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.PullRefreshState
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.vistony.app.Entidad.Actividad
 import com.vistony.app.Entidad.ListaRequest
 import com.vistony.app.Entidad.Parada
-import com.vistony.app.Extras.convertirFecha2
-import com.vistony.app.Extras.formatoFecha
-import com.vistony.app.R
+import com.vistony.app.Entidad.UserState
+import com.vistony.app.Extras.formatoServidor
 import com.vistony.app.Screen.Generic.CustomAlertDialog
-import com.vistony.app.Screen.Generic.CustomButton
-import com.vistony.app.Screen.Generic.CustomDrawer
-import com.vistony.app.Screen.Generic.CustomOutlinedTextField
-import com.vistony.app.Screen.Generic.DateOutlinedTextField
-import com.vistony.app.Screen.Generic.Detalle
+import com.vistony.app.Screen.Generic.CustomSearchText
 import com.vistony.app.Screen.Generic.DialogType
+import com.vistony.app.Screen.Generic.Drawers.BottomBar
+import com.vistony.app.Screen.Generic.Drawers.BottomCurtainDrawer
+import com.vistony.app.Screen.Generic.FilterButtonsRow
+import com.vistony.app.Screen.Generic.Drawers.CustomDrawer
+import com.vistony.app.Screen.Generic.Drawers.RightCurtainDrawer
 import com.vistony.app.Screen.Generic.TopBar
+import com.vistony.app.Screen.Inspeccion.backGroundLigth
+import com.vistony.app.Screen.ParadaMantenimiento.TarjetaActividad
+import com.vistony.app.ViewModel.ActividadViewModel
 import com.vistony.app.ViewModel.EstadoParada
+import com.vistony.app.ViewModel.LoginViewModel
 import com.vistony.app.ViewModel.ParadaViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.time.Duration
-import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.math.absoluteValue
 
+@OptIn(ExperimentalMaterialApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ListParada(
     navController: NavController,
     paradaViewModel: ParadaViewModel = hiltViewModel(),
-    id: String
+    actividadViewModel: ActividadViewModel = hiltViewModel(),
+    id: String,
+    userState: UserState,
+    onLogout: () -> Unit
 ) {
+    val loginViewModel = hiltViewModel<LoginViewModel>(LocalContext.current as ComponentActivity)
+
+    //val role by loginViewModel.userRole.collectAsState()
+    val role = userState.currentUser.role
+
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val bottomSheetState =
+        rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
+    val systemUiController = rememberSystemUiController()
+    //val topBarColor = Color(0xFFF7F7F7)
+    val topBarColor = backGroundLigth
+
+    var paradaSeleccionada by remember { mutableStateOf<Parada?>(null) }
+    var showDrawerDetalle by remember { mutableStateOf(false) }
+    var showDrawerHome by remember { mutableStateOf(false) }
+    var showDrawerActivity by remember { mutableStateOf(false) }
+
+    var selected by remember { mutableStateOf(if (role == "mantenimiento") "Iniciado" else "Todos") }
+    val actividades by actividadViewModel.actividades.collectAsState()
+
+    // Estado para pull-to-refresh
+    var isRefreshing by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+    
+    // Función para refrescar datos
+    fun refreshData() {
+        if (userState.currentUser.dni.isNotEmpty()) {
+            paradaViewModel.obtenerParadas(
+                ListaRequest(
+                    formatoServidor(paradaViewModel.fechaIni.value),
+                    formatoServidor(paradaViewModel.fechaFin.value),
+                    "T",
+                    userState.currentUser.dni
+                )
+            )
+        }
+    }
+
+    // Inicializar paradas con DNI del usuario
+    LaunchedEffect(userState.currentUser.dni) {
+        if (userState.currentUser.dni.isNotEmpty()) {
+            refreshData()
+        }
+    }
+    val coroutineScope = rememberCoroutineScope()
+
+    // Estado de pull-to-refresh
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isRefreshing,
+        onRefresh = {
+            coroutineScope.launch{
+                isRefreshing = true
+                refreshData()
+                // Simular un pequeño delay para mostrar el indicador
+                kotlinx.coroutines.delay(500)
+                isRefreshing = false
+            }
+        }
+    )
+
+    SideEffect {
+        systemUiController.setStatusBarColor(
+            color = topBarColor,
+            darkIcons = true
+        )
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        drawerContent = { CustomDrawer(navController = navController, id = id) }
+        drawerContent = {
+            CustomDrawer(
+                navController = navController,
+                id = id,
+                userState = userState,
+                onLogout = onLogout
+            )
+        }
     ) {
-        Scaffold(
-            topBar = {
-                TopBar("Lista de Paradas", navController = navController, onMenuClick = {
-                    scope.launch {
-                        drawerState.open()
-                    }
-                })
-            },
-            content = { paddingValues ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                        .background(color = Color(0xFF0B4FAF)),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Top
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .width(610.dp)
-                            .height(210.dp)
-                            .clip(RoundedCornerShape(25.dp))
-                            .background(Color.White)
-                    ) {
-                        Image(
-                            modifier = Modifier.size(width = 600.dp, height = 200.dp),
-                            painter = painterResource(id = R.drawable.vistony),
-                            contentDescription = "Logo"
+        ModalBottomSheetLayout(
+            modifier = Modifier.fillMaxWidth(),
+            sheetState = bottomSheetState,
+            sheetContent = { BottomBar("parada", userState.currentUser) }
+        ) {
+            Scaffold(
+                topBar = {
+                    TopBar(
+                        "",
+                        color = Color(0XFFF7F7F7),
+                        colorContent = Color.Black,
+                        navController = navController,
+                        onMenuClick = { scope.launch { drawerState.open() } },
+                        onBottomMenuClick = {
+                            scope.launch {
+                                if (bottomSheetState.isVisible) {
+                                    bottomSheetState.hide()
+                                } else {
+                                    bottomSheetState.show()
+                                }
+                            }
+                        },
+                        viewModel = loginViewModel
+                    )
+                },
+                floatingActionButton = {
+                    IconButton(
+                        modifier = Modifier.size(60.dp),
+                        onClick = { showDrawerHome = true },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Color(0xFFFC6A68),
+                            contentColor = Color.White
                         )
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = "")
+
                     }
-                    Spacer(modifier = Modifier.height(15.dp))
-                    BodyListParada(navController, id, paradaViewModel)
-                }
-            }
-        )
+                },
+                content = { paddingValues ->
+                    BodyListParada(
+                        navController,
+                        id,
+                        paradaViewModel,
+                        actividadViewModel,
+                        role = role,
+                        selected = selected,
+                        onSelectedChange = { selected = it },
+                        listState = listState,
+                        pullRefreshState = pullRefreshState,
+                        isRefreshing = isRefreshing,
+                        paddingValues,
+                        function = { it ->
+                            Log.d("TAG", "DetalleParada-CallBack: $it")
+                            paradaSeleccionada = it
+                            //if (it.FechaHoraFin.isNullOrEmpty()) {
+                                showDrawerDetalle = true
+                            //}
+                            /*if (it.Usuario.isEmpty()) {
+                                showDrawerDetalle = true
+                            } else {
+                                if (actividades.none { it.paradaDocEntry == paradaSeleccionada?.DocEntry }) {
+                                    showDrawerActivity = true
+                                } else {
+                                    showDrawerDetalle = true
+                                }
+                            }*/
+                        }
+                    )
+                },
+                containerColor = Color(0XFFF7F7F7)
+            )
+        }
+
     }
+
+    // ============================ FORMULARIO DETALLE PARADA ================================= //
+    RightCurtainDrawer(
+        visible = showDrawerDetalle,
+        onClose = { showDrawerDetalle = false },
+        animationDuration = 300 // ms, ajusta velocidad
+    ) {
+        IconButton(onClick = { showDrawerDetalle = false }) {
+            Icon(Icons.Default.TurnLeft, contentDescription = "Cerrar")
+        }
+        Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 32.dp)) {
+            DetalleParada(
+                id = id,
+                role = role,
+                parada = paradaSeleccionada,
+                paradaViewModel = paradaViewModel,
+                actividadViewModel = actividadViewModel,
+                actividades = actividades,
+                onClose = {
+                    showDrawerDetalle = false
+                    selected = it
+                },
+                onOpenActivity = { showDrawerActivity = true }
+            )
+        }
+    }
+
+    // ============================ FORMULARIO REGISTRO PARADA ================================= //
+    RightCurtainDrawer(
+        visible = showDrawerHome,
+        onClose = { showDrawerHome = false },
+        animationDuration = 300 // ms, ajusta velocidad
+    ) {
+        IconButton(onClick = { showDrawerHome = false }) {
+            Icon(Icons.Default.TurnLeft, contentDescription = "Cerrar")
+        }
+        Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 32.dp)) {
+            // =========== CONTENIDO =============== //
+            Log.d("TAG", "id: $id")
+            BodyParada(navController, paradaViewModel, id)
+        }
+    }
+
+    // ========================== FORMULARIO REGISTRO ACTIVIDAD ================================= //
+
+    BottomCurtainDrawer(
+        visible = showDrawerActivity,
+        onClose = { showDrawerActivity = false },
+        animationDuration = 300
+    ) {
+        IconButton(onClick = { showDrawerActivity = false }) {
+            Icon(Icons.Default.TurnLeft, contentDescription = "Cerrar")
+        }
+        Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 32.dp)) {
+            // ======= CONTENIDO ========== //
+            /*BodyActividad(
+                //paradaSeleccionada,
+                navController,
+                paradaViewModel,
+                actividadViewModel,
+                id,
+                onClose = { showDrawerActivity = false },
+            )*/
+        }
+    }
+
+
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BodyListParada(navController: NavController, id: String, paradaViewModel: ParadaViewModel) {
+fun BodyListParada(
+    navController: NavController,
+    id: String,
+    paradaViewModel: ParadaViewModel,
+    actividadViewModel: ActividadViewModel,
+    role: String?, // listOf("produccion", "mantenimiento")
+    selected: String,
+    onSelectedChange: (String) -> Unit,
+    listState: LazyListState,
+    pullRefreshState: PullRefreshState,
+    isRefreshing: Boolean,
+    paddingValues: PaddingValues,
+    function: (Parada) -> Unit
+) {
 
-    var fechaFinal by rememberSaveable { mutableStateOf<LocalDateTime?>(null) }
-    var showDialog by remember { mutableStateOf(false) }
-    var showDialogDetalle by remember { mutableStateOf(false) }
-    var item by remember { mutableStateOf(Parada()) }
-    var txt_estado = rememberSaveable { mutableStateOf("") }
-
-    var selectedDateIni by remember { mutableStateOf(LocalDate.now()) }
-    var showDialogDateIni by remember { mutableStateOf(false) }
-    var selectedDateFin by remember { mutableStateOf(LocalDate.now()) }
-    var showDialogDateFin by remember { mutableStateOf(false) }
-
-    val expanded = remember { mutableStateOf(false) }
-    val options = listOf("Iniciado", "Finalizado", "Todos")
-
+    var searchText by remember { mutableStateOf("") }
     val paradas by paradaViewModel.listParadas.collectAsState()
-    val estado by paradaViewModel.estadoParada.collectAsState()
+    val actividades by actividadViewModel.actividades.collectAsState()
+    //var selected by remember { mutableStateOf(if(role == "mantenimiento") "Iniciado" else "Todos" ) }
+    /*val options = listOf("Todos", "Iniciado", "Finalizado")
+    val optionsMantenimiento = listOf("Iniciado", "Actividades")*/
 
-    LaunchedEffect(selectedDateIni, selectedDateFin) {
-        val newfechaIni = selectedDateIni.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
-        val newfechaFin = selectedDateFin.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
-        paradaViewModel.obtenerParadas(
-            ListaRequest(
-                newfechaIni, newfechaFin, "T"
-            )
-        )
+    val options = if (role == "mantenimiento") {
+        listOf("Iniciado", "Asignados")
+    } else {
+        listOf("Todos", "Iniciado", "Finalizado")
     }
 
-    Box(
+
+    val listaFiltradaParadas = remember(paradas.data, selected, searchText) {
+        paradas.data.filter { parada ->
+            // Filtro por estado
+            val estadoFilter = when (selected) {
+                "Iniciado" -> parada.FechaHoraFin.isNullOrBlank()
+                "Finalizado" -> !parada.FechaHoraFin.isNullOrBlank()
+                else -> true
+            }
+
+            // Filtro por texto de búsqueda
+            val searchFilter = searchText.isEmpty() || listOf(
+                parada.Maquina,
+                parada.FechaHoraInicio,
+                parada.FechaHoraFin ?: ""
+            ).any { it.contains(searchText, ignoreCase = true) }
+
+            estadoFilter && searchFilter
+        }
+    }
+    val listaFiltradaActividad = remember(paradas.data, searchText) {
+        paradas.data.filter { parada ->
+            // Filtro por texto de búsqueda
+            val searchFilter = searchText.isEmpty() || listOf(
+                parada.Maquina,
+                parada.FechaHoraInicio,
+                parada.FechaHoraFin ?: ""
+            ).any { it.contains(searchText, ignoreCase = true) }
+
+            searchFilter
+        }
+
+    }
+    val listaFiltrada: List<ListItem> =
+        remember(paradas.data, actividades, selected, searchText, role) {
+            if (role == "mantenimiento") {
+                when (selected) {
+                    "Iniciado" -> listaFiltradaParadas
+                        .filter { parada -> parada.FechaHoraFin.isNullOrBlank() }
+                        .map { ListItem.ParadaItem(it) }
+
+                    "Asignados" -> listaFiltradaActividad
+                        .filter { parada -> parada.Usuario.isNotEmpty() }
+                        .map { ListItem.ParadaItem(it) }
+
+                    else -> emptyList()
+                }
+            } else {
+                listaFiltradaParadas.map { ListItem.ParadaItem(it) }
+            }
+        }
+
+
+
+
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 32.dp)
+            .padding(paddingValues)
             .wrapContentSize()
-            .clip(RoundedCornerShape(25.dp))
-            .background(color = Color(0xFFFFFFFF))
+            .background(Color(0xFFf7f7f7))
     ) {
-        Column(
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            text = "Paradas de máquinas",
+            fontSize = 30.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        Text(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            text = "Revisa las paradas en un Rango de tiempo",
+            fontSize = 12.sp
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        CustomSearchText(
+            text = searchText,
+            onTextChange = { searchText = it },
             modifier = Modifier
                 .fillMaxWidth()
-                .wrapContentSize()
-                .padding(vertical = 16.dp, horizontal = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "LISTA DE PARADAS",
-                modifier = Modifier.padding(end = 8.dp, top = 16.dp),
-                color = Color.Black
+                .padding(horizontal = 12.dp),
+            containerColor = Color.White,
+            searchIcon = Icons.Default.Search,
+            placeholderText = "Buscar..."
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+        /*if(role == "mantenimiento"){
+            FilterButtonsRow(
+                options = optionsMantenimiento,
+                selectedOption = selected,
+                onOptionSelected = { selected = it }
             )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+        }else{
+            FilterButtonsRow(
+                options = options,
+                selectedOption = selected,
+                onOptionSelected = { selected = it }
+            )
+        }*/
+        FilterButtonsRow(
+            options = options,
+            selectedOption = selected,
+            onOptionSelected = { onSelectedChange(it) }
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+        if (listaFiltrada.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(end = 8.dp, top = 16.dp),
+                contentAlignment = Alignment.Center
             ) {
-                DateOutlinedTextField(
-                    modifier = Modifier.weight(1f),
-                    "Fecha Inicio",
-                    selectedDate = selectedDateIni,
-                    onDateChange = { selectedDateIni = it },
-                    showDialog = showDialogDateIni,
-                    onShowDialogChange = { showDialogDateIni = it }
-                )
-                Spacer(modifier = Modifier.width(130.dp))
-                DateOutlinedTextField(
-                    modifier = Modifier.weight(1f),
-                    "Fecha Final",
-                    selectedDate = selectedDateFin,
-                    onDateChange = { selectedDateFin = it },
-                    showDialog = showDialogDateFin,
-                    onShowDialogChange = { showDialogDateFin = it }
+                Text(
+                    text = "No hay Paradas, Registre una nueva.",
+                    color = Color.Black,
+                    textAlign = TextAlign.Center,
+                    fontSize = 14.sp
                 )
             }
-            Row(
+        } else {
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxWidth()
+                    .pullRefresh(pullRefreshState)
             ) {
-                ExposedDropdownMenuBox(
-                    modifier = Modifier.width(200.dp),
-                    expanded = expanded.value,
-                    onExpandedChange = {
-                        expanded.value = !expanded.value
-                        txt_estado.value = ""
-                    }) {
-                    CustomOutlinedTextField(
-                        modifier = Modifier.menuAnchor(),
-                        value = txt_estado.value,
-                        onValueChange = { },
-                        label = "Estado",
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded.value) },
-                        readOnly = true
-                    )
-                    ExposedDropdownMenu(
-                        modifier = Modifier
-                            .background(Color.White)
-                            .clip(RoundedCornerShape(8.dp)),
-                        expanded = expanded.value,
-                        onDismissRequest = { expanded.value = false }) {
-                        options.forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(option, color = Color.Black) },
-                                onClick = {
-                                    txt_estado.value = option
-                                    expanded.value = false
-                                    paradaViewModel.obtenerParadas(
-                                        ListaRequest(
-                                            selectedDateIni.toString(),
-                                            selectedDateFin.toString(),
-                                            when (txt_estado.value) {
-                                                "Iniciado" -> "I"
-                                                "Finalizado" -> "F"
-                                                "Todos"-> "T"
-                                                else -> "T"
-                                            }
-                                        )
-                                    )
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    state = listState
+                ) {
+                    items(listaFiltrada.asReversed()) { item ->
+                        when (item) {
+                            is ListItem.ParadaItem -> TarjetaParada(
+                                parada = item.parada,
+                                paradaViewModel = paradaViewModel,
+                                navController = navController,
+                                id = id,
+                                function = { function(item.parada) }
+                            )
+
+                            is ListItem.ActividadItem -> TarjetaActividad(
+                                actividad = item.actividad,
+                                id = id,
+                                actividadViewModel = actividadViewModel,
+                                function = {
+                                    /* función para actividad */
                                 }
                             )
                         }
                     }
                 }
-                Spacer(modifier = Modifier.width(60.dp))
-                CustomButton(
-                    "Registro Nuevo",
-                    modifier = Modifier.weight(1f),
-                    Icons.Filled.Add,
-                    onClick = { navController.navigate("homeParada/${id}") },
-                    Color(0xFF299203)
+                
+                // Indicador de pull-to-refresh
+                PullRefreshIndicator(
+                    refreshing = isRefreshing,
+                    state = pullRefreshState,
+                    modifier = Modifier.align(Alignment.TopCenter)
                 )
             }
-            Spacer(modifier = Modifier.height(32.dp))
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                val listaParadas = paradas.data.asReversed()
-                if (listaParadas.isNotEmpty()) {
-                    items(listaParadas) { row ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(0.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-
-                            TarjetaParada(
-                                parada = row,
-                                paradaViewModel,
-                                navController,
-                                id
-                            ) { showDialogDetalle = true; item = row }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-                } else {
-                    item {
-                        Text(
-                            text = "No hay registros de Paradas",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(end = 8.dp, top = 16.dp),
-                            color = Color.Black,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            }
-
-            Log.d("TAG", "BodyListParada: ${paradas}")
-            Detalle(
-                isVisible = showDialogDetalle,
-                onDismiss = { showDialogDetalle = false },
-                titulo = "Detalle de Parada de Máquina",
-                data = item,
-                content = {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        // Título de la máquina
-                        Text(
-                            text = item.Maquina,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        // Hora de inicio y fin
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "Inicio: ${item.FechaHoraInicio}",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                            Text(
-                                text = "Fin: ${item.FechaHoraFin.ifEmpty { "En curso" }}",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-
-                        // Área
-                        Text(
-                            text = "Área: ${item.Area}",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-
-                        // Comentario
-                        Text(
-                            text = "Comentario: ${item.Comentario}",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-
-                        // Motivo
-                        Text(
-                            text = "Motivo: ${item.Motivo}",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-
-                        // Separador
-                        Divider(modifier = Modifier.padding(vertical = 8.dp))
-
-                        // Botón para cerrar o regresar
-                        Button(
-                            onClick = { showDialogDetalle = false },
-                            modifier = Modifier.align(Alignment.End)
-                        ) {
-                            Text(text = "Cerrar")
-                        }
-                    }
-                }
-            )
-            if (showDialog) {
-                when (estado) {
-                    EstadoParada.Cargando ->
-                        CustomAlertDialog(
-                            showDialog = true,
-                            title = "Cargando",
-                            message = "Espere por favor...",
-                            confirmButtonText = "",
-                            dismissButtonText = null,
-                            onDismiss = { showDialog = false },
-                            dialogType = DialogType.LOADING
-                        )
-
-                    is EstadoParada.Error -> TODO()
-                    EstadoParada.Exitoso -> {
-                        CustomAlertDialog(
-                            showDialog = true,
-                            title = "Exitoso",
-                            message = "Parada finalizada a las ${formatoFecha(fechaFinal!!)}",
-                            confirmButtonText = "Aceptar",
-                            dismissButtonText = null,
-                            onDismiss = { showDialog = false },
-                            dialogType = DialogType.SUCCESS
-                        )
-                    }
-
-                    EstadoParada.Idle -> TODO()
-                }
-            }
         }
+
     }
-}
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DialogEspera(onDismiss: () -> Unit = {}) {
-    var showSuccess by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        delay(5000) // Wait for 5 seconds
-        showSuccess = true
-    }
-
-    AlertDialog(
-        onDismissRequest = { onDismiss() },
-        modifier = Modifier.size(200.dp), content = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(25.dp))
-                    .background(Color.White),
-                contentAlignment = Alignment.Center
-            ) {
-                if (showSuccess) {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.CheckCircleOutline,
-                            contentDescription = "Success",
-                            tint = Color.Green
-                        )
-                        Text(text = "Exitoso")
-                    }
-                } else {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        CircularProgressIndicator(color = Color(0xFF0054A3))
-                        Text(text = "Espera")
-                    }
-                }
-            }
-        }
-    )
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -466,119 +539,112 @@ fun TarjetaParada(
     var showDialog by remember { mutableStateOf(false) }
     val estado by paradaViewModel.estadoParada.collectAsState()
     val paradaState by paradaViewModel.paradas.collectAsState()
+    val context = LocalContext.current
+
+    val backgroundColor = remember(parada.Maquina) {
+        val colors = listOf(
+            Color(0xFFCACACA),
+            Color(0xFFC6C6C6),
+            Color(0xFFB1B1B1),
+            Color(0xFFAEAEAE),
+            Color(0xFFA1A1A1)
+
+        )
+        colors[parada.Maquina.hashCode().absoluteValue % colors.size]
+    }
+
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { /* Acción al hacer clic en la tarjeta */ },
+            .padding(vertical = 8.dp),
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, Color.Gray),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(
+        elevation = 0.dp,
+        backgroundColor = Color.Transparent
+        /*colors = CardDefaults.cardColors(
             if (parada.FechaHoraFin.isNullOrEmpty()) Color.White else Color(
                 0xFFF0F0F0
             )
-        )
+        )*/
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = parada.Maquina,
-                style = MaterialTheme.typography.titleLarge
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Columna imagen / círculo
+            Box(
+                modifier = Modifier
+                    //.weight(0.7f)
+                    .size(75.dp)
+                    .clip(CircleShape)
+                    .background(backgroundColor)
+                    .clickable { function() },
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "Fecha de Inicio: ${
-                        parada.FechaHoraInicio.format(
-                            DateTimeFormatter.ofPattern(
-                                "dd/MM/yyyy HH:mm"
-                            )
-                        )
-                    }",
-                    fontSize = 16.sp
+                // Aquí puedes cargar imagen si tienes url o recurso
+                // Por ejemplo con Coil:
+                /*
+                val painter = rememberAsyncImagePainter(model = parada.imagenUrl)
+                Image(
+                    painter = painter,
+                    contentDescription = "Imagen de la máquina",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
                 )
-                if (parada.FechaHoraFin.isNullOrEmpty()) {
-                    var tiempoTranscurrido by remember { mutableStateOf(Duration.ZERO) }
-                    LaunchedEffect(Unit) {
-                        while (true) {
-                            tiempoTranscurrido = Duration.between(
-                                convertirFecha2(parada.FechaHoraInicio),
-                                LocalDateTime.now()
-                            )
-                            delay(1000)
-                        }
-                    }
-                    val dias = tiempoTranscurrido.toDays()
-                    val horas = tiempoTranscurrido.toHours() % 24
-                    val minutos = tiempoTranscurrido.toMinutes() % 60
-                    val segundos = tiempoTranscurrido.seconds % 60
-                    Text(
-                        text = "$dias días, $horas:$minutos:$segundos",
-                        fontSize = 16.sp,
-                        color = Color.Red
-                    )
+                */
+                // Por ahora dejamos solo el círculo con color
+                val palabras = parada.Maquina.split(" ")
+                val cadena = if (palabras.size > 1) palabras[1] else palabras[0]
 
-                } else {
-                    Text(
-                        text = "Fecha de Fin: ${
-                            parada.FechaHoraFin.format(
-                                DateTimeFormatter.ofPattern(
-                                    "dd/MM/yyyy HH:mm"
-                                )
-                            )
-                        }",
-                    )
-                }
+                Text(
+                    text = cadena.take(1).uppercase(),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp
+                )
             }
-            if (parada.FechaHoraFin.isNullOrEmpty()) {
-                /*Text(
-                    text = "En Curso",
-                    fontSize = 16.sp,
-                    color = Color(0xFF0037FF)
-                )*/
-            } else {
-                val tiempoTranscurrido = Duration.between(
-                    convertirFecha2(parada.FechaHoraInicio),
-                    convertirFecha2(parada.FechaHoraFin)
+
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(
+                modifier = Modifier
+                    .weight(3f)
+                    .clickable { function() },
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = parada.Maquina,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1B2733)
                 )
                 Text(
-                    text = "Tiempo transcurriendo: ${tiempoTranscurrido.toDays()} días, ${tiempoTranscurrido.toHours() % 24} horas, ${tiempoTranscurrido.toMinutes() % 60} minutos",
-                    fontSize = 16.sp,
-                    color = Color.DarkGray
+                    text = parada.Comentario,
+                    fontSize = 12.sp,
+                    color = Color(0xFF455A64),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (parada.FechaHoraFin.isNullOrEmpty()) {
-                    Text(
-                        text = "Iniciado",
-                        fontSize = 16.sp,
-                        color = Color(0xFF0037FF)
-                    )
-                } else {
-                    Button(onClick = function) {
-                        Text("Ver detalles")
-                    }
-                }
-                if (parada.FechaHoraFin.isNullOrEmpty()) {
-                    Button(
-                        onClick = {
-                            paradaViewModel.detenerParada(Integer.parseInt(parada.DocEntry))
-                            showDialog = true
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-                    ) {
-                        Text("Detener parada")
-                    }
-                }
+                Text(
+                    text = "${parada.FechaHoraInicio.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} - ${
+                        parada.FechaHoraFin?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) ?: "En curso"
+                    }",
+                    fontSize = 12.sp,
+                    color = Color(0xFF78909C)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Divider(
+                    color = Color(0xFFE0E0E0),
+                    thickness = 1.dp,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }
+
     if (showDialog) {
         when (estado) {
             EstadoParada.Cargando -> {
@@ -597,7 +663,7 @@ fun TarjetaParada(
                 CustomAlertDialog(
                     showDialog = showDialog,
                     title = "Éxito",
-                    message = paradaState.paradaResponse.data,
+                    message = paradaState.paradaResponse.message,
                     confirmButtonText = "OK",
                     dismissButtonText = null,
                     onConfirm = { paradaViewModel.actualizarEstadoParada(EstadoParada.Idle) },
@@ -629,4 +695,9 @@ fun TarjetaParada(
             else -> {}
         }
     }
+}
+
+sealed class ListItem {
+    data class ParadaItem(val parada: Parada) : ListItem()
+    data class ActividadItem(val actividad: Actividad) : ListItem()
 }

@@ -20,7 +20,8 @@ object RetrofitInstance {
 
     //private const val BASE_URL = "http://190.12.79.135:9004/api/" // free
     //private const val BASE_URL = "http://192.168.254.26:9004/api/"
-    private const val BASE_URL = "http://192.168.254.27:8060/api/"
+    private const val BASE_URL = "http://192.168.254.27:8060/api/" // LOCAL
+    private const val BASE_URL_NEW = "http://192.168.254.27:8036/api/" // NUEVA IMPLEMENTACION
     private val client = OkHttpClient.Builder()
         .connectTimeout(60,TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
@@ -35,8 +36,17 @@ object RetrofitInstance {
             .build()
     }
 
+    private val retrofitNew: Retrofit by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL_NEW)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
     val loginService: AuthService by lazy {
-        retrofit.create(AuthService::class.java)
+        //retrofit.create(AuthService::class.java)
+        retrofitNew.create(AuthService::class.java)
     }
 
     val operService: OperarioInterface by lazy {
@@ -53,7 +63,23 @@ object RetrofitInstance {
         retrofit.create(LineaService::class.java)
     }
     val paradaService: ParadaService by lazy {
-        retrofit.create(ParadaService::class.java)
+        retrofitNew.create(ParadaService::class.java)
+    }
+
+    val detenerParadaService: DetenerParadaService by lazy {
+        retrofit.create(DetenerParadaService::class.java)
+    }
+
+    val actividadService: ActividadService by lazy {
+        retrofitNew.create(ActividadService::class.java)
+    }
+
+    val temperaturaService: TemperaturaService by lazy {
+        retrofitNew.create(TemperaturaService::class.java)
+    }
+
+    val muestraService: MuestraService by lazy {
+        retrofitNew.create(MuestraService::class.java)
     }
 
 }
