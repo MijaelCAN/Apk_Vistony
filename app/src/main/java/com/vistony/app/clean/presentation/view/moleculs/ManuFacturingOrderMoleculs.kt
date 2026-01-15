@@ -2,6 +2,7 @@ package com.vistony.app.clean.presentation.view.moleculs
 
 import android.app.Activity
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -209,6 +210,7 @@ fun ManuFacturingOrderDetailBody(
     val reasonDesaprobation = viewModel.reasonDesaprobation.collectAsState()
     val observation = viewModel.observation.collectAsState()
     val isVisibleObservation = viewModel.isVisibleObservation.collectAsState()
+
     // Ejecutar con retraso de 2 segundos
     LaunchedEffect(shouldRefresh) {
         if (shouldRefresh) {
@@ -217,6 +219,15 @@ fun ManuFacturingOrderDetailBody(
             shouldRefresh = false
         }
     }
+
+    LaunchedEffect((isVisibleObservation.value)) {
+        if(isVisibleObservation.value){
+            Toast.makeText(context,"Debe ingresar peso óptimo y peso máximo diferentes de cero", Toast.LENGTH_LONG).show()
+            //viewModel.setIsVisibleObservation(false)
+        }
+    }
+
+
 
     when {
         isLoadingBodyDetail.value -> {
