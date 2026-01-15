@@ -190,7 +190,7 @@ fun onStatusAprobationHeader1Change(newValue: String, approvalLine: String, docN
                 maximunWeight = _maximunWeight.value.ifEmpty { "0" },
                 //estadoAprobacionCorreccion = _statusCorrection.value,   // Agregar parámetro faltante
                 //estadoAprobacionDesaprobadoCalidad = _statusDesaprobation.value, // Agregar parámetro faltante
-                estadoAprobacionCorreccion=if(_statusCorrection.value.equals("Pendiente")) "*" else if (_statusCorrection.value.equals("Aprobado")) "S" else if (_statusCorrection.value.equals("Rechazado")) "N" else "*",
+                estadoAprobacionCorreccion=if(_statusCorrection.value.equals("Pendiente")) "*" else if (_statusCorrection.value.equals("Aprobado")) "S" else if (_statusCorrection.value.equals("Rechazado")) "N" else if (_statusCorrection.value.equals("Si")) "S" else if (_statusCorrection.value.equals("No")) "N" else "*",
                 estadoAprobacionDesaprobadoCalidad=if(_statusDesaprobation.value.equals("Pendiente")) "*" else if (_statusDesaprobation.value.equals("Aprobado")) "S" else if (_statusDesaprobation.value.equals("Rechazado")) "N" else "*",
                 motivoCorreccion = reasonCode.toString(),                  // Agregar parámetro faltante (nombre del motivo)
                 //rejectionReasonCode = reasonCode                        // Mantener código del motivo
@@ -271,7 +271,7 @@ fun onStatusAprobationHeader1Change(newValue: String, approvalLine: String, docN
                     Log.e("REOS","getManufacturingOrder-order.approbationName1: "+order.approbationName1)
                     Log.e("REOS","getManufacturingOrder-order.correction: "+order.correction)
                     _statusAprobationHeader1.value = order.approbationName1
-                    _statusCorrection.value=if(order.correction.equals("NO")) "Rechazado" else if (order.correction.equals("SI")) "Aprobado" else "Pendiente"
+                    _statusCorrection.value=if(order.correction.equals("NO")) "No" else if (order.correction.equals("SI")) "Si" else "No"
                     _reasonDesaprobation.value=order.reason
                     _statusDesaprobation.value=if(order.qualityDisapproved.equals("N")) "Rechazado" else if (order.qualityDisapproved.equals("S")) "Aprobado" else "Pendiente"
                     _density.value=order.density
@@ -292,7 +292,8 @@ fun onStatusAprobationHeader1Change(newValue: String, approvalLine: String, docN
                     Log.e("REOS","recalculateDensityUseCase-order.approbationName1: "+order.approbationName1)
                     Log.e("REOS","recalculateDensityUseCase-order.correction: "+order.correction)
                     _statusAprobationHeader1.value = order.approbationName1
-                    _statusCorrection.value=if(order.correction.equals("NO")) "Rechazado" else if (order.correction.equals("SI")) "Aprobado" else "Pendiente"
+                    //_statusCorrection.value=if(order.correction.equals("NO")) "Rechazado" else if (order.correction.equals("SI")) "Aprobado" else "Pendiente"
+                    _statusCorrection.value=if(order.correction.equals("NO")) "No" else if (order.correction.equals("SI")) "Si" else "No"
                     _reasonDesaprobation.value=order.reason
                     _statusDesaprobation.value=if(order.qualityDisapproved.equals("N")) "Rechazado" else if (order.qualityDisapproved.equals("S")) "Aprobado" else "Pendiente"
                     _observation.value=order.observations

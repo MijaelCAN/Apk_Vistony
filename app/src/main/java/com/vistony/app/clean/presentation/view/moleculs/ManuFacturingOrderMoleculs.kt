@@ -73,10 +73,8 @@ fun ManuFacturingOrderHead(
     val orderCode = viewModel.orderCode.collectAsState()
     val scanData by scanViewModel.scanData.collectAsState()
 
-    Log.e("REOS", "ManufacturingOrderMoleculs-ManuFacturingOrderHead")
     LaunchedEffect(scanData) {
         scanData?.let { data ->
-            Log.e("REOS", "ManuFacturingOrderHead - Actualizando orderCode con: ${data}")
             viewModel.onOrderCodeChange(data)
             viewModel.getManufacturingOrder(data)
             viewModel.onDensityChange("0")
@@ -137,11 +135,9 @@ fun ManuFacturingOrderDetail(
 
     when {
         isLoading.value -> {
-            // Pantalla de carga
             CustomProgressDialog()
         }
         data.value.data.isNotEmpty() -> {
-            //TextWithDivider("Lotes Encontrados")
             ManuFacturingOrderDetailBody()
         }
         else -> {
@@ -195,6 +191,8 @@ fun ManuFacturingOrderDetailBody(
 ) {
     val listApprobation = ApprobationDefaults.DEFAULT_APPROBATIONS
     val listApprobationHeader = ApprobationDefaults.DEFAULT_APPROBATIONS_HEADER
+    val listApprobationClosed = ApprobationDefaults.DEFAULT_APPROBATIONS_CLOSED
+
     val data = viewModel.manufacturingOrderResponseModel.collectAsState()
     val statusAprobationHeader1 = viewModel.statusAprobationHeader1.collectAsState()
     val context = LocalContext.current
@@ -254,18 +252,7 @@ fun ManuFacturingOrderDetailBody(
 
                 )
                 Spacer(modifier = Modifier.padding(top = 10.dp))
-                /*ManuFacturingOrderSpinnerView(
-                    status = true,
-                    selectedOption = statusDesaprobation.value,
-                    label = "Estado Aprobación (Desaprobado Calidad)",
-                    onOptionSelected = { result ->
-                        viewModel.onStatusDesaprobationChange(result)
-                        viewModel.onStatusAprobationHeader1Change(statusAprobationHeader1.value, "Linea1", it.batchName)
-                        shouldRefresh=true
-                    },
-                    options = listApprobation.map { it.name }
-                )
-                Spacer(modifier = Modifier.padding(top = 10.dp))*/
+
                 ManuFacturingOrderSpinnerView(
                     status = true,
                     selectedOption = statusCorrection.value,
@@ -275,21 +262,26 @@ fun ManuFacturingOrderDetailBody(
                         viewModel.onStatusAprobationHeader1Change(statusAprobationHeader1.value, "Linea1", it.batchName)
                         shouldRefresh=true
                     },
-                    options = listApprobation.map { it.name }
+                    options = listApprobationClosed.map { it.name }
                 )
-
-                Spacer(modifier = Modifier.padding(top = 10.dp))
-                ManuFacturingOrderSpinnerView(
-                    status = true,
-                    selectedOption = reasonDesaprobation.value,
-                    label = "Motivo Corrección (Listado)",
-                    onOptionSelected = { result ->
-                        viewModel.onReasonDesaprobationChange( result )
-                        viewModel.onStatusAprobationHeader1Change(statusAprobationHeader1.value, "Linea1", it.batchName)
-                        shouldRefresh=true
-                    },
-                    options = reasonForRejectionsResponseModel.value.data.map { it.name },
+                if(statusCorrection.value.equals("Si", ignoreCase = true)) {
+                    Spacer(modifier = Modifier.padding(top = 10.dp))
+                    ManuFacturingOrderSpinnerView(
+                        status = true,
+                        selectedOption = reasonDesaprobation.value,
+                        label = "Motivo Corrección (Listado)",
+                        onOptionSelected = { result ->
+                            viewModel.onReasonDesaprobationChange(result)
+                            viewModel.onStatusAprobationHeader1Change(
+                                statusAprobationHeader1.value,
+                                "Linea1",
+                                it.batchName
+                            )
+                            shouldRefresh = true
+                        },
+                        options = reasonForRejectionsResponseModel.value.data.map { it.name },
                     )
+                }
                 Spacer(modifier = Modifier.padding(top = 10.dp))
                 ManuFacturingOrderEditTextView(
                     status = true,
@@ -297,8 +289,6 @@ fun ManuFacturingOrderDetailBody(
                     label = "Observaciones",
                     onClick = { result ->
                         viewModel.onObservationChange( result )
-                        //viewModel.onStatusAprobationHeader1Change(statusAprobationHeader1.value, "Linea1", it.batchName)
-                        //shouldRefresh=true
                     },
                     countMaxCharacter = 254,
                     keyboardType = KeyboardType.Text,
