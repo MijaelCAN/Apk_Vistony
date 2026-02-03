@@ -470,7 +470,7 @@ fun InspeccionDimensionalForm(
             
             // Lógica para N° Cavidad
             val listaVacia = inspecciones.isEmpty()
-            val ultimoNumeroCavidad = inspecciones.lastOrNull()?.numeroCavidad?.toIntOrNull()
+            val ultimoNumeroCavidad = inspecciones.mapNotNull { it.numeroCavidad.toIntOrNull() }.maxOrNull()
             val siguienteNumeroCavidad = if (ultimoNumeroCavidad != null) {
                 (ultimoNumeroCavidad + 1).toString()
             } else {
