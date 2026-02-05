@@ -126,15 +126,6 @@ class MuestraViewModel @Inject constructor(
         var isFormValid: Boolean = false
     )
 
-    // Estado del formulario de Registro de Llegada
-    data class RegistroLlegadaFormState(
-        var numeroOrdenFabricacion: String = "",
-        var numeroMuestra: String = "",
-        var descripcionProducto: String = "",
-        var maquina: String = "",
-        var isFormValid: Boolean = false
-    )
-
     // Estados de los formularios
     private val _cabeceraFormState = MutableStateFlow(CabeceraFormState())
     val cabeceraFormState: StateFlow<CabeceraFormState> = _cabeceraFormState.asStateFlow()
@@ -150,13 +141,6 @@ class MuestraViewModel @Inject constructor(
 
     private val _evaluacionFormState = MutableStateFlow(EvaluacionFormState())
     val evaluacionFormState: StateFlow<EvaluacionFormState> = _evaluacionFormState.asStateFlow()
-
-    private val _registroLlegadaFormState = MutableStateFlow(RegistroLlegadaFormState())
-    val registroLlegadaFormState: StateFlow<RegistroLlegadaFormState> = _registroLlegadaFormState.asStateFlow()
-
-    // Lista de registros de llegada
-    private val _registrosLlegada = MutableStateFlow<List<RegistroLlegada>>(emptyList())
-    val registrosLlegada: StateFlow<List<RegistroLlegada>> = _registrosLlegada.asStateFlow()
 
     // Listas temporales para cada sección
     private val _materialesTemporales = MutableStateFlow<List<MaterialEmpleado>>(emptyList())
@@ -389,19 +373,6 @@ class MuestraViewModel @Inject constructor(
         validateEvaluacionForm()
     }
 
-    fun updateRegistroLlegada(field: String, value: String) {
-        val current = _registroLlegadaFormState.value
-        val newState = when (field) {
-            "numeroOrdenFabricacion" -> current.copy(numeroOrdenFabricacion = value)
-            "numeroMuestra" -> current.copy(numeroMuestra = value)
-            "descripcionProducto" -> current.copy(descripcionProducto = value)
-            "maquina" -> current.copy(maquina = value)
-            else -> current
-        }
-        _registroLlegadaFormState.value = newState
-        validateRegistroLlegadaForm()
-    }
-
     // Funciones de validación
     private fun validateCabeceraForm() {
         val current = _cabeceraFormState.value
@@ -496,15 +467,6 @@ class MuestraViewModel @Inject constructor(
         }
         
         _evaluacionFormState.value = current.copy(isFormValid = isValid)
-    }
-
-    private fun validateRegistroLlegadaForm() {
-        val current = _registroLlegadaFormState.value
-        val isValid = current.numeroOrdenFabricacion.isNotEmpty() &&
-                current.numeroMuestra.isNotEmpty() &&
-                current.descripcionProducto.isNotEmpty() &&
-                current.maquina.isNotEmpty()
-        _registroLlegadaFormState.value = current.copy(isFormValid = isValid)
     }
 
     // Función para crear un CheckList
@@ -934,52 +896,12 @@ class MuestraViewModel @Inject constructor(
         _evaluacionFormState.value = EvaluacionFormState()
     }
 
-    fun resetRegistroLlegadaForm() {
-        _registroLlegadaFormState.value = RegistroLlegadaFormState()
-    }
-
-    fun agregarRegistroLlegada() {
-        val formState = _registroLlegadaFormState.value
-        if (!formState.isFormValid) {
-            _errorMessage.value = "Por favor complete todos los campos"
-            return
-        }
-
-        val fechaHora = LocalDateTime.now()
-        val fechaRegistro = fechaHora.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-        val horaRegistro = fechaHora.format(DateTimeFormatter.ofPattern("HH:mm"))
-
-        val nuevoRegistro = RegistroLlegada(
-            id = UUID.randomUUID().toString(),
-            numeroOrdenFabricacion = formState.numeroOrdenFabricacion,
-            numeroMuestra = formState.numeroMuestra,
-            descripcionProducto = formState.descripcionProducto,
-            maquina = formState.maquina,
-            fechaRegistro = fechaRegistro,
-            horaRegistro = horaRegistro
-        )
-
-        val listaActual = _registrosLlegada.value.toMutableList()
-        listaActual.add(0, nuevoRegistro) // Agregar al inicio
-        _registrosLlegada.value = listaActual
-
-        // Limpiar formulario
-        resetRegistroLlegadaForm()
-        _successMessage.value = "Registro de llegada agregado exitosamente"
-    }
-
-    fun obtenerRegistrosLlegada() {
-        // Por ahora, solo retornamos la lista local
-        // En el futuro, esto podría llamar a un API
-    }
-
     fun resetAllForms() {
         _cabeceraFormState.value = CabeceraFormState()
         _materialFormState.value = MaterialFormState()
         _inspeccionFormState.value = InspeccionDimensionalFormState()
         _checkListFormState.value = CheckListFormState()
         _evaluacionFormState.value = EvaluacionFormState()
-        _registroLlegadaFormState.value = RegistroLlegadaFormState()
         _materialesTemporales.value = emptyList()
         _inspeccionesTemporales.value = emptyList()
         _checkListsTemporales.value = emptyList()
@@ -1520,50 +1442,6 @@ class MuestraViewModel @Inject constructor(
             }
             
             android.util.Log.d("MuestraViewModel", "=== FIN CONSULTAR PRODUCTO ===")
-        }
-    }
-
-    fun consultarProductoRegistroLlegada(codigo: String) {
-        viewModelScope.launch {
-            android.util.Log.d("MuestraViewModel", "=== CONSULTANDO PRODUCTO REGISTRO LLEGADA ===")
-            android.util.Log.d("MuestraViewModel", "Código a consultar: $codigo")
-            
-            try {
-                val result = muestraRepository.consultarProducto(codigo)
-                
-                result.fold(
-                    onSuccess = { response ->
-                        if (response.success && response.data.isNotEmpty()) {
-                            val ordenFabricacion = response.data.first()
-                            
-                            // Actualizar el formulario de RegistroLlegada
-                            val current = _registroLlegadaFormState.value
-                            _registroLlegadaFormState.value = current.copy(
-                                descripcionProducto = ordenFabricacion.descripcion,
-                                maquina = ordenFabricacion.maquina
-                            )
-                            validateRegistroLlegadaForm()
-                        } else {
-                            // Limpiar campos si no se encuentra
-                            val current = _registroLlegadaFormState.value
-                            _registroLlegadaFormState.value = current.copy(
-                                descripcionProducto = "",
-                                maquina = ""
-                            )
-                        }
-                    },
-                    onFailure = { exception ->
-                        android.util.Log.e("MuestraViewModel", "Error consultando producto", exception)
-                        val current = _registroLlegadaFormState.value
-                        _registroLlegadaFormState.value = current.copy(
-                            descripcionProducto = "",
-                            maquina = ""
-                        )
-                    }
-                )
-            } catch (e: Exception) {
-                android.util.Log.e("MuestraViewModel", "Excepción consultando producto", e)
-            }
         }
     }
 

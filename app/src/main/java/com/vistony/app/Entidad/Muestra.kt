@@ -412,39 +412,3 @@ data class EspecificacionSopladoResponse(
     @SerializedName("message") val message: String,
     @SerializedName("data") val data: EspecificacionSopladoData?
 )
-
-// Registro de Llegada
-data class RegistroLlegada(
-    @SerializedName("id") val id: String = "",
-    @SerializedName("numeroOrdenFabricacion") val numeroOrdenFabricacion: String = "",
-    @SerializedName("numeroMuestra") val numeroMuestra: String = "",
-    @SerializedName("descripcionProducto") val descripcionProducto: String = "",
-    @SerializedName("maquina") val maquina: String = "",
-    @SerializedName("fechaRegistro") val fechaRegistro: String = "",
-    @SerializedName("horaRegistro") val horaRegistro: String = ""
-)
-
-// Request para crear Registro de Llegada
-data class RegistroLlegadaCreateRequest(
-    @SerializedName("numeroOrdenFabricacion") val numeroOrdenFabricacion: String,
-    @SerializedName("numeroMuestra") val numeroMuestra: String,
-    @SerializedName("descripcionProducto") val descripcionProducto: String,
-    @SerializedName("maquina") val maquina: String,
-    @SerializedName("fec_reg") val fecReg: String
-)
-
-// Response para crear Registro de Llegada
-data class RegistroLlegadaCreateResponse(
-    @SerializedName("statusCode") val statusCode: Int,
-    @SerializedName("success") val success: Boolean,
-    @SerializedName("message") val message: String,
-    @SerializedName("data") val data: Any?
-)
-
-// Response para obtener lista de Registros de Llegada
-data class RegistroLlegadaResponse(
-    @SerializedName("statusCode") val statusCode: Int,
-    @SerializedName("success") val success: Boolean,
-    @SerializedName("message") val message: String,
-    @SerializedName("data") val data: List<RegistroLlegada>
-)

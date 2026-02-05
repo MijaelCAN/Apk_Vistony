@@ -524,7 +524,6 @@ fun MuestraEmptyState(
         elevation = 0.dp
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(

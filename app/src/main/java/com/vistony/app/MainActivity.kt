@@ -10,9 +10,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -52,8 +49,6 @@ import com.vistony.app.Screen.Muestra.ListMuestra
 import com.vistony.app.Screen.Muestra.CreateMuestra
 import com.vistony.app.Screen.Muestra.DetailMuestra
 import com.vistony.app.Screen.Muestra.EditMuestra
-import com.vistony.app.Screen.Muestra.RegistroLlegadaScreen
-import com.vistony.app.Screen.Muestra.RegistroLlegadaTodosScreen
 import com.vistony.app.ViewModel.LoginViewModel
 import com.vistony.app.ViewModel.TemperaturaViewModel
 import com.vistony.app.ViewModel.MuestraViewModel
@@ -95,16 +90,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        
-        // Ocultar la barra de estado (status bar)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
-        windowInsetsController?.let { controller ->
-            // Ocultar la barra de estado
-            controller.hide(WindowInsetsCompat.Type.statusBars())
-            // Hacer que la barra de estado se oculte de forma persistente
-            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
         setContent {
             AppTheme() {
                 Surface(
@@ -340,34 +325,6 @@ class MainActivity : ComponentActivity() {
                                         )
                                     }
                                 }
-                            }
-                            composable("registroLlegada") {
-                                RegistroLlegadaScreen(
-                                    muestraViewModel = muestraViewModel,
-                                    currentUser = userState.currentUser,
-                                    userState = userState,
-                                    navController = navController,
-                                    onLogout = {
-                                        loginViewModel.clearUserData()
-                                        navController.navigate("login") {
-                                            popUpTo(0) { inclusive = true }
-                                        }
-                                    }
-                                )
-                            }
-                            composable("registroLlegadaTodos") {
-                                RegistroLlegadaTodosScreen(
-                                    muestraViewModel = muestraViewModel,
-                                    currentUser = userState.currentUser,
-                                    userState = userState,
-                                    navController = navController,
-                                    onLogout = {
-                                        loginViewModel.clearUserData()
-                                        navController.navigate("login") {
-                                            popUpTo(0) { inclusive = true }
-                                        }
-                                    }
-                                )
                             }
                         }
                     } else {
