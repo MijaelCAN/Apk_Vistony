@@ -55,6 +55,19 @@ interface MuestraService {
     
     @GET("Inspeccion/EspecificacionSoplado")
     suspend fun obtenerEspecificacionSoplado(@Query("CodProducto") codProducto: String): Response<EspecificacionSopladoResponse>
+    
+    @GET("Inspeccion/GetProduccion")
+    suspend fun obtenerRegistrosLlegada(
+        @Query("FechaInicio") fechaInicio: String? = null,
+        @Query("FechaFin") fechaFin: String? = null,
+        @Query("Code") role: String? = null
+    ): Response<RegistroLlegadaResponse>
+
+    @GET("Inspeccion/consultaProductoMuestra")
+    suspend fun consultarProductoMuestra(@Query("Code") code: String): Response<ConsultaProductoMuestraResponse>
+    
+    @POST("Inspeccion/PostProduccion")
+    suspend fun crearRegistroLlegada(@Body request: RegistroLlegadaCreateRequest): Response<RegistroLlegadaCreateResponse>
 }
 
 

@@ -130,6 +130,7 @@ class MuestraViewModel @Inject constructor(
     data class RegistroLlegadaFormState(
         var numeroOrdenFabricacion: String = "",
         var numeroMuestra: String = "",
+        var codigoProducto: String = "",
         var descripcionProducto: String = "",
         var maquina: String = "",
         var isFormValid: Boolean = false
@@ -157,6 +158,14 @@ class MuestraViewModel @Inject constructor(
     // Lista de registros de llegada
     private val _registrosLlegada = MutableStateFlow<List<RegistroLlegada>>(emptyList())
     val registrosLlegada: StateFlow<List<RegistroLlegada>> = _registrosLlegada.asStateFlow()
+
+    // Lista de muestras disponibles desde el API
+    private val _muestrasDisponibles = MutableStateFlow<List<String>>(emptyList())
+    val muestrasDisponibles: StateFlow<List<String>> = _muestrasDisponibles.asStateFlow()
+    
+    // Estado para mostrar alert cuando se encuentra la orden
+    private val _productoEncontrado = MutableStateFlow<String?>(null)
+    val productoEncontrado: StateFlow<String?> = _productoEncontrado.asStateFlow()
 
     // Listas temporales para cada sección
     private val _materialesTemporales = MutableStateFlow<List<MaterialEmpleado>>(emptyList())
@@ -392,7 +401,19 @@ class MuestraViewModel @Inject constructor(
     fun updateRegistroLlegada(field: String, value: String) {
         val current = _registroLlegadaFormState.value
         val newState = when (field) {
-            "numeroOrdenFabricacion" -> current.copy(numeroOrdenFabricacion = value)
+            "numeroOrdenFabricacion" -> {
+                // Si se limpia el número de orden, limpiar también las muestras disponibles
+                if (value.isEmpty()) {
+                    _muestrasDisponibles.value = emptyList()
+                }
+                current.copy(
+                    numeroOrdenFabricacion = value,
+                    codigoProducto = if (value.isEmpty()) "" else current.codigoProducto,
+                    descripcionProducto = if (value.isEmpty()) "" else current.descripcionProducto,
+                    maquina = if (value.isEmpty()) "" else current.maquina,
+                    numeroMuestra = if (value.isEmpty()) "" else current.numeroMuestra
+                )
+            }
             "numeroMuestra" -> current.copy(numeroMuestra = value)
             "descripcionProducto" -> current.copy(descripcionProducto = value)
             "maquina" -> current.copy(maquina = value)
@@ -502,8 +523,8 @@ class MuestraViewModel @Inject constructor(
         val current = _registroLlegadaFormState.value
         val isValid = current.numeroOrdenFabricacion.isNotEmpty() &&
                 current.numeroMuestra.isNotEmpty() &&
-                current.descripcionProducto.isNotEmpty() &&
-                current.maquina.isNotEmpty()
+                current.codigoProducto.isNotEmpty() &&
+                current.descripcionProducto.isNotEmpty()
         _registroLlegadaFormState.value = current.copy(isFormValid = isValid)
     }
 
@@ -936,41 +957,115 @@ class MuestraViewModel @Inject constructor(
 
     fun resetRegistroLlegadaForm() {
         _registroLlegadaFormState.value = RegistroLlegadaFormState()
+        _muestrasDisponibles.value = emptyList() // Limpiar las muestras disponibles
     }
 
-    fun agregarRegistroLlegada() {
-        val formState = _registroLlegadaFormState.value
-        if (!formState.isFormValid) {
-            _errorMessage.value = "Por favor complete todos los campos"
-            return
+    fun agregarRegistroLlegada(currentUser: UserResponse? = null) {
+        viewModelScope.launch {
+            val formState = _registroLlegadaFormState.value
+            if (!formState.isFormValid) {
+                _errorMessage.value = "Por favor complete todos los campos"
+                return@launch
+            }
+
+            _isCreating.value = true
+            _errorMessage.value = null
+
+            try {
+                // Formatear fecha en formato ISO 8601 con timezone: "2026-02-06T09:27:58-05:00"
+                val fechaHora = java.time.ZonedDateTime.now(java.time.ZoneId.of("America/Lima"))
+                val fechaRegistro = fechaHora.format(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+
+                // Extraer solo el número antes del guion del número de muestra
+                // Ejemplo: "2-Muestra 2" -> "2"
+                val numeroMuestraLimpio = formState.numeroMuestra.split("-").firstOrNull()?.trim() ?: formState.numeroMuestra
+
+                val request = RegistroLlegadaCreateRequest(
+                    ordenFabricacion = formState.numeroOrdenFabricacion,
+                    nMuestra = numeroMuestraLimpio,
+                    codProducto = formState.codigoProducto,
+                    desProducto = formState.descripcionProducto,
+                    fechaRegistro = fechaRegistro,
+                    userRegister = currentUser?.dni ?: "70131373"
+                )
+
+                android.util.Log.d("MuestraViewModel", "=== CREANDO REGISTRO DE LLEGADA ===")
+                android.util.Log.d("MuestraViewModel", "Request: $request")
+
+                val result = muestraRepository.crearRegistroLlegada(request)
+
+                result.fold(
+                    onSuccess = { response ->
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Response.success: ${response.success}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Message: ${response.message}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Data: ${response.data}")
+
+                        if (response.statusCode == 201) {
+                            _successMessage.value = response.message ?: "Registro de llegada creado exitosamente"
+                            
+                            // Limpiar formulario
+                            resetRegistroLlegadaForm()
+                            
+                            // Recargar la lista de registros
+                            val fechaInicio = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+                            val fechaFin = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+                            obtenerRegistrosLlegada(fechaInicio, fechaFin, currentUser?.dni)
+                        } else {
+                            _errorMessage.value = response.message ?: "Error al crear registro"
+                        }
+                    },
+                    onFailure = { exception ->
+                        android.util.Log.e("MuestraViewModel", "FAILURE - Excepción: ${exception.message}", exception)
+                        _errorMessage.value = "Error al crear registro de llegada: ${exception.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("MuestraViewModel", "EXCEPCIÓN INESPERADA", e)
+                _errorMessage.value = "Error inesperado: ${e.message}"
+            }
+
+            _isCreating.value = false
+            android.util.Log.d("MuestraViewModel", "=== FIN CREAR REGISTRO DE LLEGADA ===")
         }
-
-        val fechaHora = LocalDateTime.now()
-        val fechaRegistro = fechaHora.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-        val horaRegistro = fechaHora.format(DateTimeFormatter.ofPattern("HH:mm"))
-
-        val nuevoRegistro = RegistroLlegada(
-            id = UUID.randomUUID().toString(),
-            numeroOrdenFabricacion = formState.numeroOrdenFabricacion,
-            numeroMuestra = formState.numeroMuestra,
-            descripcionProducto = formState.descripcionProducto,
-            maquina = formState.maquina,
-            fechaRegistro = fechaRegistro,
-            horaRegistro = horaRegistro
-        )
-
-        val listaActual = _registrosLlegada.value.toMutableList()
-        listaActual.add(0, nuevoRegistro) // Agregar al inicio
-        _registrosLlegada.value = listaActual
-
-        // Limpiar formulario
-        resetRegistroLlegadaForm()
-        _successMessage.value = "Registro de llegada agregado exitosamente"
     }
 
-    fun obtenerRegistrosLlegada() {
-        // Por ahora, solo retornamos la lista local
-        // En el futuro, esto podría llamar a un API
+    fun obtenerRegistrosLlegada(fechaInicio: String? = null, fechaFin: String? = null, code: String? = null) {
+        viewModelScope.launch {
+            android.util.Log.d("MuestraViewModel", "=== OBTENIENDO REGISTROS DE LLEGADA ===")
+            android.util.Log.d("MuestraViewModel", "FechaInicio: $fechaInicio, FechaFin: $fechaFin, Code: $code")
+            
+            _isLoading.value = true
+            _errorMessage.value = null
+            
+            try {
+                val result = muestraRepository.obtenerRegistrosLlegada(fechaInicio, fechaFin, code)
+                
+                result.fold(
+                    onSuccess = { response ->
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Response.success: ${response.success}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Cantidad de registros: ${response.data.size}")
+                        
+                        if (response.success) {
+                            _registrosLlegada.value = response.data
+                            android.util.Log.d("MuestraViewModel", "Registros actualizados en el estado")
+                        } else {
+                            android.util.Log.e("MuestraViewModel", "ERROR - Response.message: ${response.message}")
+                            _errorMessage.value = response.message
+                        }
+                    },
+                    onFailure = { exception ->
+                        android.util.Log.e("MuestraViewModel", "FAILURE - Excepción: ${exception.message}", exception)
+                        _errorMessage.value = "Error al obtener registros de llegada: ${exception.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("MuestraViewModel", "EXCEPCIÓN INESPERADA", e)
+                _errorMessage.value = "Error inesperado: ${e.message}"
+            }
+            
+            _isLoading.value = false
+            android.util.Log.d("MuestraViewModel", "=== FIN OBTENIENDO REGISTROS DE LLEGADA ===")
+        }
     }
 
     fun resetAllForms() {
@@ -1187,6 +1282,7 @@ class MuestraViewModel @Inject constructor(
     fun clearMessages() {
         _errorMessage.value = null
         _successMessage.value = null
+        _productoEncontrado.value = null
     }
 
     fun resetForm() {
@@ -1529,40 +1625,58 @@ class MuestraViewModel @Inject constructor(
             android.util.Log.d("MuestraViewModel", "Código a consultar: $codigo")
             
             try {
-                val result = muestraRepository.consultarProducto(codigo)
+                val result = muestraRepository.consultarProductoMuestra(codigo)
                 
                 result.fold(
                     onSuccess = { response ->
                         if (response.success && response.data.isNotEmpty()) {
                             val ordenFabricacion = response.data.first()
                             
+                            // Actualizar las muestras disponibles desde el API
+                            _muestrasDisponibles.value = ordenFabricacion.muestras
+                            android.util.Log.d("MuestraViewModel", "Muestras disponibles: ${ordenFabricacion.muestras}")
+                            
+                            // Mostrar alert de producto encontrado
+                            _productoEncontrado.value = "Orden de fabricación encontrada: ${ordenFabricacion.descripcion}"
+                            
                             // Actualizar el formulario de RegistroLlegada
                             val current = _registroLlegadaFormState.value
                             _registroLlegadaFormState.value = current.copy(
+                                codigoProducto = ordenFabricacion.codigo,
                                 descripcionProducto = ordenFabricacion.descripcion,
-                                maquina = ordenFabricacion.maquina
+                                maquina = ordenFabricacion.maquina,
+                                numeroMuestra = "" // Limpiar la muestra seleccionada cuando cambia la orden
                             )
                             validateRegistroLlegadaForm()
                         } else {
                             // Limpiar campos si no se encuentra
+                            _muestrasDisponibles.value = emptyList()
+                            _productoEncontrado.value = null
                             val current = _registroLlegadaFormState.value
                             _registroLlegadaFormState.value = current.copy(
+                                codigoProducto = "",
                                 descripcionProducto = "",
-                                maquina = ""
+                                maquina = "",
+                                numeroMuestra = ""
                             )
                         }
                     },
                     onFailure = { exception ->
                         android.util.Log.e("MuestraViewModel", "Error consultando producto", exception)
+                        _muestrasDisponibles.value = emptyList()
+                        _productoEncontrado.value = null
                         val current = _registroLlegadaFormState.value
                         _registroLlegadaFormState.value = current.copy(
+                            codigoProducto = "",
                             descripcionProducto = "",
-                            maquina = ""
+                            maquina = "",
+                            numeroMuestra = ""
                         )
                     }
                 )
             } catch (e: Exception) {
                 android.util.Log.e("MuestraViewModel", "Excepción consultando producto", e)
+                _muestrasDisponibles.value = emptyList()
             }
         }
     }

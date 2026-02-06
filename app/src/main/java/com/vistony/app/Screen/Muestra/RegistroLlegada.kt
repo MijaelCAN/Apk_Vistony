@@ -69,6 +69,8 @@ fun RegistroLlegadaScreen(
     val registros by muestraViewModel.registrosLlegada.collectAsState()
     val successMessage by muestraViewModel.successMessage.collectAsState()
     val errorMessage by muestraViewModel.errorMessage.collectAsState()
+    val isCreating by muestraViewModel.isCreating.collectAsState()
+    val productoEncontrado by muestraViewModel.productoEncontrado.collectAsState()
 
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -78,20 +80,30 @@ fun RegistroLlegadaScreen(
     // Estado para BottomSheet de detalle
     var selectedRegistro by remember { mutableStateOf<RegistroLlegada?>(null) }
     val detailSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    // Cargar registros al iniciar
-    LaunchedEffect(Unit) {
-        muestraViewModel.obtenerRegistrosLlegada()
-    }
-
-    // Mostrar mensajes de éxito/error
-    LaunchedEffect(successMessage) {
-        successMessage?.let {
+    
+    // Estado para controlar el modal de éxito
+    var showSuccessModal by remember { mutableStateOf(false) }
+    
+    // Detectar cuando se completa el envío exitosamente
+    LaunchedEffect(isCreating, successMessage) {
+        if (!isCreating && successMessage != null) {
+            showSuccessModal = true
+            // Auto-cerrar después de 3 segundos
             kotlinx.coroutines.delay(3000)
+            showSuccessModal = false
             muestraViewModel.clearMessages()
         }
     }
 
+    // Cargar registros al iniciar
+    LaunchedEffect(Unit) {
+        // Formatear fechas en formato yyyyMMdd (ejemplo: 20260101, 20260206)
+        val fechaInicio = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+        val fechaFin = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+        muestraViewModel.obtenerRegistrosLlegada(fechaInicio, fechaFin, currentUser.dni)
+    }
+
+    // Manejar mensajes de error (sin modal, solo toast o snackbar)
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
             kotlinx.coroutines.delay(5000)
@@ -172,11 +184,12 @@ fun RegistroLlegadaScreen(
                     item {
                         RegistroLlegadaForm(
                             formState = formState,
+                            muestraViewModel = muestraViewModel,
                             onUpdateField = { field, value ->
                                 muestraViewModel.updateRegistroLlegada(field, value)
                             },
                             onRegistrar = {
-                                muestraViewModel.agregarRegistroLlegada()
+                                muestraViewModel.agregarRegistroLlegada(currentUser)
                             },
                             windowSize = windowSize.widthSizeClass,
                             padding = padding_res
@@ -240,6 +253,26 @@ fun RegistroLlegadaScreen(
         }
     }
     
+    // Alert de producto encontrado
+    MuestraInfoAlert(
+        message = productoEncontrado,
+        onDismiss = {
+            muestraViewModel.clearMessages()
+        }
+    )
+    
+    // Modal de carga y éxito
+    MuestraLoadingModal(
+        isLoading = isCreating,
+        isSuccess = showSuccessModal,
+        successMessage = successMessage ?: "¡Registro enviado exitosamente!",
+        loadingMessage = "Enviando registro de llegada...",
+        onDismiss = {
+            showSuccessModal = false
+            muestraViewModel.clearMessages()
+        }
+    )
+    
     // BottomSheet para detalle
     selectedRegistro?.let { registro ->
         ModalBottomSheet(
@@ -271,15 +304,22 @@ fun RegistroLlegadaScreen(
 @Composable
 fun RegistroLlegadaForm(
     formState: MuestraViewModel.RegistroLlegadaFormState,
+    muestraViewModel: MuestraViewModel,
     onUpdateField: (String, String) -> Unit,
     onRegistrar: () -> Unit,
     windowSize: WindowWidthSizeClass,
     padding: androidx.compose.ui.unit.Dp
 ) {
-    // Lista de números de muestra disponibles
-    val numerosMuestra = remember {
-        (1..20).map { "Muestra ${String.format("%02d", it)}" }
+    // Obtener muestras disponibles del API
+    val muestrasDisponibles by muestraViewModel.muestrasDisponibles.collectAsState()
+    
+    // Usar las muestras del API si están disponibles, sino usar lista vacía
+    val numerosMuestra = if (muestrasDisponibles.isNotEmpty()) {
+        muestrasDisponibles
+    } else {
+        emptyList()
     }
+    
     var expandedMuestra by remember { mutableStateOf(false) }
     
     // Determinar si es mobile o tablet
@@ -310,7 +350,7 @@ fun RegistroLlegadaForm(
                         value = formState.numeroOrdenFabricacion,
                         onValueChange = { onUpdateField("numeroOrdenFabricacion", it) },
                         label = "",
-                        placeholder = "OF-2024-0",
+                        placeholder = "260002070",
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Description,
@@ -318,6 +358,11 @@ fun RegistroLlegadaForm(
                                 tint = Color(0xFF9CA3AF),
                                 modifier = Modifier.size(20.dp)
                             )
+                        },
+                        onImeAction = {
+                            if (formState.numeroOrdenFabricacion.isNotEmpty()) {
+                                muestraViewModel.consultarProductoRegistroLlegada(formState.numeroOrdenFabricacion)
+                            }
                         }
                     )
                 }
@@ -367,14 +412,22 @@ fun RegistroLlegadaForm(
                             expanded = expandedMuestra,
                             onDismissRequest = { expandedMuestra = false }
                         ) {
-                            numerosMuestra.forEach { muestra ->
+                            if (numerosMuestra.isEmpty()) {
                                 DropdownMenuItem(
-                                    text = { Text(muestra) },
-                                    onClick = {
-                                        onUpdateField("numeroMuestra", muestra)
-                                        expandedMuestra = false
-                                    }
+                                    text = { Text("No hay muestras disponibles") },
+                                    onClick = { expandedMuestra = false },
+                                    enabled = false
                                 )
+                            } else {
+                                numerosMuestra.forEach { muestra ->
+                                    DropdownMenuItem(
+                                        text = { Text(muestra) },
+                                        onClick = {
+                                            onUpdateField("numeroMuestra", muestra)
+                                            expandedMuestra = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -453,14 +506,22 @@ fun RegistroLlegadaForm(
                                 expanded = expandedMuestra,
                                 onDismissRequest = { expandedMuestra = false }
                             ) {
-                                numerosMuestra.forEach { muestra ->
+                                if (numerosMuestra.isEmpty()) {
                                     DropdownMenuItem(
-                                        text = { Text(muestra) },
-                                        onClick = {
-                                            onUpdateField("numeroMuestra", muestra)
-                                            expandedMuestra = false
-                                        }
+                                        text = { Text("No hay muestras disponibles") },
+                                        onClick = { expandedMuestra = false },
+                                        enabled = false
                                     )
+                                } else {
+                                    numerosMuestra.forEach { muestra ->
+                                        DropdownMenuItem(
+                                            text = { Text(muestra) },
+                                            onClick = {
+                                                onUpdateField("numeroMuestra", muestra)
+                                                expandedMuestra = false
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -586,7 +647,7 @@ fun RegistroLlegadaItemCard(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = formatearTiempoRelativo(registro.fechaRegistro, registro.horaRegistro),
+                    text = formatearTiempoRelativo(registro.fechaRegistro),
                     fontSize = 14.sp,
                     color = Color(0xFF6B7280)
                 )
@@ -603,6 +664,7 @@ fun RegistroLlegadaItemCard(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegistroLlegadaDetailSheet(
@@ -663,20 +725,26 @@ fun RegistroLlegadaDetailSheet(
             
             DetailRow(
                 label = "Máquina",
-                value = registro.maquina,
+                value = registro.descripcionProducto, // maquina
                 icon = Icons.Default.Build
             )
             
             DetailRow(
-                label = "Fecha de Registro",
-                value = registro.fechaRegistro,
+                label = "Fecha y Hora de Registro",
+                value = formatearFechaHora(registro.fechaRegistro),
                 icon = Icons.Default.CalendarToday
             )
             
             DetailRow(
-                label = "Hora de Registro",
-                value = registro.horaRegistro,
-                icon = Icons.Default.Schedule
+                label = "Usuario",
+                value = registro.userRegister,
+                icon = Icons.Default.Person
+            )
+            
+            DetailRow(
+                label = "Código de Producto",
+                value = registro.codigoProducto,
+                icon = Icons.Default.Tag
             )
         }
         
@@ -728,10 +796,12 @@ fun DetailRow(
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-fun formatearTiempoRelativo(fecha: String, hora: String): String {
+fun formatearTiempoRelativo(fechaRegistro: String): String {
     return try {
-        val fechaHora = LocalDateTime.parse("${fecha}T${hora}:00")
-        val ahora = LocalDateTime.now()
+        // Parsear el formato ISO 8601 con timezone: "2026-02-06T02:22:58-05:00"
+        val formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
+        val fechaHora = java.time.ZonedDateTime.parse(fechaRegistro, formatter)
+        val ahora = java.time.ZonedDateTime.now()
         val minutos = ChronoUnit.MINUTES.between(fechaHora, ahora)
         
         when {
@@ -749,5 +819,19 @@ fun formatearTiempoRelativo(fecha: String, hora: String): String {
         }
     } catch (e: Exception) {
         "Fecha no disponible"
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun formatearFechaHora(fechaRegistro: String): String {
+    return try {
+        // Parsear el formato ISO 8601 con timezone: "2026-02-06T02:22:58-05:00"
+        val formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
+        val fechaHora = java.time.ZonedDateTime.parse(fechaRegistro, formatter)
+        // Formatear a formato legible: "06/02/2026 02:22"
+        val formatoSalida = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+        fechaHora.format(formatoSalida)
+    } catch (e: Exception) {
+        fechaRegistro
     }
 }

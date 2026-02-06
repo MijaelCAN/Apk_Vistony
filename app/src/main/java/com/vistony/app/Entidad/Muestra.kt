@@ -378,7 +378,6 @@ data class ConsultaProductoItem(
     @SerializedName("Lote") val lote: String = "",
     @SerializedName("Maquina") val maquina: String = "",
     @SerializedName("Embalaje") val embalaje: String,
-    @SerializedName("Encargado_produccion") val encargadoProduccion: String = ""
 )
 
 data class ConsultaProductoResponse(
@@ -386,6 +385,24 @@ data class ConsultaProductoResponse(
     @SerializedName("success") val success: Boolean = false,
     @SerializedName("message") val message: String = "",
     @SerializedName("data") val data: List<ConsultaProductoItem> = emptyList()
+)
+
+// Consulta de producto por código
+data class ConsultaProductoMuestraItem(
+    @SerializedName("CodProd") val codigo: String = "",
+    @SerializedName("Producto") val descripcion: String = "",
+    @SerializedName("Lote") val lote: String = "",
+    @SerializedName("Maquina") val maquina: String = "",
+    @SerializedName("Embalaje") val embalaje: String,
+    @SerializedName("Encargado_produccion") val encargadoProduccion: String = "",
+    @SerializedName("Muestras") val muestras: List<String> = emptyList()
+)
+
+data class ConsultaProductoMuestraResponse(
+    @SerializedName("statusCode") val statusCode: Int = 0,
+    @SerializedName("success") val success: Boolean = false,
+    @SerializedName("message") val message: String = "",
+    @SerializedName("data") val data: List<ConsultaProductoMuestraItem> = emptyList()
 )
 
 // Especificaciones de Soplado
@@ -415,22 +432,23 @@ data class EspecificacionSopladoResponse(
 
 // Registro de Llegada
 data class RegistroLlegada(
-    @SerializedName("id") val id: String = "",
-    @SerializedName("numeroOrdenFabricacion") val numeroOrdenFabricacion: String = "",
-    @SerializedName("numeroMuestra") val numeroMuestra: String = "",
-    @SerializedName("descripcionProducto") val descripcionProducto: String = "",
-    @SerializedName("maquina") val maquina: String = "",
-    @SerializedName("fechaRegistro") val fechaRegistro: String = "",
-    @SerializedName("horaRegistro") val horaRegistro: String = ""
+    @SerializedName("DocEntry") val id: String = "",
+    @SerializedName("U_OrdenFabricacion") val numeroOrdenFabricacion: String = "",
+    @SerializedName("U_NMuestra") val numeroMuestra: String = "",
+    @SerializedName("U_CodProducto") val codigoProducto: String = "",
+    @SerializedName("U_DesProducto") val descripcionProducto: String = "",
+    @SerializedName("U_FechaRegistro") val fechaRegistro: String = "",
+    @SerializedName("U_UserRegister") val userRegister: String = ""
 )
 
 // Request para crear Registro de Llegada
 data class RegistroLlegadaCreateRequest(
-    @SerializedName("numeroOrdenFabricacion") val numeroOrdenFabricacion: String,
-    @SerializedName("numeroMuestra") val numeroMuestra: String,
-    @SerializedName("descripcionProducto") val descripcionProducto: String,
-    @SerializedName("maquina") val maquina: String,
-    @SerializedName("fec_reg") val fecReg: String
+    @SerializedName("u_OrdenFabricacion") val ordenFabricacion: String,
+    @SerializedName("u_NMuestra") val nMuestra: String,
+    @SerializedName("u_CodProducto") val codProducto: String,
+    @SerializedName("u_DesProducto") val desProducto: String,
+    @SerializedName("u_FechaRegistro") val fechaRegistro: String,
+    @SerializedName("u_UserRegister") val userRegister: String
 )
 
 // Response para crear Registro de Llegada

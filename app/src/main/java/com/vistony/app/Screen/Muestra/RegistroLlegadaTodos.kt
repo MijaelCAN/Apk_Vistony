@@ -76,23 +76,19 @@ fun RegistroLlegadaTodosScreen(
     var showDialogFechaInicio by remember { mutableStateOf(false) }
     var showDialogFechaFin by remember { mutableStateOf(false) }
     
-    // Filtrar registros por fecha
-    val registrosFiltrados = remember(registros, fechaInicio, fechaFin) {
-        if (fechaInicio == null && fechaFin == null) {
-            registros
-        } else {
-            registros.filter { registro ->
-                try {
-                    val fechaRegistro = LocalDateTime.parse("${registro.fechaRegistro}T${registro.horaRegistro}:00")
-                    val cumpleInicio = fechaInicio == null || !fechaRegistro.isBefore(fechaInicio)
-                    val cumpleFin = fechaFin == null || !fechaRegistro.isAfter(fechaFin)
-                    cumpleInicio && cumpleFin
-                } catch (e: Exception) {
-                    false
-                }
-            }
+    // Cargar registros al iniciar y cuando cambien las fechas
+    LaunchedEffect(fechaInicio, fechaFin) {
+        val fechaInicioStr = fechaInicio?.let { 
+            java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd").format(it)
         }
+        val fechaFinStr = fechaFin?.let { 
+            java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd").format(it)
+        }
+        muestraViewModel.obtenerRegistrosLlegada(fechaInicioStr, fechaFinStr, currentUser.dni)
     }
+    
+    // Los registros ya vienen filtrados del API
+    val registrosFiltrados = registros
 
     ModalNavigationDrawer(
         drawerState = drawerState,

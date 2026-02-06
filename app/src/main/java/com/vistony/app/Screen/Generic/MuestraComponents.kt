@@ -1,6 +1,7 @@
 package com.vistony.app.Screen.Generic
 
 import android.app.Activity
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -9,6 +10,9 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,6 +23,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -44,6 +50,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vistony.app.Entidad.CriterioEvaluacion
@@ -81,17 +88,17 @@ fun MuestraTextField2(
     val activity = context as Activity
     val windowSize = calculateWindowSizeClass(context)
     val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
-    
+
     var isFocused by remember { mutableStateOf(false) }
-    
+
     val borderColor = when {
         isError -> ErrorColor
         isFocused -> PrimaryMuestraColor
         else -> Color(0xFFD1D5DB)
     }
-    
+
     val backgroundColor = if (enabled) Color.White else Color(0xFFF9FAFB)
-    
+
     Column(modifier = modifier) {
         // Label
         Text(
@@ -101,7 +108,7 @@ fun MuestraTextField2(
             color = if (isFocused) PrimaryMuestraColor else Color(0xFF6B7280),
             modifier = Modifier.padding(bottom = 8.dp)
         )
-        
+
         // TextField Container
         Box(
             modifier = Modifier
@@ -129,7 +136,7 @@ fun MuestraTextField2(
                         it()
                     }
                 }
-                
+
                 // TextField
                 BasicTextField(
                     value = value,
@@ -156,7 +163,7 @@ fun MuestraTextField2(
                         innerTextField()
                     }
                 )
-                
+
                 // Trailing Icon
                 trailingIcon?.let {
                     Box(modifier = Modifier.padding(start = 8.dp)) {
@@ -165,7 +172,7 @@ fun MuestraTextField2(
                 }
             }
         }
-        
+
         if (isError && errorMessage != null) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
@@ -197,7 +204,7 @@ fun MuestraButton(
         animationSpec = tween(100),
         label = "scale"
     )
-    
+
     val buttonColors = when (variant) {
         ButtonVariant.Filled -> ButtonDefaults.buttonColors(
             containerColor = if (enabled) backgroundColor else Color(0xFFD1D5DB),
@@ -212,9 +219,9 @@ fun MuestraButton(
             contentColor = if (enabled) backgroundColor else Color(0xFF9CA3AF)
         )
     }
-    
+
     val buttonShape = RoundedCornerShape(12.dp)
-    
+
     when (variant) {
         ButtonVariant.Filled -> {
             Button(
@@ -386,7 +393,7 @@ fun MuestraHeader(
                         )
                     }
                 }
-                
+
                 actionButton?.invoke()
             }
         }
@@ -421,10 +428,10 @@ fun MuestraSectionTitle(
                     modifier = Modifier.size(20.dp)
                 )
             }
-            
+
             Spacer(modifier = Modifier.width(12.dp))
         }
-        
+
         Column {
             Text(
                 text = title,
@@ -454,7 +461,7 @@ fun MuestraChip(
     val backgroundColor = if (isSelected) color else Color.Transparent
     val contentColor = if (isSelected) Color.White else color
     val borderColor = color
-    
+
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(20.dp))
@@ -491,7 +498,7 @@ fun MuestraCriterioSelector(
             color = Color(0xFF374151),
             modifier = Modifier.padding(bottom = 8.dp)
         )
-        
+
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -593,6 +600,222 @@ fun MuestraLoadingCard(
                 fontSize = 16.sp,
                 color = Color(0xFF6B7280)
             )
+        }
+    }
+}
+
+@Composable
+fun MuestraInfoAlert(
+    message: String?,
+    onDismiss: () -> Unit = {}
+) {
+    message?.let { msg ->
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Información",
+                        tint = InfoColor,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        text = "Orden encontrada",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1E293B)
+                    )
+                }
+            },
+            text = {
+                Text(
+                    text = msg,
+                    fontSize = 14.sp,
+                    color = Color(0xFF6B7280)
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = onDismiss) {
+                    Text(
+                        text = "Aceptar",
+                        color = PrimaryMuestraColor,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MuestraLoadingModal(
+    isLoading: Boolean,
+    isSuccess: Boolean = false,
+    successMessage: String = "¡Registro enviado exitosamente!",
+    loadingMessage: String = "Enviando registro...",
+    onDismiss: () -> Unit = {}
+) {
+    // Estado combinado para AnimatedContent
+    val modalState = when {
+        isLoading -> "loading"
+        isSuccess -> "success"
+        else -> null
+    }
+    
+    if (modalState != null) {
+        Dialog(
+            onDismissRequest = { if (!isLoading) onDismiss() },
+            properties = DialogProperties(
+                dismissOnBackPress = !isLoading,
+                dismissOnClickOutside = !isLoading
+            )
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(0.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Header con gradiente
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(PrimaryMuestraColor, SecondaryMuestraColor)
+                                )
+                            )
+                            .padding(32.dp)
+                    ) {
+                        AnimatedContent(
+                            targetState = modalState,
+                            transitionSpec = {
+                                // Agrupa la entrada y la salida con paréntesis
+                                (fadeIn(animationSpec = tween(300)) + slideInVertically(animationSpec = tween(300)) { it })
+                                    .togetherWith(fadeOut(animationSpec = tween(300)) + slideOutVertically(animationSpec = tween(300)) { -it })
+                            },
+                            label = "loading_success_transition"
+                        ) { state ->
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                when (state) {
+                                    "loading" -> {
+                                        // Indicador de carga animado
+                                        CircularProgressIndicator(
+                                            color = Color.White,
+                                            modifier = Modifier.size(64.dp),
+                                            strokeWidth = 4.dp
+                                        )
+                                        Spacer(modifier = Modifier.height(20.dp))
+                                        Text(
+                                            text = loadingMessage,
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = "Por favor espera...",
+                                            fontSize = 14.sp,
+                                            color = Color.White.copy(alpha = 0.9f)
+                                        )
+                                    }
+                                    "success" -> {
+                                        // Icono de éxito animado
+                                        Box(
+                                            modifier = Modifier
+                                                .size(80.dp)
+                                                .background(
+                                                    color = Color.White.copy(alpha = 0.2f),
+                                                    shape = CircleShape
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.CheckCircle,
+                                                contentDescription = "Éxito",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(48.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(20.dp))
+                                        Text(
+                                            text = "¡Éxito!",
+                                            fontSize = 24.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = successMessage,
+                                            fontSize = 14.sp,
+                                            color = Color.White.copy(alpha = 0.9f),
+                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Contenido del modal (solo para éxito)
+                    AnimatedVisibility(
+                        visible = isSuccess,
+                        enter = fadeIn(animationSpec = tween(300)) + expandVertically(animationSpec = tween(300)),
+                        exit = fadeOut(animationSpec = tween(300)) + shrinkVertically(animationSpec = tween(300))
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "El registro ha sido guardado correctamente",
+                                fontSize = 14.sp,
+                                color = Color(0xFF6B7280),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            // Botón de cerrar
+                            Button(
+                                onClick = onDismiss,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = PrimaryMuestraColor
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    text = "Cerrar",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

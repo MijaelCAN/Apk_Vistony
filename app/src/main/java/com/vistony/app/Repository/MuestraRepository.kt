@@ -187,6 +187,28 @@ class MuestraRepository @Inject constructor() {
             Result.failure(e)
         }
     }
+    suspend fun consultarProductoMuestra(code: String): Result<ConsultaProductoMuestraResponse> {
+        return try {
+            android.util.Log.d("MuestraRepository", "Consultando producto muestra - Code: $code")
+
+            val response = muestraService.consultarProductoMuestra(code)
+
+            android.util.Log.d("MuestraRepository", "Respuesta muetsra - Código: ${response.code()}, Éxito: ${response.isSuccessful}")
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                android.util.Log.d("MuestraRepository", "Body - Success: ${body?.success}, Cantidad: ${body?.data?.size}")
+                Result.success(body ?: ConsultaProductoMuestraResponse())
+            } else {
+                val errorMessage = "Error del servidor: ${response.message()}"
+                android.util.Log.e("MuestraRepository", "Error consultando producto muestra: $errorMessage")
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MuestraRepository", "Excepción al consultar producto muestra", e)
+            Result.failure(e)
+        }
+    }
     
     suspend fun obtenerEspecificacionSoplado(codProducto: String): Result<EspecificacionSopladoResponse> {
         return try {
@@ -207,6 +229,54 @@ class MuestraRepository @Inject constructor() {
             }
         } catch (e: Exception) {
             android.util.Log.e("MuestraRepository", "Excepción al obtener especificación", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun obtenerRegistrosLlegada(fechaInicio: String? = null, fechaFin: String? = null, code: String? = null): Result<RegistroLlegadaResponse> {
+        return try {
+            android.util.Log.d("MuestraRepository", "Obteniendo registros de llegada")
+            android.util.Log.d("MuestraRepository", "FechaInicio: $fechaInicio, FechaFin: $fechaFin, Code: $code")
+            
+            val response = muestraService.obtenerRegistrosLlegada(fechaInicio, fechaFin, code)
+            
+            android.util.Log.d("MuestraRepository", "Respuesta - Código: ${response.code()}, Éxito: ${response.isSuccessful}")
+            
+            if (response.isSuccessful) {
+                val body = response.body()
+                android.util.Log.d("MuestraRepository", "Body - Success: ${body?.success}, Cantidad: ${body?.data?.size}")
+                Result.success(body ?: RegistroLlegadaResponse(400, false, "Error desconocido", emptyList()))
+            } else {
+                val errorMessage = "Error del servidor: ${response.message()}"
+                android.util.Log.e("MuestraRepository", "Error obteniendo registros de llegada: $errorMessage")
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MuestraRepository", "Excepción al obtener registros de llegada", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun crearRegistroLlegada(request: RegistroLlegadaCreateRequest): Result<RegistroLlegadaCreateResponse> {
+        return try {
+            android.util.Log.d("MuestraRepository", "Creando registro de llegada")
+            android.util.Log.d("MuestraRepository", "Request: $request")
+            
+            val response = muestraService.crearRegistroLlegada(request)
+            
+            android.util.Log.d("MuestraRepository", "Respuesta - Código: ${response.code()}, Éxito: ${response.isSuccessful}")
+            
+            if (response.isSuccessful) {
+                val body = response.body()
+                android.util.Log.d("MuestraRepository", "Body - StatusCode: ${body?.statusCode}, Success: ${body?.success}, Message: ${body?.message}")
+                Result.success(body ?: RegistroLlegadaCreateResponse(400, false, "Error desconocido", null))
+            } else {
+                val errorMessage = "Error del servidor: ${response.message()}"
+                android.util.Log.e("MuestraRepository", "Error creando registro de llegada: $errorMessage")
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MuestraRepository", "Excepción al crear registro de llegada", e)
             Result.failure(e)
         }
     }
