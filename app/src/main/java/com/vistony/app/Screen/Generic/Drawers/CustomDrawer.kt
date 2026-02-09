@@ -116,8 +116,9 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                 label = "Registro de Muestras",
                 subItems = listOf(
                     DrawerSubItem("Lista de Muestras") { navController.navigate("listaMuestra") },
+                    DrawerSubItem("Registro de Llegada") { navController.navigate("registroLlegada") },
                 ),
-                visibleForRoles = setOf("PRODUCCIÓN", "SISTEMAS", "SOPLADO", "ALMACEN INSUMOS") // CAMBIAR POR EL AREA
+                visibleForRoles = setOf("PRODUCCIÓN", "SISTEMAS", "SOPLADO", "ALMACEN INSUMOS", "ASEG. CALIDAD") // CAMBIAR POR EL AREA
             ),
             DrawerItem(
                 id = "calidad",
