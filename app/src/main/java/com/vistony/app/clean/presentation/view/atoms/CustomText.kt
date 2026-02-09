@@ -3,10 +3,12 @@ package com.vistony.app.clean.presentation.view.atoms
 import android.app.Activity
 import android.util.Size
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -893,5 +895,44 @@ fun TextM3(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun RowScope.TableCell(
+    text: String,
+    weight: Float,
+    title:Boolean=false,
+    color: Color = Color.Unspecified,
+    textAlign: TextAlign = TextAlign.Center,
+    fontSise: TextUnit = 15.sp,
+    backgroundColor: Color = Color.Unspecified,
+) {
+    if (title) {
+        androidx.compose.material.Text(
+            text = text,
+            modifier =
+                Modifier
+                    .weight(weight)
+                    .padding(2.dp)
+                    .background(backgroundColor),
+            fontSize = fontSise,
+            //fontWeight = FontWeight.Bold,
+            color = color,
+            textAlign = textAlign,
+            style = MaterialTheme.typography.bodyLarge,
+        )
+    } else {
+        Text(
+            text = text,
+            modifier = Modifier
+                .weight(weight)
+                .padding(2.dp)
+                .background(backgroundColor)
+            ,
+            color = color,
+            fontSize = fontSise,
+            textAlign = textAlign, style = MaterialTheme.typography.bodyMedium
+        )
     }
 }
