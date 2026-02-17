@@ -30,6 +30,9 @@ import com.vistony.app.Entidad.MaterialEmpleado
 import com.vistony.app.Entidad.InspeccionDimensional
 import com.vistony.app.Entidad.CheckListInspeccion
 import com.vistony.app.Screen.Generic.*
+import com.vistony.app.Screen.Generic.SuccessColor
+import com.vistony.app.Screen.Generic.WarningColor
+import com.vistony.app.Screen.Generic.ErrorColor
 import com.vistony.app.ViewModel.MuestraViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -2074,7 +2077,7 @@ fun EvaluacionForm(
     val currentMuestraId by muestraViewModel.currentMuestraId.collectAsState()
     
     // Lista de equipos disponibles
-    val equipos = listOf("SOP 1", "SOP 2", "SOP 3", "SOP 4")
+    val equipos = listOf("SOP 1", "SOP 2", "SOP 3", "SOP 4", "SOP 5", "Enlaynadora")
     var expandedEquipo by remember { mutableStateOf(false) }
     
     MuestraSectionTitle(
@@ -2164,19 +2167,135 @@ fun EvaluacionForm(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+            // Paletas
+            Text(
+                text = "Paletas",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF374151),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                MuestraCriterioSelector(
-                    label = "Paletas",
-                    selectedValue = formState.paletas,
-                    onValueChange = { muestraViewModel.updateEvaluacion("paletas", it) }
+                MuestraTextField(
+                    value = formState.paletasAprobadas,
+                    onValueChange = { muestraViewModel.updateEvaluacion("paletasAprobadas", it) },
+                    label = "Aprobadas",
+                    placeholder = "0",
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = SuccessColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 )
                 
-                MuestraCriterioSelector(
-                    label = "Bolsas",
-                    selectedValue = formState.bolsas,
-                    onValueChange = { muestraViewModel.updateEvaluacion("bolsas", it) }
+                MuestraTextField(
+                    value = formState.paletasObservadas,
+                    onValueChange = { muestraViewModel.updateEvaluacion("paletasObservadas", it) },
+                    label = "Observadas",
+                    placeholder = "0",
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = WarningColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                )
+                
+                MuestraTextField(
+                    value = formState.paletasRechazadas,
+                    onValueChange = { muestraViewModel.updateEvaluacion("paletasRechazadas", it) },
+                    label = "Rechazadas",
+                    placeholder = "0",
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Cancel,
+                            contentDescription = null,
+                            tint = ErrorColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Bolsas
+            Text(
+                text = "Bolsas",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF374151),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                MuestraTextField(
+                    value = formState.bolsasAprobadas,
+                    onValueChange = { muestraViewModel.updateEvaluacion("bolsasAprobadas", it) },
+                    label = "Aprobadas",
+                    placeholder = "0",
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = SuccessColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                )
+                
+                MuestraTextField(
+                    value = formState.bolsasObservadas,
+                    onValueChange = { muestraViewModel.updateEvaluacion("bolsasObservadas", it) },
+                    label = "Observadas",
+                    placeholder = "0",
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = WarningColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                )
+                
+                MuestraTextField(
+                    value = formState.bolsasRechazadas,
+                    onValueChange = { muestraViewModel.updateEvaluacion("bolsasRechazadas", it) },
+                    label = "Rechazadas",
+                    placeholder = "0",
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Cancel,
+                            contentDescription = null,
+                            tint = ErrorColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 )
             }
             

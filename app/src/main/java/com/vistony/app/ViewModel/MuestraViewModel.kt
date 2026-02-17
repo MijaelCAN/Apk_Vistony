@@ -120,8 +120,12 @@ class MuestraViewModel @Inject constructor(
     data class EvaluacionFormState(
         var equipo: String = "",
         var estado: String = "",
-        var paletas: String = "",
-        var bolsas: String = "",
+        var paletasAprobadas: String = "",
+        var paletasObservadas: String = "",
+        var paletasRechazadas: String = "",
+        var bolsasAprobadas: String = "",
+        var bolsasObservadas: String = "",
+        var bolsasRechazadas: String = "",
         var criteriosEvaluacion: String = "",
         var isFormValid: Boolean = false
     )
@@ -389,8 +393,12 @@ class MuestraViewModel @Inject constructor(
         val current = _evaluacionFormState.value
         val newState = when (field) {
             "equipo" -> current.copy(equipo = value)
-            "paletas" -> current.copy(paletas = value)
-            "bolsas" -> current.copy(bolsas = value)
+            "paletasAprobadas" -> current.copy(paletasAprobadas = value)
+            "paletasObservadas" -> current.copy(paletasObservadas = value)
+            "paletasRechazadas" -> current.copy(paletasRechazadas = value)
+            "bolsasAprobadas" -> current.copy(bolsasAprobadas = value)
+            "bolsasObservadas" -> current.copy(bolsasObservadas = value)
+            "bolsasRechazadas" -> current.copy(bolsasRechazadas = value)
             "criteriosEvaluacion" -> current.copy(criteriosEvaluacion = value)
             else -> current
         }
@@ -512,8 +520,10 @@ class MuestraViewModel @Inject constructor(
             true // En modo edición, siempre es válido para agregar items
         } else {
             current.equipo.isNotEmpty() &&
-            current.paletas.isNotEmpty() &&
-            current.bolsas.isNotEmpty()
+            // Validar que al menos un campo de paletas tenga valor
+            (current.paletasAprobadas.isNotEmpty() || current.paletasObservadas.isNotEmpty() || current.paletasRechazadas.isNotEmpty()) &&
+            // Validar que al menos un campo de bolsas tenga valor
+            (current.bolsasAprobadas.isNotEmpty() || current.bolsasObservadas.isNotEmpty() || current.bolsasRechazadas.isNotEmpty())
         }
         
         _evaluacionFormState.value = current.copy(isFormValid = isValid)
@@ -818,8 +828,12 @@ class MuestraViewModel @Inject constructor(
                 val request = EvaluacionProduccionCreateRequest(
                     equipo = evaluacion.equipo,
                     estado = "", // Dejar vacío según requerimiento
-                    paletas = evaluacion.paletas,
-                    bolsas = evaluacion.bolsas,
+                    paletasAprobadas = evaluacion.paletasAprobadas.ifEmpty { "0" },
+                    paletasObservadas = evaluacion.paletasObservadas.ifEmpty { "0" },
+                    paletasRechazadas = evaluacion.paletasRechazadas.ifEmpty { "0" },
+                    bolsasAprobadas = evaluacion.bolsasAprobadas.ifEmpty { "0" },
+                    bolsasObservadas = evaluacion.bolsasObservadas.ifEmpty { "0" },
+                    bolsasRechazadas = evaluacion.bolsasRechazadas.ifEmpty { "0" },
                     criteriosEvaluacion = evaluacion.criteriosEvaluacion,
                     fecReg = fechaHora
                 )
@@ -1198,8 +1212,12 @@ class MuestraViewModel @Inject constructor(
                 _evaluacionFormState.value = EvaluacionFormState(
                     equipo = evaluacion.equipo,
                     estado = evaluacion.estado,
-                    paletas = evaluacion.paletas,
-                    bolsas = evaluacion.bolsas,
+                    paletasAprobadas = evaluacion.paletasAprobadas,
+                    paletasObservadas = evaluacion.paletasObservadas,
+                    paletasRechazadas = evaluacion.paletasRechazadas,
+                    bolsasAprobadas = evaluacion.bolsasAprobadas,
+                    bolsasObservadas = evaluacion.bolsasObservadas,
+                    bolsasRechazadas = evaluacion.bolsasRechazadas,
                     criteriosEvaluacion = evaluacion.criteriosEvaluacion
                 )
             }
@@ -1232,7 +1250,14 @@ class MuestraViewModel @Inject constructor(
                     val materialesCompletado = _materialesTemporales.value.isNotEmpty()
                     val inspeccionesCompletado = _inspeccionesTemporales.value.isNotEmpty()
                     val checkListsCompletado = _checkListsTemporales.value.isNotEmpty()
-                    val evaluacionCompletado = _evaluacionFormState.value.estado.isNotEmpty()
+                    // La evaluación está completada cuando tiene equipo y al menos un valor en paletas o bolsas
+                    val evaluacionCompletado = _evaluacionFormState.value.equipo.isNotEmpty() &&
+                        ((_evaluacionFormState.value.paletasAprobadas.isNotEmpty() || 
+                          _evaluacionFormState.value.paletasObservadas.isNotEmpty() || 
+                          _evaluacionFormState.value.paletasRechazadas.isNotEmpty()) ||
+                         (_evaluacionFormState.value.bolsasAprobadas.isNotEmpty() || 
+                          _evaluacionFormState.value.bolsasObservadas.isNotEmpty() || 
+                          _evaluacionFormState.value.bolsasRechazadas.isNotEmpty()))
                     
                     // Determinar el estado de la cabecera basado en la completitud
                     val estadoCabecera = when {
@@ -1246,13 +1271,17 @@ class MuestraViewModel @Inject constructor(
                         materiales = _materialesTemporales.value,
                         inspeccionesDimensionales = _inspeccionesTemporales.value,
                         checkLists = _checkListsTemporales.value,
-                        evaluacionProduccion = if (_evaluacionFormState.value.estado.isNotEmpty()) {
+                        evaluacionProduccion = if (evaluacionCompletado) {
                             EvaluacionProduccion(
                                 id = UUID.randomUUID().toString(),
                                 muestraId = muestraId,
                                 estado = _evaluacionFormState.value.estado,
-                                paletas = _evaluacionFormState.value.paletas,
-                                bolsas = _evaluacionFormState.value.bolsas,
+                                paletasAprobadas = _evaluacionFormState.value.paletasAprobadas,
+                                paletasObservadas = _evaluacionFormState.value.paletasObservadas,
+                                paletasRechazadas = _evaluacionFormState.value.paletasRechazadas,
+                                bolsasAprobadas = _evaluacionFormState.value.bolsasAprobadas,
+                                bolsasObservadas = _evaluacionFormState.value.bolsasObservadas,
+                                bolsasRechazadas = _evaluacionFormState.value.bolsasRechazadas,
                                 criteriosEvaluacion = _evaluacionFormState.value.criteriosEvaluacion
                             )
                         } else null,
@@ -1427,8 +1456,12 @@ class MuestraViewModel @Inject constructor(
                                     muestraId = id,
                                     equipo = evaluacionAPI.equipo ?: "",
                                     estado = evaluacionAPI.estado ?: "",
-                                    paletas = evaluacionAPI.paletas ?: "",
-                                    bolsas = evaluacionAPI.bolsas ?: "",
+                                    paletasAprobadas = evaluacionAPI.paletasAprobadas ?: "",
+                                    paletasObservadas = evaluacionAPI.paletasObservadas ?: "",
+                                    paletasRechazadas = evaluacionAPI.paletasRechazadas ?: "",
+                                    bolsasAprobadas = evaluacionAPI.bolsasAprobadas ?: "",
+                                    bolsasObservadas = evaluacionAPI.bolsasObservadas ?: "",
+                                    bolsasRechazadas = evaluacionAPI.bolsasRechazadas ?: "",
                                     criteriosEvaluacion = evaluacionAPI.criteriosEvaluacion ?: ""
                                 )
                             }
@@ -1483,8 +1516,12 @@ class MuestraViewModel @Inject constructor(
                                     _evaluacionFormState.value = EvaluacionFormState(
                                         equipo = eval.equipo,
                                         estado = eval.estado,
-                                        paletas = eval.paletas,
-                                        bolsas = eval.bolsas,
+                                        paletasAprobadas = eval.paletasAprobadas,
+                                        paletasObservadas = eval.paletasObservadas,
+                                        paletasRechazadas = eval.paletasRechazadas,
+                                        bolsasAprobadas = eval.bolsasAprobadas,
+                                        bolsasObservadas = eval.bolsasObservadas,
+                                        bolsasRechazadas = eval.bolsasRechazadas,
                                         criteriosEvaluacion = eval.criteriosEvaluacion,
                                         isFormValid = true
                                     )
