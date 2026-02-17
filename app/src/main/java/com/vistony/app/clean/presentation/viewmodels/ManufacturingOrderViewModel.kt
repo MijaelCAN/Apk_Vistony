@@ -101,6 +101,17 @@ class ManufacturingOrderViewModel @Inject constructor(
     val _densityGroupResponseModel = MutableStateFlow(DensityGroupResponseModel())
     val densityGroupResponseModel: StateFlow<DensityGroupResponseModel> get() = _densityGroupResponseModel
 
+    private val _validationMessage = MutableStateFlow<String?>(null)
+    val validationMessage: StateFlow<String?> = _validationMessage
+
+    fun showValidationMessage(message: String) {
+        _validationMessage.value = message
+    }
+
+    fun clearValidationMessage() {
+        _validationMessage.value = null
+    }
+
 
     fun setIsVisibleObservation(newValue: Boolean) {
         _isVisibleObservation.value = newValue
@@ -328,42 +339,17 @@ fun onStatusAprobationHeader1Change(newValue: String, approvalLine: String, docN
         Log.e("REOS","saveStatusAprobation-optimalWeight: "+optimalWeight.value)
         Log.e("REOS","saveStatusAprobation-maximunWeight: "+maximunWeight.value)
         viewModelScope.launch {
-                if(!docNum.value.equals("")&&!density.value.equals("")&&!optimalWeight.value .equals("")&&!maximunWeight.value.equals("")&&!optimalWeight.value .equals("0")&&!maximunWeight.value.equals("0") ){
-                    Log.e("REOS","saveStatusAprobation-entra linea 1")
-                updateApprovalStatusUseCase(
-                    docNum.value,
-                    density.value,
-                    if(statusAprobbation1.value.equals("Pendiente")) "*" else if (statusAprobbation1.value.equals("Aprobado")) "S" else if (statusAprobbation1.value.equals("Rechazado")) "N" else "*",
-                    "Linea1",
-                    optimalWeight.value,
-                    maximunWeight.value,
-                    "",
-                    "",
-                "",
-                    ""
-
-                )
-                if(!docNum.value.equals("")&&!density.value.equals("")&&!optimalWeight.value.equals("")&&!maximunWeight.value.equals("") ) {
-                    updateApprovalStatusUseCase(
-                        docNum.value,
-                        density.value,
-                        if (statusAprobbation2.value.equals("Pendiente")) "*" else if (statusAprobbation2.value.equals("Aprobado")) "S" else if (statusAprobbation2.value.equals("Rechazado")) "N" else "*",
-                        "Linea2",
-                        optimalWeight.value,
-                        maximunWeight.value,
-                        "",
-                        "",
-                        "",
-                        ""
-
-                    )
-                }
-                if(!docNum.value.equals("")&&!density.value.equals("")&&!optimalWeight.value.equals("")&&!maximunWeight.value.equals("") ) {
+                if(!
+                    optimalWeight.value .equals("")&&!maximunWeight.value.equals("")
+                    &&!optimalWeight.value .equals("0")&&!maximunWeight.value.equals("0")
+                    ){
+                    if(!docNum.value.equals("") &&!density.value.equals(""))
+                    {
                         updateApprovalStatusUseCase(
                             docNum.value,
                             density.value,
-                            if (statusAprobbation3.value.equals("Pendiente")) "*" else if (statusAprobbation3.value.equals("Aprobado")) "S" else if (statusAprobbation3.value.equals("Rechazado")) "N" else "*",
-                            "Linea3",
+                            if(statusAprobbation1.value.equals("Pendiente")) "*" else if (statusAprobbation1.value.equals("Aprobado")) "S" else if (statusAprobbation1.value.equals("Rechazado")) "N" else "*",
+                            "Linea1",
                             optimalWeight.value,
                             maximunWeight.value,
                             "",
@@ -372,7 +358,47 @@ fun onStatusAprobationHeader1Change(newValue: String, approvalLine: String, docN
                             ""
 
                         )
+                        if(!docNum.value.equals("")&&!density.value.equals("")&&!optimalWeight.value.equals("")&&!maximunWeight.value.equals("") ) {
+                            updateApprovalStatusUseCase(
+                                docNum.value,
+                                density.value,
+                                if (statusAprobbation2.value.equals("Pendiente")) "*" else if (statusAprobbation2.value.equals("Aprobado")) "S" else if (statusAprobbation2.value.equals("Rechazado")) "N" else "*",
+                                "Linea2",
+                                optimalWeight.value,
+                                maximunWeight.value,
+                                "",
+                                "",
+                                "",
+                                ""
+
+                            )
+                        }
+                        if(!docNum.value.equals("")&&!density.value.equals("")&&!optimalWeight.value.equals("")&&!maximunWeight.value.equals("") ) {
+                            updateApprovalStatusUseCase(
+                                docNum.value,
+                                density.value,
+                                if (statusAprobbation3.value.equals("Pendiente")) "*" else if (statusAprobbation3.value.equals("Aprobado")) "S" else if (statusAprobbation3.value.equals("Rechazado")) "N" else "*",
+                                "Linea3",
+                                optimalWeight.value,
+                                maximunWeight.value,
+                                "",
+                                "",
+                                "",
+                                ""
+
+                            )
+                        }
+                    }else {
+                        Log.e("REOS","saveStatusAprobation: Faltan datos para guardar la aprobación")
+                        setIsVisibleObservation(true)
+                        showValidationMessage("Debe ingresar número de documento y densidad para guardar la aprobación")
                     }
+                }
+                else
+                {
+                    Log.e("REOS","saveStatusAprobation: Faltan datos para guardar la aprobación")
+                    setIsVisibleObservation(true)
+                    showValidationMessage("Debe ingresar peso óptimo y peso máximo diferentes de cero")
             }
         }
     }

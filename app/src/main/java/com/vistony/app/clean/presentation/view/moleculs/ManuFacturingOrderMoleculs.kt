@@ -63,6 +63,7 @@ import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.unit.sp
 import com.vistony.app.clean.presentation.view.atoms.ManuFacturingOrderSpinnerView
 import com.vistony.app.clean.presentation.view.atoms.ManuFacturingOrderTextView
+import com.vistony.app.clean.presentation.view.atoms.ResultDialog
 import com.vistony.app.clean.presentation.viewmodels.ScanViewModel
 import kotlinx.coroutines.delay
 
@@ -210,6 +211,18 @@ fun ManuFacturingOrderDetailBody(
     val reasonDesaprobation = viewModel.reasonDesaprobation.collectAsState()
     val observation = viewModel.observation.collectAsState()
     val isVisibleObservation = viewModel.isVisibleObservation.collectAsState()
+    val validationMessage = viewModel.validationMessage.collectAsState()
+
+    // ✅ Diálogo de resultado con iconos
+    if (isVisibleObservation.value) {
+        ResultDialog(
+            isSuccess = false,
+            message = validationMessage.value.toString(),
+            onDismiss = {
+                viewModel.setIsVisibleObservation(false)
+            }
+        )
+    }
 
     // Ejecutar con retraso de 2 segundos
     LaunchedEffect(shouldRefresh) {
@@ -220,12 +233,11 @@ fun ManuFacturingOrderDetailBody(
         }
     }
 
-    LaunchedEffect((isVisibleObservation.value)) {
+    /*LaunchedEffect((isVisibleObservation.value)) {
         if(isVisibleObservation.value){
             Toast.makeText(context,"Debe ingresar peso óptimo y peso máximo diferentes de cero", Toast.LENGTH_LONG).show()
-            //viewModel.setIsVisibleObservation(false)
         }
-    }
+    }*/
 
 
 
@@ -387,7 +399,8 @@ fun ManuFacturingOrderDetailBodyPackaging(
     val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
     val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
     val statusAprobationHeader1= viewModel.statusAprobationHeader1.collectAsState()
-    Log.e("REOS","ManuFacturingOrderMoleculs-ManuFacturingOrderDetailBodyPackaging-statusAprobationHeader1"+statusAprobationHeader1.value)
+
+
 
     manufacturingOrderDetailModel.forEach {
         Card(

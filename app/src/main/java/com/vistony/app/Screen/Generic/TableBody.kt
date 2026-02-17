@@ -25,7 +25,7 @@ fun TableCell(
             .border(1.dp, Color.Gray),
         textAlign = TextAlign.Center
     )
-}*/
+}*
 @Composable
 fun <T> TableCell(
     value: T,
@@ -49,4 +49,4 @@ fun TableCell(
     TableCell(text, modifier) {
         Text(text = it, textAlign = TextAlign.Left)
     }
-}
+}*/
