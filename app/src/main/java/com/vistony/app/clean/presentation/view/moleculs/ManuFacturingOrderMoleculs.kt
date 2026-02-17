@@ -2,6 +2,7 @@ package com.vistony.app.clean.presentation.view.moleculs
 
 import android.app.Activity
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,6 +63,7 @@ import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.unit.sp
 import com.vistony.app.clean.presentation.view.atoms.ManuFacturingOrderSpinnerView
 import com.vistony.app.clean.presentation.view.atoms.ManuFacturingOrderTextView
+import com.vistony.app.clean.presentation.view.atoms.ResultDialog
 import com.vistony.app.clean.presentation.viewmodels.ScanViewModel
 import kotlinx.coroutines.delay
 
@@ -75,7 +77,6 @@ fun ManuFacturingOrderHead(
 
     LaunchedEffect(scanData) {
         scanData?.let { data ->
-            Log.e("REOS", "ManuFacturingOrderHead - Actualizando orderCode con: ${data}")
             viewModel.onOrderCodeChange(data)
             viewModel.getManufacturingOrder(data)
             viewModel.onDensityChange("0")
@@ -96,13 +97,6 @@ fun ManuFacturingOrderHead(
                 Spacer(modifier = Modifier.height(8.dp))
                 TextWithDivider("Datos de Orden de Fabricación")
                 Spacer(modifier = Modifier.height(8.dp))
-                /*Row(modifier = Modifier.fillMaxWidth()) {
-                    ManuFacturingOrderTextFieldView(
-                        value = "Digite o escanee el Nro. de Orden de Fabricación",
-                        textAlign = TextAlign.Start,
-                        //color = Color.Black
-                    )
-                }*/
                 ManuFacturingOrderEditTextView(
                     status = true,
                     text = orderCode.value,
@@ -143,11 +137,9 @@ fun ManuFacturingOrderDetail(
 
     when {
         isLoading.value -> {
-            // Pantalla de carga
             CustomProgressDialog()
         }
         data.value.data.isNotEmpty() -> {
-            //TextWithDivider("Lotes Encontrados")
             ManuFacturingOrderDetailBody()
         }
         else -> {
@@ -201,6 +193,8 @@ fun ManuFacturingOrderDetailBody(
 ) {
     val listApprobation = ApprobationDefaults.DEFAULT_APPROBATIONS
     val listApprobationHeader = ApprobationDefaults.DEFAULT_APPROBATIONS_HEADER
+    val listApprobationClosed = ApprobationDefaults.DEFAULT_APPROBATIONS_CLOSED
+
     val data = viewModel.manufacturingOrderResponseModel.collectAsState()
     val statusAprobationHeader1 = viewModel.statusAprobationHeader1.collectAsState()
     val context = LocalContext.current
@@ -217,6 +211,19 @@ fun ManuFacturingOrderDetailBody(
     val reasonDesaprobation = viewModel.reasonDesaprobation.collectAsState()
     val observation = viewModel.observation.collectAsState()
     val isVisibleObservation = viewModel.isVisibleObservation.collectAsState()
+    val validationMessage = viewModel.validationMessage.collectAsState()
+
+    // ✅ Diálogo de resultado con iconos
+    if (isVisibleObservation.value) {
+        ResultDialog(
+            isSuccess = false,
+            message = validationMessage.value.toString(),
+            onDismiss = {
+                viewModel.setIsVisibleObservation(false)
+            }
+        )
+    }
+
     // Ejecutar con retraso de 2 segundos
     LaunchedEffect(shouldRefresh) {
         if (shouldRefresh) {
@@ -225,6 +232,14 @@ fun ManuFacturingOrderDetailBody(
             shouldRefresh = false
         }
     }
+
+    /*LaunchedEffect((isVisibleObservation.value)) {
+        if(isVisibleObservation.value){
+            Toast.makeText(context,"Debe ingresar peso óptimo y peso máximo diferentes de cero", Toast.LENGTH_LONG).show()
+        }
+    }*/
+
+
 
     when {
         isLoadingBodyDetail.value -> {
@@ -260,18 +275,7 @@ fun ManuFacturingOrderDetailBody(
 
                 )
                 Spacer(modifier = Modifier.padding(top = 10.dp))
-                /*ManuFacturingOrderSpinnerView(
-                    status = true,
-                    selectedOption = statusDesaprobation.value,
-                    label = "Estado Aprobación (Desaprobado Calidad)",
-                    onOptionSelected = { result ->
-                        viewModel.onStatusDesaprobationChange(result)
-                        viewModel.onStatusAprobationHeader1Change(statusAprobationHeader1.value, "Linea1", it.batchName)
-                        shouldRefresh=true
-                    },
-                    options = listApprobation.map { it.name }
-                )
-                Spacer(modifier = Modifier.padding(top = 10.dp))*/
+
                 ManuFacturingOrderSpinnerView(
                     status = true,
                     selectedOption = statusCorrection.value,
@@ -281,21 +285,26 @@ fun ManuFacturingOrderDetailBody(
                         viewModel.onStatusAprobationHeader1Change(statusAprobationHeader1.value, "Linea1", it.batchName)
                         shouldRefresh=true
                     },
-                    options = listApprobation.map { it.name }
+                    options = listApprobationClosed.map { it.name }
                 )
-
-                Spacer(modifier = Modifier.padding(top = 10.dp))
-                ManuFacturingOrderSpinnerView(
-                    status = true,
-                    selectedOption = reasonDesaprobation.value,
-                    label = "Motivo Corrección (Listado)",
-                    onOptionSelected = { result ->
-                        viewModel.onReasonDesaprobationChange( result )
-                        viewModel.onStatusAprobationHeader1Change(statusAprobationHeader1.value, "Linea1", it.batchName)
-                        shouldRefresh=true
-                    },
-                    options = reasonForRejectionsResponseModel.value.data.map { it.name },
+                if(statusCorrection.value.equals("Si", ignoreCase = true)) {
+                    Spacer(modifier = Modifier.padding(top = 10.dp))
+                    ManuFacturingOrderSpinnerView(
+                        status = true,
+                        selectedOption = reasonDesaprobation.value,
+                        label = "Motivo Corrección (Listado)",
+                        onOptionSelected = { result ->
+                            viewModel.onReasonDesaprobationChange(result)
+                            viewModel.onStatusAprobationHeader1Change(
+                                statusAprobationHeader1.value,
+                                "Linea1",
+                                it.batchName
+                            )
+                            shouldRefresh = true
+                        },
+                        options = reasonForRejectionsResponseModel.value.data.map { it.name },
                     )
+                }
                 Spacer(modifier = Modifier.padding(top = 10.dp))
                 ManuFacturingOrderEditTextView(
                     status = true,
@@ -303,8 +312,6 @@ fun ManuFacturingOrderDetailBody(
                     label = "Observaciones",
                     onClick = { result ->
                         viewModel.onObservationChange( result )
-                        //viewModel.onStatusAprobationHeader1Change(statusAprobationHeader1.value, "Linea1", it.batchName)
-                        //shouldRefresh=true
                     },
                     countMaxCharacter = 254,
                     keyboardType = KeyboardType.Text,
@@ -392,7 +399,8 @@ fun ManuFacturingOrderDetailBodyPackaging(
     val padding_res = Dimensions.getPadding(windowSize.widthSizeClass)
     val bodyFontSize = Dimensions.getBodyFontSize(windowSize.widthSizeClass)
     val statusAprobationHeader1= viewModel.statusAprobationHeader1.collectAsState()
-    Log.e("REOS","ManuFacturingOrderMoleculs-ManuFacturingOrderDetailBodyPackaging-statusAprobationHeader1"+statusAprobationHeader1.value)
+
+
 
     manufacturingOrderDetailModel.forEach {
         Card(
@@ -493,6 +501,7 @@ fun ManufacturingOrderCustomDialog(
     val isStatusApprobationContainer2 = viewModel.isStatusApprobationContainer2.collectAsState()
     val isStatusApprobationContainer3 = viewModel.isStatusApprobationContainer3.collectAsState()
     val statusAprobationHeader1 = viewModel.statusAprobationHeader1.collectAsState()
+
 
     // Ejecutar con retraso de 2 segundos
     LaunchedEffect(shouldRefresh) {

@@ -60,6 +60,11 @@ object ApprobationDefaults {
         ApprobationModel(code = "*", name = "Pendiente"),
         ApprobationModel(code = "N", name = "No Conforme")
     )
+
+    val DEFAULT_APPROBATIONS_CLOSED = listOf(
+        ApprobationModel(code = "N", name = "No"),
+        ApprobationModel(code = "S", name = "Si"),
+    )
 }
 
 data class ManufacturingOrderUpdateStatus(
