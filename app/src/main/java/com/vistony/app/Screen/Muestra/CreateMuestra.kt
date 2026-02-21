@@ -56,6 +56,7 @@ fun CreateMuestra(
     val errorMessage by muestraViewModel.errorMessage.collectAsState()
     val isEditMode by muestraViewModel.isEditMode.collectAsState()
     val currentMuestraId by muestraViewModel.currentMuestraId.collectAsState()
+    val isCompletado = muestraViewModel.isMuestraCompletada(currentMuestraId)
 
     // Limpiar mensajes al entrar a la pantalla
     LaunchedEffect(Unit) {
@@ -145,9 +146,9 @@ fun CreateMuestra(
                 when (pasoActual) {
                     1 -> CabeceraForm(muestraViewModel, padding_res, isEditMode)
                     2 -> MaterialForm(muestraViewModel, padding_res)
-                    3 -> InspeccionDimensionalForm(muestraViewModel, padding_res)
-                    4 -> CheckListForm(muestraViewModel, padding_res)
-                    5 -> EvaluacionForm(muestraViewModel, padding_res)
+                    3 -> InspeccionDimensionalForm(muestraViewModel, padding_res, isCompletado = isCompletado)
+                    4 -> CheckListForm(muestraViewModel, padding_res, isCompletado = isCompletado)
+                    5 -> EvaluacionForm(muestraViewModel, padding_res, isCompletado = isCompletado)
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))

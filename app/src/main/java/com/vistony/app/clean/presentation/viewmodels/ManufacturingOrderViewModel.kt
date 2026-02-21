@@ -193,7 +193,7 @@ fun onStatusAprobationHeader1Change(newValue: String, approvalLine: String, docN
         try {
             _isLoadingBodyDetail.value = true
             // Corregir nombres de parámetros según los errores
-            if(!_optimalWeight.value.equals("0")&&!_maximunWeight.value.equals("0")) {
+            /*if(!_optimalWeight.value.equals("0")&&!_maximunWeight.value.equals("0")) {*/
                 updateApprovalStatusUseCase.invoke(
                     docNum = docNum,
                     approvalLine = approvalLine,                           // Cambiar 'line' por 'approvalLine'
@@ -250,10 +250,10 @@ fun onStatusAprobationHeader1Change(newValue: String, approvalLine: String, docN
                         )
                     }
                 }
-            }else {
+            /*}else {
                 Log.e("REOS", "onStatusAprobationHeader1Change-optimalWeight or maximunWeight is zero")
                 setIsVisibleObservation(true)
-            }
+            }*/
 
 
         } catch (e: Exception) {
@@ -339,9 +339,8 @@ fun onStatusAprobationHeader1Change(newValue: String, approvalLine: String, docN
         Log.e("REOS","saveStatusAprobation-optimalWeight: "+optimalWeight.value)
         Log.e("REOS","saveStatusAprobation-maximunWeight: "+maximunWeight.value)
         viewModelScope.launch {
-                if(!
-                    optimalWeight.value .equals("")&&!maximunWeight.value.equals("")
-                    &&!optimalWeight.value .equals("0")&&!maximunWeight.value.equals("0")
+                if(!optimalWeight.value.equals("")&&!maximunWeight.value.equals("")
+                    &&!optimalWeight.value.equals("0")&&!maximunWeight.value.equals("0")
                     ){
                     if(!docNum.value.equals("") &&!density.value.equals(""))
                     {
