@@ -73,8 +73,12 @@ data class EvaluacionProduccion(
     @SerializedName("muestraId") val muestraId: String = "",
     @SerializedName("equipo") val equipo: String = "",
     @SerializedName("estado") val estado: String = "",
-    @SerializedName("paletas") val paletas: String = "", // Aprobado, Observado, Rechazado
-    @SerializedName("bolsas") val bolsas: String = "",
+    @SerializedName("paletasAprobadas") val paletasAprobadas: String = "",
+    @SerializedName("paletasObservadas") val paletasObservadas: String = "",
+    @SerializedName("paletasRechazadas") val paletasRechazadas: String = "",
+    @SerializedName("bolsasAprobadas") val bolsasAprobadas: String = "",
+    @SerializedName("bolsasObservadas") val bolsasObservadas: String = "",
+    @SerializedName("bolsasRechazadas") val bolsasRechazadas: String = "",
     @SerializedName("criteriosEvaluacion") val criteriosEvaluacion: String = ""
 )
 
@@ -226,8 +230,12 @@ data class MaterialEmpleadoCreateResponse(
 data class EvaluacionProduccionCreateRequest(
     @SerializedName("equipo") val equipo: String,
     @SerializedName("estado") val estado: String = "",
-    @SerializedName("paletas") val paletas: String,
-    @SerializedName("bolsas") val bolsas: String,
+    @SerializedName("paletasAprobadas") val paletasAprobadas: String,
+    @SerializedName("paletasObservadas") val paletasObservadas: String,
+    @SerializedName("paletasRechazadas") val paletasRechazadas: String,
+    @SerializedName("bolsasAprobadas") val bolsasAprobadas: String,
+    @SerializedName("bolsasObservadas") val bolsasObservadas: String,
+    @SerializedName("bolsasRechazadas") val bolsasRechazadas: String,
     @SerializedName("criteriosEvaluacion") val criteriosEvaluacion: String,
     @SerializedName("fec_reg") val fecReg: String
 )
@@ -279,8 +287,12 @@ data class PostMuestraResponse(
 data class EvaluacionProduccionAPI(
     @SerializedName("U_equipo") val equipo: String? = "",
     @SerializedName("U_estado") val estado: String? = "",
-    @SerializedName("U_paletas") val paletas: String? = "",
-    @SerializedName("U_bolsas") val bolsas: String? = "",
+    @SerializedName("U_paletasAprobadas") val paletasAprobadas: String? = "",
+    @SerializedName("U_paletasObservadas") val paletasObservadas: String? = "",
+    @SerializedName("U_paletasRechazadas") val paletasRechazadas: String? = "",
+    @SerializedName("U_bolsasAprobadas") val bolsasAprobadas: String? = "",
+    @SerializedName("U_bolsasObservadas") val bolsasObservadas: String? = "",
+    @SerializedName("U_bolsasRechazadas") val bolsasRechazadas: String? = "",
     @SerializedName("U_criteriosEvaluacion") val criteriosEvaluacion: String? = "",
     @SerializedName("U_fec_reg") val fecReg: String? = ""
 )

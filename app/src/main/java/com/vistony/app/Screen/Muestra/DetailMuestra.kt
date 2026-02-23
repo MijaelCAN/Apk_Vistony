@@ -26,6 +26,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vistony.app.Entidad.MuestraCompleta
 import com.vistony.app.Screen.Generic.*
+import com.vistony.app.Screen.Generic.SuccessColor
+import com.vistony.app.Screen.Generic.WarningColor
+import com.vistony.app.Screen.Generic.ErrorColor
 import com.vistony.app.ViewModel.MuestraViewModel
 import com.vistony.app.ui.theme.theme.Dimensions
 
@@ -601,57 +604,116 @@ fun EvaluacionDetailItem(
             
             Spacer(modifier = Modifier.height(12.dp))
             
+            // Paletas
+            Text(
+                text = "Paletas",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF111827),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Estado General",
+                        text = "Aprobadas",
                         fontSize = 10.sp,
                         color = Color(0xFF6B7280)
                     )
                     Text(
-                        text = evaluacion.estado,
-                        fontSize = 12.sp,
+                        text = evaluacion.paletasAprobadas.ifEmpty { "0" },
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF111827)
+                        color = SuccessColor
                     )
                 }
                 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Paletas",
+                        text = "Observadas",
                         fontSize = 10.sp,
                         color = Color(0xFF6B7280)
                     )
-                    MuestraChip(
-                        text = evaluacion.paletas,
-                        isSelected = true,
-                        color = when (evaluacion.paletas) {
-                            "Aprobado" -> Color(0xFF10B981)
-                            "Observado" -> Color(0xFFF59E0B)
-                            "Rechazado" -> Color(0xFFEF4444)
-                            else -> Color(0xFF6B7280)
-                        }
+                    Text(
+                        text = evaluacion.paletasObservadas.ifEmpty { "0" },
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = WarningColor
                     )
                 }
                 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Bolsas",
+                        text = "Rechazadas",
                         fontSize = 10.sp,
                         color = Color(0xFF6B7280)
                     )
-                    MuestraChip(
-                        text = evaluacion.bolsas,
-                        isSelected = true,
-                        color = when (evaluacion.bolsas) {
-                            "Aprobado" -> Color(0xFF10B981)
-                            "Observado" -> Color(0xFFF59E0B)
-                            "Rechazado" -> Color(0xFFEF4444)
-                            else -> Color(0xFF6B7280)
-                        }
+                    Text(
+                        text = evaluacion.paletasRechazadas.ifEmpty { "0" },
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ErrorColor
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // Bolsas
+            Text(
+                text = "Bolsas",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF111827),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Aprobadas",
+                        fontSize = 10.sp,
+                        color = Color(0xFF6B7280)
+                    )
+                    Text(
+                        text = evaluacion.bolsasAprobadas.ifEmpty { "0" },
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = SuccessColor
+                    )
+                }
+                
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Observadas",
+                        fontSize = 10.sp,
+                        color = Color(0xFF6B7280)
+                    )
+                    Text(
+                        text = evaluacion.bolsasObservadas.ifEmpty { "0" },
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = WarningColor
+                    )
+                }
+                
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Rechazadas",
+                        fontSize = 10.sp,
+                        color = Color(0xFF6B7280)
+                    )
+                    Text(
+                        text = evaluacion.bolsasRechazadas.ifEmpty { "0" },
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ErrorColor
                     )
                 }
             }

@@ -25,7 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vistony.app.Entidad.UserResponse
@@ -56,6 +56,7 @@ fun CreateMuestra(
     val errorMessage by muestraViewModel.errorMessage.collectAsState()
     val isEditMode by muestraViewModel.isEditMode.collectAsState()
     val currentMuestraId by muestraViewModel.currentMuestraId.collectAsState()
+    val isCompletado = muestraViewModel.isMuestraCompletada(currentMuestraId)
 
     // Limpiar mensajes al entrar a la pantalla
     LaunchedEffect(Unit) {
@@ -145,9 +146,9 @@ fun CreateMuestra(
                 when (pasoActual) {
                     1 -> CabeceraForm(muestraViewModel, padding_res, isEditMode)
                     2 -> MaterialForm(muestraViewModel, padding_res)
-                    3 -> InspeccionDimensionalForm(muestraViewModel, padding_res)
-                    4 -> CheckListForm(muestraViewModel, padding_res)
-                    5 -> EvaluacionForm(muestraViewModel, padding_res)
+                    3 -> InspeccionDimensionalForm(muestraViewModel, padding_res, isCompletado = isCompletado)
+                    4 -> CheckListForm(muestraViewModel, padding_res, isCompletado = isCompletado)
+                    5 -> EvaluacionForm(muestraViewModel, padding_res, isCompletado = isCompletado)
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -180,7 +181,8 @@ fun CreateMuestra(
                     },
                     isCreating = isCreating,
                     buttonHeight = buttonHeight,
-                    isEditMode = isEditMode
+                    isEditMode = isEditMode,
+                    isCompletado = isCompletado
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -343,8 +345,9 @@ fun MuestraWizardNavigation(
     onSiguiente: () -> Unit,
     onFinalizar: () -> Unit,
     isCreating: Boolean,
-    buttonHeight: androidx.compose.ui.unit.Dp,
-    isEditMode: Boolean = false
+    buttonHeight: Dp,
+    isEditMode: Boolean = false,
+    isCompletado: Boolean
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -387,20 +390,22 @@ fun MuestraWizardNavigation(
             }
             // Paso final (5) o paso 1 en creación: Finalizar/Registrar
             else -> {
-                MuestraButton(
-                    text = when {
-                        isCreating -> "Registrando..."
-                        isEditMode -> "Actualizar"
-                        pasoActual == 1 -> "Registrar Muestra"
-                        else -> "Finalizar"
-                    },
-                    onClick = onFinalizar,
-                    icon = Icons.Default.Check,
-                    enabled = !isCreating,
-                    isLoading = isCreating,
-                    modifier = Modifier.weight(1f),
-                    buttonHeight = buttonHeight
-                )
+                if(!isCompletado){
+                    MuestraButton(
+                        text = when {
+                            isCreating -> "Registrando..."
+                            isEditMode -> "Actualizar"
+                            pasoActual == 1 -> "Registrar Muestra"
+                            else -> "Finalizar"
+                        },
+                        onClick = onFinalizar,
+                        icon = Icons.Default.Check,
+                        enabled = !isCreating,
+                        isLoading = isCreating,
+                        modifier = Modifier.weight(1f),
+                        buttonHeight = buttonHeight
+                    )
+                }
             }
         }
     }
