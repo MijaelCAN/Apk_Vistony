@@ -34,10 +34,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vistony.app.R
+import com.vistony.app.ViewModel.NetworkStatusViewModel
 
 
 @Composable
-fun NoInternetScreen() {
+fun NoInternetScreen(
+    networkStatusViewModel: NetworkStatusViewModel? = null
+) {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -74,10 +77,16 @@ fun NoInternetScreen() {
                     fontSize = 10.sp
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = {}, colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF0E0E0E).copy(alpha = 0.8f)
-                    //containerColor = Color(0xFF0054A3)
-                )) {
+                Button(
+                    onClick = { 
+                        // Verificar manualmente el estado de conexión
+                        networkStatusViewModel?.checkConnection()
+                    }, 
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF0E0E0E).copy(alpha = 0.8f)
+                        //containerColor = Color(0xFF0054A3)
+                    )
+                ) {
                     Text("Reintentar", color = Color.White)
                 }
             }

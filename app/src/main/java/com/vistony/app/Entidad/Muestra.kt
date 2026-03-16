@@ -7,6 +7,7 @@ data class MuestraCabecera(
     @SerializedName("DocEntry") val id: String = "",
     @SerializedName("U_Fec_Register") val fechaRegistro: String = "",
     @SerializedName("U_ItemCode") val codigo: String = "",
+    @SerializedName("U_CodigoMaquina") val codigoMaquina: String = "",
     @SerializedName("U_Lote") val lote: String = "",
     @SerializedName("U_Embalaje") val embalaje: String = "",
     @SerializedName("U_Maquina") val maquina: String = "",
@@ -143,6 +144,7 @@ data class MuestraCreateRequest(
     @SerializedName("fec_register") val fecRegister: String,
     @SerializedName("turno") val turno: String,
     @SerializedName("maquina") val maquina: String,
+    @SerializedName("codMaquina") val codigoMaquina: String,
     @SerializedName("encargado_prod") val encargadoProd: String,
     @SerializedName("estado") val estado: String
 )
@@ -357,6 +359,7 @@ data class MuestraDetalleData(
     @SerializedName("U_ItemCode") val itemCode: String = "",
     @SerializedName("U_Descripcion") val descripcion: String = "",
     @SerializedName("U_Lote") val lote: String = "",
+    @SerializedName("U_CodigoMaquina") val codigoMaquina: String = "",
     @SerializedName("U_Embalaje") val embalaje: String = "",
     @SerializedName("U_User_Register") val userRegister: String = "",
     @SerializedName("U_Fec_Register") val fecRegister: String = "",
@@ -388,6 +391,7 @@ data class ConsultaProductoItem(
     @SerializedName("CodProd") val codigo: String = "",
     @SerializedName("Producto") val descripcion: String = "",
     @SerializedName("Lote") val lote: String = "",
+    @SerializedName("CodMaquina") val codMaquina: String = "",
     @SerializedName("Maquina") val maquina: String = "",
     @SerializedName("Embalaje") val embalaje: String,
 )
