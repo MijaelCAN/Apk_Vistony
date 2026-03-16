@@ -7,6 +7,7 @@ data class MuestraCabecera(
     @SerializedName("DocEntry") val id: String = "",
     @SerializedName("U_Fec_Register") val fechaRegistro: String = "",
     @SerializedName("U_ItemCode") val codigo: String = "",
+    @SerializedName("U_CodigoMaquina") val codigoMaquina: String = "",
     @SerializedName("U_Lote") val lote: String = "",
     @SerializedName("U_Embalaje") val embalaje: String = "",
     @SerializedName("U_Maquina") val maquina: String = "",
@@ -71,9 +72,14 @@ data class CheckListInspeccion(
 data class EvaluacionProduccion(
     @SerializedName("id") val id: String = "",
     @SerializedName("muestraId") val muestraId: String = "",
+    @SerializedName("equipo") val equipo: String = "",
     @SerializedName("estado") val estado: String = "",
-    @SerializedName("paletas") val paletas: String = "", // Aprobado, Observado, Rechazado
-    @SerializedName("bolsas") val bolsas: String = "",
+    @SerializedName("paletasAprobadas") val paletasAprobadas: String = "",
+    @SerializedName("paletasObservadas") val paletasObservadas: String = "",
+    @SerializedName("paletasRechazadas") val paletasRechazadas: String = "",
+    @SerializedName("bolsasAprobadas") val bolsasAprobadas: String = "",
+    @SerializedName("bolsasObservadas") val bolsasObservadas: String = "",
+    @SerializedName("bolsasRechazadas") val bolsasRechazadas: String = "",
     @SerializedName("criteriosEvaluacion") val criteriosEvaluacion: String = ""
 )
 
@@ -138,6 +144,7 @@ data class MuestraCreateRequest(
     @SerializedName("fec_register") val fecRegister: String,
     @SerializedName("turno") val turno: String,
     @SerializedName("maquina") val maquina: String,
+    @SerializedName("codMaquina") val codigoMaquina: String,
     @SerializedName("encargado_prod") val encargadoProd: String,
     @SerializedName("estado") val estado: String
 )
@@ -166,6 +173,77 @@ data class CheckListCreateRequest(
 
 // Response para crear CheckList
 data class CheckListCreateResponse(
+    @SerializedName("statusCode") val statusCode: Int,
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String,
+    @SerializedName("data") val data: Any?
+)
+
+// Request para crear Inspeccion Dimensional
+data class InspeccionDimensionalCreateRequest(
+    @SerializedName("muestraId") val muestraId: String,
+    @SerializedName("horaInspeccion") val horaInspeccion: String,
+    @SerializedName("temperaturaChiller") val temperaturaChiller: String,
+    @SerializedName("temperaturaCiclo") val temperaturaCiclo: String,
+    @SerializedName("numeroCavidad") val numeroCavidad: String,
+    @SerializedName("peso") val peso: String,
+    @SerializedName("diametroRoscaMedida1") val diametroRoscaMedida1: String,
+    @SerializedName("diametroRoscaMedida2") val diametroRoscaMedida2: String,
+    @SerializedName("alturaBocaMedida1") val alturaBocaMedida1: String,
+    @SerializedName("alturaBocaMedida2") val alturaBocaMedida2: String,
+    @SerializedName("alturaBocaMedida3") val alturaBocaMedida3: String,
+    @SerializedName("alturaBocaMedida4") val alturaBocaMedida4: String,
+    @SerializedName("diametroPrecintoMedida1") val diametroPrecintoMedida1: String,
+    @SerializedName("diametroPrecintoMedida2") val diametroPrecintoMedida2: String,
+    @SerializedName("diametroPrecintoMedida3") val diametroPrecintoMedida3: String,
+    @SerializedName("alturaTotalMedida1") val alturaTotalMedida1: String,
+    @SerializedName("alturaTotalMedida2") val alturaTotalMedida2: String,
+    @SerializedName("diametroInternoMedida1") val diametroInternoMedida1: String,
+    @SerializedName("diametroInternoMedida2") val diametroInternoMedida2: String,
+    @SerializedName("observacion") val observacion: String
+)
+
+// Response para crear Inspeccion Dimensional
+data class InspeccionDimensionalCreateResponse(
+    @SerializedName("statusCode") val statusCode: Int,
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String,
+    @SerializedName("data") val data: Any?
+)
+
+// Request para crear Material Empleado
+data class MaterialEmpleadoCreateRequest(
+    @SerializedName("material") val material: String,
+    @SerializedName("marca") val marca: String,
+    @SerializedName("codigo") val codigo: String,
+    @SerializedName("lote") val lote: String,
+    @SerializedName("fec_reg") val fecReg: String
+)
+
+// Response para crear Material Empleado
+data class MaterialEmpleadoCreateResponse(
+    @SerializedName("statusCode") val statusCode: Int,
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String,
+    @SerializedName("data") val data: Any?
+)
+
+// Request para crear Evaluación de Producción
+data class EvaluacionProduccionCreateRequest(
+    @SerializedName("equipo") val equipo: String,
+    @SerializedName("estado") val estado: String = "",
+    @SerializedName("paletasAprobadas") val paletasAprobadas: String,
+    @SerializedName("paletasObservadas") val paletasObservadas: String,
+    @SerializedName("paletasRechazadas") val paletasRechazadas: String,
+    @SerializedName("bolsasAprobadas") val bolsasAprobadas: String,
+    @SerializedName("bolsasObservadas") val bolsasObservadas: String,
+    @SerializedName("bolsasRechazadas") val bolsasRechazadas: String,
+    @SerializedName("criteriosEvaluacion") val criteriosEvaluacion: String,
+    @SerializedName("fec_reg") val fecReg: String
+)
+
+// Response para crear Evaluación de Producción
+data class EvaluacionProduccionCreateResponse(
     @SerializedName("statusCode") val statusCode: Int,
     @SerializedName("success") val success: Boolean,
     @SerializedName("message") val message: String,
@@ -207,17 +285,65 @@ data class PostMuestraResponse(
     @SerializedName("message") val message: String
 )
 
+// Evaluación de la Producción del API
+data class EvaluacionProduccionAPI(
+    @SerializedName("U_equipo") val equipo: String? = "",
+    @SerializedName("U_estado") val estado: String? = "",
+    @SerializedName("U_paletasAprobadas") val paletasAprobadas: String? = "",
+    @SerializedName("U_paletasObservadas") val paletasObservadas: String? = "",
+    @SerializedName("U_paletasRechazadas") val paletasRechazadas: String? = "",
+    @SerializedName("U_bolsasAprobadas") val bolsasAprobadas: String? = "",
+    @SerializedName("U_bolsasObservadas") val bolsasObservadas: String? = "",
+    @SerializedName("U_bolsasRechazadas") val bolsasRechazadas: String? = "",
+    @SerializedName("U_criteriosEvaluacion") val criteriosEvaluacion: String? = "",
+    @SerializedName("U_fec_reg") val fecReg: String? = ""
+)
+
+
+
+// Inspeccion Dimensional del API
+data class InspeccionDimensionalAPI(
+    @SerializedName("U_alturaBocaMedida1") val alturaBocaMedida1: String? = "",
+    @SerializedName("U_alturaBocaMedida2") val alturaBocaMedida2: String? = "",
+    @SerializedName("U_alturaBocaMedida3") val alturaBocaMedida3: String? = "",
+    @SerializedName("U_alturaBocaMedida4") val alturaBocaMedida4: String? = "",
+    @SerializedName("U_alturaTotalMedida1") val alturaTotalMedida1: String? = "",
+    @SerializedName("U_alturaTotalMedida2") val alturaTotalMedida2: String? = "",
+    @SerializedName("U_diametroInternoMedida1") val diametroInternoMedida1: String? = "",
+    @SerializedName("U_diametroInternoMedida2") val diametroInternoMedida2: String? = "",
+    @SerializedName("U_diametroPrecintoMedida1") val diametroPrecintoMedida1: String? = "",
+    @SerializedName("U_diametroPrecintoMedida2") val diametroPrecintoMedida2: String? = "",
+    @SerializedName("U_diametroPrecintoMedida3") val diametroPrecintoMedida3: String? = "",
+    @SerializedName("U_diametroRoscaMedida1") val diametroRoscaMedida1: String? = "",
+    @SerializedName("U_diametroRoscaMedida2") val diametroRoscaMedida2: String? = "",
+    @SerializedName("U_horaInspeccion") val horaInspeccion: String? = "",
+    @SerializedName("U_numeroCavidad") val numeroCavidad: String? = "",
+    @SerializedName("U_observacion") val observacion: String? = "",
+    @SerializedName("U_peso") val peso: String? = "",
+    @SerializedName("U_temperaturaChiller") val temperaturaChiller: String? = "",
+    @SerializedName("U_temperaturaCiclo") val temperaturaCiclo: String? = ""
+)
+
+// Material Empleado del API
+data class MaterialEmpleadoAPI(
+    @SerializedName("U_material") val material: String? = "",
+    @SerializedName("U_marca") val marca: String? = "",
+    @SerializedName("U_codigo") val codigo: String? = "",
+    @SerializedName("U_lote") val lote: String? = "",
+    @SerializedName("U_fec_reg") val fecReg: String? = ""
+)
+
 // CheckList del API
 data class CheckListAPI(
-    @SerializedName("u_HoraCheckList") val horaCheckList: String? = "",
-    @SerializedName("u_Testeado") val testeado: String? = "",
-    @SerializedName("u_Estabilidad") val estabilidad: String? = "",
-    @SerializedName("u_Tonalidad") val tonalidad: String? = "",
-    @SerializedName("u_VisorUniforme") val visorUniforme: String? = "",
-    @SerializedName("u_CorrectaCostura") val correctaCostura: String? = "",
-    @SerializedName("u_LibreOvulamiento") val libreOvulamiento: String? = "",
-    @SerializedName("u_LibreContaminacion") val libreContaminacion: String? = "",
-    @SerializedName("u_Observacion") val observacion: String? = ""
+    @SerializedName("U_horaCheckList") val horaCheckList: String? = "",
+    @SerializedName("U_testeado") val testeado: String? = "",
+    @SerializedName("U_estabilidad") val estabilidad: String? = "",
+    @SerializedName("U_tonalidad") val tonalidad: String? = "",
+    @SerializedName("U_visorUniforme") val visorUniforme: String? = "",
+    @SerializedName("U_correctaCostura") val correctaCostura: String? = "",
+    @SerializedName("U_libreOvulamiento") val libreOvulamiento: String? = "",
+    @SerializedName("U_libreContaminacion") val libreContaminacion: String? = "",
+    @SerializedName("U_observacion") val observacion: String? = ""
 )
 
 // Response del detalle de muestra del API
@@ -225,23 +351,26 @@ data class MuestraDetalleResponse(
     @SerializedName("statusCode") val statusCode: Int = 0,
     @SerializedName("success") val success: Boolean = false,
     @SerializedName("message") val message: String = "",
-    @SerializedName("data") val data: MuestraDetalleData = MuestraDetalleData()
+    @SerializedName("data") val data: List<MuestraDetalleData> = emptyList()
 )
 
 data class MuestraDetalleData(
-    @SerializedName("docEntry") val docEntry: String = "",
-    @SerializedName("u_ItemCode") val itemCode: String = "",
-    @SerializedName("u_Descripcion") val descripcion: String = "",
-    @SerializedName("u_Lote") val lote: String = "",
-    @SerializedName("u_Embalaje") val embalaje: String = "",
-    @SerializedName("u_User_Register") val userRegister: String = "",
-    @SerializedName("u_Fec_Register") val fecRegister: String = "",
-    @SerializedName("u_Turno") val turno: String = "",
-    @SerializedName("u_Maquina") val maquina: String = "",
-    @SerializedName("u_EncargadorProd") val encargadorProd: String = "",
-    @SerializedName("u_Estado") val estado: String = "",
-    @SerializedName("checkList") val checkList: List<CheckListAPI> = emptyList(),
-    @SerializedName("materialEmpleado") val materialEmpleado: List<Any> = emptyList()
+    @SerializedName("DocEntry") val docEntry: String = "",
+    @SerializedName("U_ItemCode") val itemCode: String = "",
+    @SerializedName("U_Descripcion") val descripcion: String = "",
+    @SerializedName("U_Lote") val lote: String = "",
+    @SerializedName("U_CodigoMaquina") val codigoMaquina: String = "",
+    @SerializedName("U_Embalaje") val embalaje: String = "",
+    @SerializedName("U_User_Register") val userRegister: String = "",
+    @SerializedName("U_Fec_Register") val fecRegister: String = "",
+    @SerializedName("U_Turno") val turno: String = "",
+    @SerializedName("U_Maquina") val maquina: String = "",
+    @SerializedName("U_EncargadorProd") val encargadorProd: String = "",
+    @SerializedName("U_Estado") val estado: String = "",
+    @SerializedName("CheckList") val checkList: List<CheckListAPI> = emptyList(),
+    @SerializedName("MaterialEmpleado") val materialEmpleado: List<MaterialEmpleadoAPI> = emptyList(),
+    @SerializedName("InspeccionDimencional") val inspeccionDimencional: List<InspeccionDimensionalAPI> = emptyList(),
+    @SerializedName("Evaluacion") val evaluacion: List<EvaluacionProduccionAPI> = emptyList()
 )
 
 // Productos para el dropdown
@@ -259,7 +388,12 @@ data class ProductoResponseTemp(
 
 // Consulta de producto por código
 data class ConsultaProductoItem(
-    @SerializedName("ItemName") val itemName: String = ""
+    @SerializedName("CodProd") val codigo: String = "",
+    @SerializedName("Producto") val descripcion: String = "",
+    @SerializedName("Lote") val lote: String = "",
+    @SerializedName("CodMaquina") val codMaquina: String = "",
+    @SerializedName("Maquina") val maquina: String = "",
+    @SerializedName("Embalaje") val embalaje: String,
 )
 
 data class ConsultaProductoResponse(
@@ -267,4 +401,84 @@ data class ConsultaProductoResponse(
     @SerializedName("success") val success: Boolean = false,
     @SerializedName("message") val message: String = "",
     @SerializedName("data") val data: List<ConsultaProductoItem> = emptyList()
+)
+
+// Consulta de producto por código
+data class ConsultaProductoMuestraItem(
+    @SerializedName("CodProd") val codigo: String = "",
+    @SerializedName("Producto") val descripcion: String = "",
+    @SerializedName("Lote") val lote: String = "",
+    @SerializedName("Maquina") val maquina: String = "",
+    @SerializedName("Embalaje") val embalaje: String,
+    @SerializedName("Encargado_produccion") val encargadoProduccion: String = "",
+    @SerializedName("Muestras") val muestras: List<String> = emptyList()
+)
+
+data class ConsultaProductoMuestraResponse(
+    @SerializedName("statusCode") val statusCode: Int = 0,
+    @SerializedName("success") val success: Boolean = false,
+    @SerializedName("message") val message: String = "",
+    @SerializedName("data") val data: List<ConsultaProductoMuestraItem> = emptyList()
+)
+
+// Especificaciones de Soplado
+data class EspecificacionSopladoData(
+    @SerializedName("U_Producto") val producto: String = "",
+    @SerializedName("U_Codigo") val codigo: String = "",
+    @SerializedName("U_PesoMin") val pesoMin: String = "",
+    @SerializedName("U_PesoMax") val pesoMax: String = "",
+    @SerializedName("U_DRoscaMain") val diametroRoscaMin: String = "",
+    @SerializedName("U_DRoscaMax") val diametroRoscaMax: String = "",
+    @SerializedName("U_AlturaBocaMin") val alturaBocaMin: String = "",
+    @SerializedName("U_AlturaBocaMax") val alturaBocaMax: String = "",
+    @SerializedName("U_DPrecintoMin") val diametroPrecintoMin: String = "",
+    @SerializedName("U_DPrecintoMax") val diametroPrecintoMax: String = "",
+    @SerializedName("U_DInternoMin") val diametroInternoMin: String = "",
+    @SerializedName("U_DInternoMax") val diametroInternoMax: String = "",
+    @SerializedName("U_AlturaTotalMin") val alturaTotalMin: String = "",
+    @SerializedName("U_AlturaTotalMax") val alturaTotalMax: String = ""
+)
+
+data class EspecificacionSopladoResponse(
+    @SerializedName("statusCode") val statusCode: Int,
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String,
+    @SerializedName("data") val data: EspecificacionSopladoData?
+)
+
+// Registro de Llegada
+data class RegistroLlegada(
+    @SerializedName("DocEntry") val id: String = "",
+    @SerializedName("U_OrdenFabricacion") val numeroOrdenFabricacion: String = "",
+    @SerializedName("U_NMuestra") val numeroMuestra: String = "",
+    @SerializedName("U_CodProducto") val codigoProducto: String = "",
+    @SerializedName("U_DesProducto") val descripcionProducto: String = "",
+    @SerializedName("U_FechaRegistro") val fechaRegistro: String = "",
+    @SerializedName("U_UserRegister") val userRegister: String = ""
+)
+
+// Request para crear Registro de Llegada
+data class RegistroLlegadaCreateRequest(
+    @SerializedName("u_OrdenFabricacion") val ordenFabricacion: String,
+    @SerializedName("u_NMuestra") val nMuestra: String,
+    @SerializedName("u_CodProducto") val codProducto: String,
+    @SerializedName("u_DesProducto") val desProducto: String,
+    @SerializedName("u_FechaRegistro") val fechaRegistro: String,
+    @SerializedName("u_UserRegister") val userRegister: String
+)
+
+// Response para crear Registro de Llegada
+data class RegistroLlegadaCreateResponse(
+    @SerializedName("statusCode") val statusCode: Int,
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String,
+    @SerializedName("data") val data: Any?
+)
+
+// Response para obtener lista de Registros de Llegada
+data class RegistroLlegadaResponse(
+    @SerializedName("statusCode") val statusCode: Int,
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String,
+    @SerializedName("data") val data: List<RegistroLlegada>
 )

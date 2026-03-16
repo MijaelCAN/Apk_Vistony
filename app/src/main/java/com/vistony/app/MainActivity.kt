@@ -1,11 +1,18 @@
 package com.vistony.app
 
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -30,11 +37,12 @@ import com.vistony.app.Service.ConnectivityObserver
 import com.vistony.app.ViewModel.NetworkStatusViewModel
 import com.vistony.app.ViewModel.SharedViewModel
 import com.vistony.app.ui.theme.theme.AppTheme
+import com.vistony.app.Screen.Admin.DashboardAdmin
 import com.vistony.app.Screen.Inspeccion.DetalleScreen
 import com.vistony.app.Screen.Inspeccion.ListScreen
 import com.vistony.app.Screen.Login2
-import com.vistony.app.Screen.LoginScreen
 import com.vistony.app.Screen.NoInternetScreen
+import com.vistony.app.Screen.NoModulesScreen
 import com.vistony.app.Screen.Parada.ListParada
 import com.vistony.app.Screen.ParadaMantenimiento.ListActividad
 import com.vistony.app.Screen.Temperatura.ListTemperatura
@@ -44,19 +52,59 @@ import com.vistony.app.Screen.Muestra.ListMuestra
 import com.vistony.app.Screen.Muestra.CreateMuestra
 import com.vistony.app.Screen.Muestra.DetailMuestra
 import com.vistony.app.Screen.Muestra.EditMuestra
+import com.vistony.app.Screen.Muestra.RegistroLlegadaScreen
+import com.vistony.app.Screen.Muestra.RegistroLlegadaTodosScreen
 import com.vistony.app.ViewModel.LoginViewModel
 import com.vistony.app.ViewModel.TemperaturaViewModel
 import com.vistony.app.ViewModel.MuestraViewModel
+import com.vistony.app.clean.core.utils.ObservableObject
+import com.vistony.app.clean.core.utils.ZebraDW
+import com.vistony.app.clean.core.utils.ZebraDWComunication
+import com.vistony.app.clean.core.utils.ZebraDWReceiver
+import com.vistony.app.clean.presentation.view.pages.ManuFacturingOrderPage
+import com.vistony.app.clean.presentation.viewmodels.ScanViewModel
+import com.vistony.app.ui.theme.theme.AppTypography
 import dagger.hilt.android.AndroidEntryPoint
+import kotlin.text.compareTo
+
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
      private val userState = UserState()
+    private val zebraDWComunication = ZebraDWComunication()
+    //private val receiver = ZebraDWReceiver()
+    private val zebraDW: ZebraDW = ZebraDW()
+    //private val scanReceiver = ZebraDWReceiver()
+    private val scanReceiver = ZebraDWReceiver()
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Registrar receiver dinámicamente
+        val intentFilter = IntentFilter(ZebraDW.PROFILE_INTENT_ACTION).apply {
+            addCategory(Intent.CATEGORY_DEFAULT)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(scanReceiver, intentFilter, Context.RECEIVER_EXPORTED)
+        } else {
+            registerReceiver(scanReceiver, intentFilter)
+        }
+
+        zebraDW.createDataWedgeProfile(this)
+
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        
+        // Ocultar la barra de estado (status bar)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+        windowInsetsController?.let { controller ->
+            // Ocultar la barra de estado
+            controller.hide(WindowInsetsCompat.Type.statusBars())
+            // Hacer que la barra de estado se oculte de forma persistente
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
         setContent {
             AppTheme() {
                 Surface(
@@ -76,12 +124,34 @@ class MainActivity : ComponentActivity() {
                     LaunchedEffect(user) {
                         user?.let { userState.setUser(it) }
                     }
+                    val scanViewModel: ScanViewModel = hiltViewModel()
+
 
                     if (status == ConnectivityObserver.Status.Available) {
                         NavHost(startDestination = "login", navController = navController) {
                             composable("login") {
                                 Login2(navController,loginViewModel, userState)
                                 //LoginScreen(navController)
+                            }
+                            composable("noModules") {
+                                NoModulesScreen(
+                                    navController = navController,
+                                    onLogout = {
+                                        loginViewModel.clearUserData()
+                                    }
+                                )
+                            }
+                            composable("dashboardAdmin") {
+                                DashboardAdmin(
+                                    navController = navController,
+                                    userState = userState,
+                                    onLogout = {
+                                        loginViewModel.clearUserData()
+                                        navController.navigate("login") {
+                                            popUpTo(0) { inclusive = true }
+                                        }
+                                    }
+                                )
                             }
                             composable(
                                 "detalle/{user}",
@@ -96,7 +166,7 @@ class MainActivity : ComponentActivity() {
                                 ListScreen(navController, sharedViewModel, id = it.arguments?.getString("user") ?: "", userState = userState)
                             }
                             composable("reporte",) {
-                                LoginScreen(navController)
+                                //LoginScreen(navController)
                             }
                             composable(
                                 "listaParada/{user}",
@@ -119,6 +189,11 @@ class MainActivity : ComponentActivity() {
                                     navController = navController,
                                     sharedViewModel = sharedViewModel,
                                     userState = userState
+                                )
+                            }
+                            composable("manufacturingOrder",) {
+                                ManuFacturingOrderPage(navController, id = it.arguments?.getString("user") ?: "",userState = userState,
+                                    scanViewModel = scanViewModel
                                 )
                             }
                             composable("listaTemperatura") {
@@ -144,7 +219,7 @@ class MainActivity : ComponentActivity() {
                             composable("createTemperatura") {
                                 CreateTemperatura(
                                     onNavigateBack = { navController.popBackStack() },
-                                    onNavigateToSuccess = { 
+                                    onNavigateToSuccess = {
                                         navController.popBackStack()
                                         navController.navigate("listaTemperatura")
                                     },
@@ -165,9 +240,9 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("listaMuestra") {
                                 ListMuestra(
-                                    onNavigateToCreate = { 
+                                    onNavigateToCreate = {
                                         //muestraViewModel.resetAllForms() // Resetear para nuevo registro
-                                        navController.navigate("createMuestra") 
+                                        navController.navigate("createMuestra")
                                     },
                                     onNavigateToDetail = { muestra ->
                                         navController.navigate("detailMuestra/${muestra.id}")
@@ -193,7 +268,7 @@ class MainActivity : ComponentActivity() {
                             composable("createMuestra") {
                                 CreateMuestra(
                                     onNavigateBack = { navController.popBackStack() },
-                                    onNavigateToSuccess = { 
+                                    onNavigateToSuccess = {
                                         // Limpiar el stack y navegar a la lista
                                         navController.navigate("listaMuestra") {
                                             popUpTo("listaMuestra") { inclusive = false }
@@ -266,14 +341,82 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
                             }
+                            composable("registroLlegada") {
+                                RegistroLlegadaScreen(
+                                    muestraViewModel = muestraViewModel,
+                                    currentUser = userState.currentUser,
+                                    userState = userState,
+                                    navController = navController,
+                                    onLogout = {
+                                        loginViewModel.clearUserData()
+                                        navController.navigate("login") {
+                                            popUpTo(0) { inclusive = true }
+                                        }
+                                    }
+                                )
+                            }
+                            composable("registroLlegadaTodos") {
+                                RegistroLlegadaTodosScreen(
+                                    muestraViewModel = muestraViewModel,
+                                    currentUser = userState.currentUser,
+                                    userState = userState,
+                                    navController = navController,
+                                    onLogout = {
+                                        loginViewModel.clearUserData()
+                                        navController.navigate("login") {
+                                            popUpTo(0) { inclusive = true }
+                                        }
+                                    }
+                                )
+                            }
                         }
                     } else {
-                        NoInternetScreen()
+                        NoInternetScreen(networkStatusViewModel = networkStatusViewModel)
                     }
 
                 }
             }
         }
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        try {
+            unregisterReceiver(scanReceiver)
+        } catch (e: IllegalArgumentException) {
+            // Receiver ya no registrado
+        }
+    }
+
+    /*override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        Log.e("REOS", "MainActivity-onNewIntent: action=${intent.action}")
+        Log.e("REOS", "MainActivity-onNewIntent: extras=${intent.extras?.keySet()?.joinToString()}")
+
+        if (intent.action == ZebraDW.PROFILE_INTENT_ACTION) {
+            Log.e("REOS", "MainActivity-onNewIntent: ACCIÓN CORRECTA detectada")
+
+            if (intent.hasExtra(ZebraDWComunication.DATAWEDGE_SCAN_EXTRA_DATA_STRING)) {
+                val scannedData = intent.getStringExtra(ZebraDWComunication.DATAWEDGE_SCAN_EXTRA_DATA_STRING)
+                val labelType = intent.getStringExtra(ZebraDWComunication.DATAWEDGE_SCAN_EXTRA_LABEL_TYPE)
+
+                Log.e("REOS", "MainActivity-onNewIntent-PayLoad: $scannedData")
+                Log.e("REOS", "MainActivity-onNewIntent-Type: $labelType")
+
+                val intentData = Intent().apply {
+                    putExtra("SCAN_DATA", scannedData)
+                    putExtra("LABEL_TYPE", labelType)
+                }
+                ObservableObject.instance.updateValue(intentData)
+            } else {
+                Log.e("REOS", "MainActivity-onNewIntent: NO tiene SCAN_DATA_STRING")
+            }
+        } else {
+            Log.e("REOS", "MainActivity-onNewIntent: Acción NO es de escaneo: ${intent.action}")
+        }
+    }*/
+
+
 
 }

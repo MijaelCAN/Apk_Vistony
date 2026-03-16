@@ -14,8 +14,8 @@ android {
         applicationId = "com.vistony.app"
         minSdk = 24
         targetSdk = 33
-        versionCode = 6
-        versionName = "1.3.0"
+        versionCode = 11
+        versionName = "1.5.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
@@ -120,5 +120,8 @@ dependencies {
     //implementation("io.coil-kt.coil3:coil-compose:3.2.0")
     implementation("io.coil-kt:coil-compose:2.4.0")
     //implementation("io.coil-kt.coil3:coil-network-okhttp:3.2.0")
+
+    // Lottie
+    implementation("com.airbnb.android:lottie-compose:6.4.0")
 
 }

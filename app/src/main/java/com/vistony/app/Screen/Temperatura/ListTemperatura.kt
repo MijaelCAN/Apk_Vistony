@@ -19,6 +19,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Thermostat
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
@@ -35,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.vistony.app.Entidad.Temperatura
 import com.vistony.app.Entidad.UserState
 import com.vistony.app.Screen.Generic.Drawers.BottomBar
@@ -46,12 +49,14 @@ import com.vistony.app.Screen.Generic.TemperatureEmptyState
 import com.vistony.app.Screen.Generic.TemperatureHeader
 import com.vistony.app.Screen.Generic.TemperatureIcon
 import com.vistony.app.Screen.Generic.TemperatureLoadingCard
+import com.vistony.app.Screen.Generic.DateOutlinedTextField
 import com.vistony.app.Screen.Generic.getTemperatureColor
 import com.vistony.app.Screen.Generic.formatTemperature
 import com.vistony.app.ViewModel.TemperaturaViewModel
 import com.vistony.app.ui.theme.theme.Dimensions
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class, ExperimentalMaterialApi::class)
@@ -77,11 +82,37 @@ fun ListTemperatura(
     val isLoading by temperaturaViewModel.isLoading.collectAsState()
     val errorMessage by temperaturaViewModel.errorMessage.collectAsState()
 
+    // Estados para filtros
+    var fechaInicio by remember { mutableStateOf<LocalDateTime?>(LocalDateTime.now()) }
+    var fechaFin by remember { mutableStateOf<LocalDateTime?>(LocalDateTime.now()) }
+    var showDialogDateIni by remember { mutableStateOf(false) }
+    var showDialogDateFin by remember { mutableStateOf(false) }
+    var searchText by remember { mutableStateOf("") }
+
+    // Filtrar temperaturas localmente por búsqueda
+    val temperaturasFiltradas = remember(temperaturas, searchText) {
+        if (searchText.isBlank()) {
+            temperaturas
+        } else {
+            temperaturas.filter { temperatura ->
+                temperatura.ot.contains(searchText, ignoreCase = true) ||
+                temperatura.dni.contains(searchText, ignoreCase = true) ||
+                temperatura.descripcion.contains(searchText, ignoreCase = true) ||
+                temperatura.auxiliar.contains(searchText, ignoreCase = true)
+            }
+        }
+    }
 
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val bottomSheetState =
         rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
+
+    val systemUiController = rememberSystemUiController()
+    SideEffect {
+        //systemUiController.setStatusBarColor(Color(0xFF0957c3))
+        systemUiController.setStatusBarColor(Color(0xFFF8FAFF))
+    }
 
     // Cargar datos iniciales
     LaunchedEffect(Unit) {
@@ -90,6 +121,17 @@ fun ListTemperatura(
             LocalDate.now(),
             LocalDate.now()
         )
+    }
+
+    // Cargar temperaturas cuando cambien las fechas
+    LaunchedEffect(fechaInicio, fechaFin) {
+        if (fechaInicio != null && fechaFin != null) {
+            temperaturaViewModel.obtenerTemperaturas(
+                currentUser.dni,
+                fechaInicio!!.toLocalDate(),
+                fechaFin!!.toLocalDate()
+            )
+        }
     }
 
     ModalNavigationDrawer(
@@ -166,6 +208,89 @@ fun ListTemperatura(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Filtros: Selector de fechas y búsqueda
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = padding_res),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        // Selector de fechas
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            DateOutlinedTextField(
+                                modifier = Modifier.weight(1f),
+                                texto = "Fecha Inicio",
+                                readonly = true,
+                                selectedDate = fechaInicio,
+                                onDateChange = { fechaInicio = it },
+                                showDialog = showDialogDateIni,
+                                onShowDialogChange = { showDialogDateIni = it }
+                            )
+                            DateOutlinedTextField(
+                                modifier = Modifier.weight(1f),
+                                texto = "Fecha Fin",
+                                readonly = true,
+                                selectedDate = fechaFin,
+                                onDateChange = { fechaFin = it },
+                                showDialog = showDialogDateFin,
+                                onShowDialogChange = { showDialogDateFin = it }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Campo de búsqueda
+                        OutlinedTextField(
+                            value = searchText,
+                            onValueChange = { searchText = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = {
+                                Text(
+                                    text = "Buscar por OT, DNI, auxiliar o descripción",
+                                    color = Color(0xFF9CA3AF),
+                                    fontSize = 14.sp
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = "Buscar",
+                                    tint = Color(0xFF9CA3AF)
+                                )
+                            },
+                            trailingIcon = {
+                                if (searchText.isNotEmpty()) {
+                                    IconButton(onClick = { searchText = "" }) {
+                                        Icon(
+                                            imageVector = Icons.Default.FilterList,
+                                            contentDescription = "Limpiar",
+                                            tint = Color(0xFF9CA3AF)
+                                        )
+                                    }
+                                }
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color(0xFFF9FAFB),
+                                unfocusedContainerColor = Color(0xFFF9FAFB),
+                                focusedBorderColor = PrimaryMuestraColor,
+                                unfocusedBorderColor = Color(0xFFE5E7EB)
+                            )
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 when {
                     isLoading -> {
                         Box(
@@ -177,7 +302,7 @@ fun ListTemperatura(
                             )
                         }
                     }
-                    temperaturas.isEmpty() -> {
+                    temperaturasFiltradas.isEmpty() -> {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
@@ -204,7 +329,7 @@ fun ListTemperatura(
                                 .padding(horizontal = padding_res),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(temperaturas) { temperatura ->
+                            items(temperaturasFiltradas) { temperatura ->
                                 TemperatureItemCard(
                                     temperatura = temperatura,
                                     onClick = { onNavigateToDetail(temperatura) },

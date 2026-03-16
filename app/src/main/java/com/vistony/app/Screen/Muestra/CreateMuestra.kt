@@ -25,13 +25,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vistony.app.Entidad.UserResponse
 import com.vistony.app.Screen.Generic.*
 import com.vistony.app.ViewModel.MuestraViewModel
 import com.vistony.app.ui.theme.theme.Dimensions
+import kotlinx.coroutines.delay
 import java.time.LocalTime
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
@@ -55,6 +56,7 @@ fun CreateMuestra(
     val errorMessage by muestraViewModel.errorMessage.collectAsState()
     val isEditMode by muestraViewModel.isEditMode.collectAsState()
     val currentMuestraId by muestraViewModel.currentMuestraId.collectAsState()
+    val isCompletado = muestraViewModel.isMuestraCompletada(currentMuestraId)
 
     // Limpiar mensajes al entrar a la pantalla
     LaunchedEffect(Unit) {
@@ -144,9 +146,9 @@ fun CreateMuestra(
                 when (pasoActual) {
                     1 -> CabeceraForm(muestraViewModel, padding_res, isEditMode)
                     2 -> MaterialForm(muestraViewModel, padding_res)
-                    3 -> InspeccionDimensionalForm(muestraViewModel, padding_res)
-                    4 -> CheckListForm(muestraViewModel, padding_res)
-                    5 -> EvaluacionForm(muestraViewModel, padding_res)
+                    3 -> InspeccionDimensionalForm(muestraViewModel, padding_res, isCompletado = isCompletado)
+                    4 -> CheckListForm(muestraViewModel, padding_res, isCompletado = isCompletado)
+                    5 -> EvaluacionForm(muestraViewModel, padding_res, isCompletado = isCompletado)
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -154,8 +156,20 @@ fun CreateMuestra(
                 // Navegación del wizard
                 MuestraWizardNavigation(
                     pasoActual = pasoActual,
-                    onAnterior = { muestraViewModel.pasoAnterior() },
-                    onSiguiente = { muestraViewModel.siguientePaso() },
+                    onAnterior = {
+                        when (pasoActual) {
+                            3 -> muestraViewModel.irAPaso(1)
+                            4 -> muestraViewModel.irAPaso(3)
+                        }
+                        //muestraViewModel.pasoAnterior()
+                    },
+                    onSiguiente = {
+                        when (pasoActual) {
+                            1 -> muestraViewModel.irAPaso(3)
+                            3 -> muestraViewModel.irAPaso(4)
+                        }
+                        //muestraViewModel.siguientePaso()
+                                  },
                     onFinalizar = { 
                         if (pasoActual == 1) {
                             // Paso 1: Solo crear cabecera
@@ -167,7 +181,8 @@ fun CreateMuestra(
                     },
                     isCreating = isCreating,
                     buttonHeight = buttonHeight,
-                    isEditMode = isEditMode
+                    isEditMode = isEditMode,
+                    isCompletado = isCompletado
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -190,10 +205,10 @@ fun MuestraWizardSteps(
     
     val steps = listOf(
         StepInfo("Información General", Icons.Default.Info, true),      // Paso 1 - Activo
-        StepInfo("Material Empleado", Icons.Default.Build, false),     // Paso 2 - Inactivo
-        StepInfo("Inspección Dimensional", Icons.Default.Straighten, false), // Paso 3 - Inactivo
+        StepInfo("Material Empleado", Icons.Default.Build, true),     // Paso 2 - Inactivo
+        StepInfo("Inspección Dimensional", Icons.Default.Straighten, true), // Paso 3 - Inactivo
         StepInfo("Check List", Icons.Default.Checklist, true),         // Paso 4 - Activo
-        StepInfo("Evaluación", Icons.Default.Assessment, false)        // Paso 5 - Inactivo
+        StepInfo("Evaluación", Icons.Default.Assessment, true)        // Paso 5 - Inactivo
     )
     val scrollState = rememberScrollState()
 
@@ -330,8 +345,9 @@ fun MuestraWizardNavigation(
     onSiguiente: () -> Unit,
     onFinalizar: () -> Unit,
     isCreating: Boolean,
-    buttonHeight: androidx.compose.ui.unit.Dp,
-    isEditMode: Boolean = false
+    buttonHeight: Dp,
+    isEditMode: Boolean = false,
+    isCompletado: Boolean
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -374,20 +390,22 @@ fun MuestraWizardNavigation(
             }
             // Paso final (5) o paso 1 en creación: Finalizar/Registrar
             else -> {
-                MuestraButton(
-                    text = when {
-                        isCreating -> "Registrando..."
-                        isEditMode -> "Actualizar"
-                        pasoActual == 1 -> "Registrar Muestra"
-                        else -> "Finalizar"
-                    },
-                    onClick = onFinalizar,
-                    icon = Icons.Default.Check,
-                    enabled = !isCreating,
-                    isLoading = isCreating,
-                    modifier = Modifier.weight(1f),
-                    buttonHeight = buttonHeight
-                )
+                if(!isCompletado){
+                    MuestraButton(
+                        text = when {
+                            isCreating -> "Registrando..."
+                            isEditMode -> "Actualizar"
+                            pasoActual == 1 -> "Registrar Muestra"
+                            else -> "Finalizar"
+                        },
+                        onClick = onFinalizar,
+                        icon = Icons.Default.Check,
+                        enabled = !isCreating,
+                        isLoading = isCreating,
+                        modifier = Modifier.weight(1f),
+                        buttonHeight = buttonHeight
+                    )
+                }
             }
         }
     }
@@ -404,7 +422,8 @@ fun CabeceraForm(
     // Consultar producto automáticamente cuando cambie el código
     LaunchedEffect(formState.codigo) {
         if (formState.codigo.isNotEmpty() && formState.codigo.length >= 3) {
-            muestraViewModel.consultarProducto(formState.codigo)
+            delay(1500)
+            if(!isEditMode) muestraViewModel.consultarProducto(formState.codigo)
         } else if (formState.codigo.isEmpty()) {
             // Limpiar producto si se borra el código
             val current = muestraViewModel.cabeceraFormState.value
@@ -443,7 +462,7 @@ fun CabeceraForm(
         MuestraTextField(
             value = formState.codigo,
             onValueChange = { muestraViewModel.updateCabecera("codigo", it) },
-            label = "Código",
+            label = "N° Orden de Fabricacion",
             enabled = !isEditMode,
             modifier = Modifier.weight(1f),
             leadingIcon = {
@@ -459,8 +478,9 @@ fun CabeceraForm(
         MuestraTextField(
             value = formState.lote,
             onValueChange = { muestraViewModel.updateCabecera("lote", it) },
-            label = "Lote",
-            enabled = !isEditMode,
+            label = "Código",
+            enabled = false,
+            readOnly = true,
             modifier = Modifier.weight(1f),
             leadingIcon = {
                 Icon(
@@ -476,9 +496,10 @@ fun CabeceraForm(
     MuestraTextField(
         value = formState.producto,
         onValueChange = { /* No permitir edición manual */ },
-        label = "Producto",
+        label = "Descripción de Producto",
         enabled = false, // Solo lectura
         readOnly = true,
+        maxLines = 2,
         leadingIcon = {
             Icon(
                 imageVector = Icons.Default.Science,
@@ -492,11 +513,11 @@ fun CabeceraForm(
     Spacer(modifier = Modifier.height(16.dp))
     
     // Embalaje y Máquina
-    /*Row(
+    Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        MuestraTextField(
+        /*MuestraTextField(
             value = formState.embalaje,
             onValueChange = { muestraViewModel.updateCabecera("embalaje", it) },
             label = "Embalaje",
@@ -510,13 +531,14 @@ fun CabeceraForm(
                     modifier = Modifier.size(20.dp)
                 )
             }
-        )
+        )*/
         
         MuestraTextField(
             value = formState.maquina,
             onValueChange = { muestraViewModel.updateCabecera("maquina", it) },
             label = "Máquina",
-            enabled = !isEditMode,
+            enabled = false,
+            readOnly = true,
             modifier = Modifier.weight(1f),
             leadingIcon = {
                 Icon(
@@ -527,7 +549,7 @@ fun CabeceraForm(
                 )
             }
         )
-    }*/
+    }
     
     Spacer(modifier = Modifier.height(16.dp))
     

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Construction
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Factory
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.HomeRepairService
 import androidx.compose.material.icons.filled.LocationOn
@@ -80,7 +81,7 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                     DrawerSubItem("Lista Inspecciones") { navController.navigate("listaInsp/$id") },
                 ),
                 // Solo visible para ciertos roles
-                visibleForRoles = setOf("PRODUCCIÓN", "ADMIN")
+                visibleForRoles = setOf("PRODUCCIÓN", "SISTEMAS")
             ),
             DrawerItem(
                 id = "parada_maquina",
@@ -89,7 +90,7 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                 subItems = listOf(
                     DrawerSubItem("Lista de Paradas") { navController.navigate("listaParada/$id") },
                 ),
-                visibleForRoles = setOf("PRODUCCIÓN", "ADMIN")
+                visibleForRoles = setOf("PRODUCCIÓN", "SISTEMAS")
             ),
             DrawerItem(
                 id = "mantenimiento",
@@ -98,7 +99,7 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                 subItems = listOf(
                     DrawerSubItem("Registro de Paradas") { navController.navigate("paradaMantenimiento") },
                 ),
-                visibleForRoles = setOf("MANTENIMIENTO", "ADMIN")
+                visibleForRoles = setOf("MANTENIMIENTO", "SISTEMAS")
             ),
             DrawerItem(
                 id = "control_temperatura",
@@ -107,7 +108,7 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                 subItems = listOf(
                     DrawerSubItem("Lista de Temperaturas") { navController.navigate("listaTemperatura") },
                 ),
-                visibleForRoles = setOf("PRODUCCIÓN", "ADMIN") // CAMBIAR POR EL AREA
+                visibleForRoles = setOf("PRODUCCIÓN", "SISTEMAS", "SOPLADO", "ALMACEN INSUMOS")
             ),
             DrawerItem(
                 id = "soplado",
@@ -115,15 +116,25 @@ fun CustomDrawer( //CustomDrawer - ProfessionalDrawer
                 label = "Registro de Muestras",
                 subItems = listOf(
                     DrawerSubItem("Lista de Muestras") { navController.navigate("listaMuestra") },
+                    DrawerSubItem("Registro de Llegada") { navController.navigate("registroLlegada") },
                 ),
-                visibleForRoles = setOf("PRODUCCIÓN", "ADMIN") // CAMBIAR POR EL AREA
+                visibleForRoles = setOf("PRODUCCIÓN", "SISTEMAS", "SOPLADO", "ALMACEN INSUMOS", "ASEG. CALIDAD") // CAMBIAR POR EL AREA
+            ),
+            DrawerItem(
+                id = "calidad",
+                icon = Icons.Filled.Factory,
+                label = "Orden de Fabricación",
+                subItems = listOf(
+                    DrawerSubItem("Orden de Fabricación") { navController.navigate("manufacturingOrder") },
+                ),
+                visibleForRoles = setOf("ASEG. CALIDAD", "admin")
             ),
             DrawerItem(
                 id = "configuracion",
                 icon = Icons.Default.Settings,
                 label = "Configuración",
                 subItems = emptyList(),
-                visibleForRoles = setOf("admin", "supervisor")
+                visibleForRoles = setOf("SISTEMAS", "supervisor")
             ),
             DrawerItem(
                 id = "salir",

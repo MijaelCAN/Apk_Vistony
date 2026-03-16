@@ -59,6 +59,7 @@ class MuestraViewModel @Inject constructor(
         var fechaRegistro: String = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
         var codigo: String = "",
         var lote: String = "",
+        var codigoMaquina: String = "",
         var embalaje: String = "",
         var maquina: String = "",
         var turno: String = "",
@@ -118,10 +119,25 @@ class MuestraViewModel @Inject constructor(
 
     // Estado del formulario de evaluación
     data class EvaluacionFormState(
+        var equipo: String = "",
         var estado: String = "",
-        var paletas: String = "",
-        var bolsas: String = "",
+        var paletasAprobadas: String = "",
+        var paletasObservadas: String = "",
+        var paletasRechazadas: String = "",
+        var bolsasAprobadas: String = "",
+        var bolsasObservadas: String = "",
+        var bolsasRechazadas: String = "",
         var criteriosEvaluacion: String = "",
+        var isFormValid: Boolean = false
+    )
+
+    // Estado del formulario de Registro de Llegada
+    data class RegistroLlegadaFormState(
+        var numeroOrdenFabricacion: String = "",
+        var numeroMuestra: String = "",
+        var codigoProducto: String = "",
+        var descripcionProducto: String = "",
+        var maquina: String = "",
         var isFormValid: Boolean = false
     )
 
@@ -141,6 +157,21 @@ class MuestraViewModel @Inject constructor(
     private val _evaluacionFormState = MutableStateFlow(EvaluacionFormState())
     val evaluacionFormState: StateFlow<EvaluacionFormState> = _evaluacionFormState.asStateFlow()
 
+    private val _registroLlegadaFormState = MutableStateFlow(RegistroLlegadaFormState())
+    val registroLlegadaFormState: StateFlow<RegistroLlegadaFormState> = _registroLlegadaFormState.asStateFlow()
+
+    // Lista de registros de llegada
+    private val _registrosLlegada = MutableStateFlow<List<RegistroLlegada>>(emptyList())
+    val registrosLlegada: StateFlow<List<RegistroLlegada>> = _registrosLlegada.asStateFlow()
+
+    // Lista de muestras disponibles desde el API
+    private val _muestrasDisponibles = MutableStateFlow<List<String>>(emptyList())
+    val muestrasDisponibles: StateFlow<List<String>> = _muestrasDisponibles.asStateFlow()
+    
+    // Estado para mostrar alert cuando se encuentra la orden
+    private val _productoEncontrado = MutableStateFlow<String?>(null)
+    val productoEncontrado: StateFlow<String?> = _productoEncontrado.asStateFlow()
+
     // Listas temporales para cada sección
     private val _materialesTemporales = MutableStateFlow<List<MaterialEmpleado>>(emptyList())
     val materialesTemporales: StateFlow<List<MaterialEmpleado>> = _materialesTemporales.asStateFlow()
@@ -150,6 +181,56 @@ class MuestraViewModel @Inject constructor(
 
     private val _checkListsTemporales = MutableStateFlow<List<CheckListInspeccion>>(emptyList())
     val checkListsTemporales: StateFlow<List<CheckListInspeccion>> = _checkListsTemporales.asStateFlow()
+    
+    // Especificaciones de soplado
+    private val _especificacionSoplado = MutableStateFlow<EspecificacionSopladoData?>(null)
+    val especificacionSoplado: StateFlow<EspecificacionSopladoData?> = _especificacionSoplado.asStateFlow()
+    
+    private val _codigoProductoActual = MutableStateFlow<String?>(null)
+    
+    // Función para obtener especificaciones de soplado
+    fun obtenerEspecificacionSoplado(codProducto: String) {
+        viewModelScope.launch {
+            // Solo obtener si el código de producto cambió
+            if (_codigoProductoActual.value != codProducto) {
+                _codigoProductoActual.value = codProducto
+                
+                try {
+                    val result = muestraRepository.obtenerEspecificacionSoplado(codProducto)
+                    result.fold(
+                        onSuccess = { response ->
+                            if (response.success) {
+                                _especificacionSoplado.value = response.data
+                            } else {
+                                android.util.Log.e("MuestraViewModel", "Error obteniendo especificación: ${response.message}")
+                                _especificacionSoplado.value = null
+                            }
+                        },
+                        onFailure = { exception ->
+                            android.util.Log.e("MuestraViewModel", "Error obteniendo especificación", exception)
+                            _especificacionSoplado.value = null
+                        }
+                    )
+                } catch (e: Exception) {
+                    android.util.Log.e("MuestraViewModel", "Excepción obteniendo especificación", e)
+                    _especificacionSoplado.value = null
+                }
+            }
+        }
+    }
+    
+    // Función para validar si un valor está dentro del rango
+    fun validarRango(valor: String, min: String, max: String): Boolean {
+        if (valor.isBlank()) return true // Si está vacío, no validar
+        return try {
+            val valorNum = valor.toDouble()
+            val minNum = min.toDoubleOrNull() ?: return true
+            val maxNum = max.toDoubleOrNull() ?: return true
+            valorNum >= minNum && valorNum <= maxNum
+        } catch (e: Exception) {
+            false
+        }
+    }
 
     // Estado del paso actual del wizard
     private val _pasoActual = MutableStateFlow(1)
@@ -187,6 +268,35 @@ class MuestraViewModel @Inject constructor(
         }
     }
 
+    // Función para obtener muestras con fechas personalizadas
+    fun obtenerMuestrasConFechas(dni: String, fechaInicio: String, fechaFin: String, role: String? = "soplado") {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            
+            try {
+                val result = muestraRepository.obtenerMuestras(dni, fechaInicio, fechaFin, role)
+                
+                result.fold(
+                    onSuccess = { response ->
+                        if (response.success) {
+                            _muestras.value = response.data
+                        } else {
+                            _errorMessage.value = response.message
+                        }
+                    },
+                    onFailure = { exception ->
+                        _errorMessage.value = "Error al obtener muestras: ${exception.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                _errorMessage.value = "Error inesperado: ${e.message}"
+            }
+            
+            _isLoading.value = false
+        }
+    }
+
     // Funciones para actualizar formularios
     fun updateCabecera(field: String, value: String) {
         val current = _cabeceraFormState.value
@@ -196,6 +306,7 @@ class MuestraViewModel @Inject constructor(
             "lote" -> current.copy(lote = value)
             "embalaje" -> current.copy(embalaje = value)
             "maquina" -> current.copy(maquina = value)
+            "codigoMaquina" -> current.copy(codigoMaquina = value)
             "turno" -> current.copy(turno = value)
             "ot" -> current.copy(ot = value)
             "producto" -> current.copy(producto = value)
@@ -283,14 +394,43 @@ class MuestraViewModel @Inject constructor(
     fun updateEvaluacion(field: String, value: String) {
         val current = _evaluacionFormState.value
         val newState = when (field) {
-            "estado" -> current.copy(estado = value)
-            "paletas" -> current.copy(paletas = value)
-            "bolsas" -> current.copy(bolsas = value)
+            "equipo" -> current.copy(equipo = value)
+            "paletasAprobadas" -> current.copy(paletasAprobadas = value)
+            "paletasObservadas" -> current.copy(paletasObservadas = value)
+            "paletasRechazadas" -> current.copy(paletasRechazadas = value)
+            "bolsasAprobadas" -> current.copy(bolsasAprobadas = value)
+            "bolsasObservadas" -> current.copy(bolsasObservadas = value)
+            "bolsasRechazadas" -> current.copy(bolsasRechazadas = value)
             "criteriosEvaluacion" -> current.copy(criteriosEvaluacion = value)
             else -> current
         }
         _evaluacionFormState.value = newState
         validateEvaluacionForm()
+    }
+
+    fun updateRegistroLlegada(field: String, value: String) {
+        val current = _registroLlegadaFormState.value
+        val newState = when (field) {
+            "numeroOrdenFabricacion" -> {
+                // Si se limpia el número de orden, limpiar también las muestras disponibles
+                if (value.isEmpty()) {
+                    _muestrasDisponibles.value = emptyList()
+                }
+                current.copy(
+                    numeroOrdenFabricacion = value,
+                    codigoProducto = if (value.isEmpty()) "" else current.codigoProducto,
+                    descripcionProducto = if (value.isEmpty()) "" else current.descripcionProducto,
+                    maquina = if (value.isEmpty()) "" else current.maquina,
+                    numeroMuestra = if (value.isEmpty()) "" else current.numeroMuestra
+                )
+            }
+            "numeroMuestra" -> current.copy(numeroMuestra = value)
+            "descripcionProducto" -> current.copy(descripcionProducto = value)
+            "maquina" -> current.copy(maquina = value)
+            else -> current
+        }
+        _registroLlegadaFormState.value = newState
+        validateRegistroLlegadaForm()
     }
 
     // Funciones de validación
@@ -381,12 +521,23 @@ class MuestraViewModel @Inject constructor(
         val isValid = if (_isEditMode.value) {
             true // En modo edición, siempre es válido para agregar items
         } else {
-            current.estado.isNotEmpty() &&
-            current.paletas.isNotEmpty() &&
-            current.bolsas.isNotEmpty()
+            current.equipo.isNotEmpty() &&
+            // Validar que al menos un campo de paletas tenga valor
+            (current.paletasAprobadas.isNotEmpty() || current.paletasObservadas.isNotEmpty() || current.paletasRechazadas.isNotEmpty()) &&
+            // Validar que al menos un campo de bolsas tenga valor
+            (current.bolsasAprobadas.isNotEmpty() || current.bolsasObservadas.isNotEmpty() || current.bolsasRechazadas.isNotEmpty())
         }
         
         _evaluacionFormState.value = current.copy(isFormValid = isValid)
+    }
+
+    private fun validateRegistroLlegadaForm() {
+        val current = _registroLlegadaFormState.value
+        val isValid = current.numeroOrdenFabricacion.isNotEmpty() &&
+                current.numeroMuestra.isNotEmpty() &&
+                current.codigoProducto.isNotEmpty() &&
+                current.descripcionProducto.isNotEmpty()
+        _registroLlegadaFormState.value = current.copy(isFormValid = isValid)
     }
 
     // Función para crear un CheckList
@@ -399,11 +550,19 @@ class MuestraViewModel @Inject constructor(
             _errorMessage.value = null
             
             try {
+                // Usar el docEntry de la muestra actual
+                val docEntry = _currentMuestraId.value ?: muestraId
+                
+                // VALIDACIÓN CRÍTICA: Verificar que la muestra no esté completada
+                if (isMuestraCompletada(docEntry)) {
+                    _errorMessage.value = "No se pueden agregar más checklists. La muestra está completada y solo permite visualización."
+                    _isCreating.value = false
+                    return@launch
+                }
+                
                 val checkList = _checkListFormState.value
                 val fechaHora = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
                 
-                // Usar el docEntry de la muestra actual
-                val docEntry = _currentMuestraId.value ?: muestraId
                 android.util.Log.d("MuestraViewModel", "DocEntry a usar: $docEntry")
                 
                 val request = CheckListCreateRequest(
@@ -450,6 +609,9 @@ class MuestraViewModel @Inject constructor(
                             listaActual.add(nuevoCheckList)
                             _checkListsTemporales.value = listaActual
                             
+                            // Actualizar estado a "En Proceso" si hay al menos 1 CheckList
+                            actualizarEstadoMuestra(docEntry)
+                            
                             // Refrescar el detalle de la muestra
                             android.util.Log.d("MuestraViewModel", "Refrescando detalle de muestra")
                             obtenerMuestraCompletaPorId(docEntry)
@@ -473,56 +635,309 @@ class MuestraViewModel @Inject constructor(
         }
     }
 
+    // Función para crear una Inspección Dimensional
+    fun crearInspeccionDimensional(muestraId: String) {
+        viewModelScope.launch {
+            android.util.Log.d("MuestraViewModel", "=== CREANDO INSPECCION DIMENSIONAL ===")
+            android.util.Log.d("MuestraViewModel", "DocEntry (currentMuestraId): $_currentMuestraId.value")
+            
+            _isCreating.value = true
+            _errorMessage.value = null
+            
+            try {
+                // Usar el docEntry de la muestra actual
+                val docEntry = _currentMuestraId.value ?: muestraId
+                
+                // VALIDACIÓN CRÍTICA: Verificar que la muestra no esté completada
+                if (isMuestraCompletada(docEntry)) {
+                    _errorMessage.value = "No se pueden agregar más inspecciones. La muestra está completada y solo permite visualización."
+                    _isCreating.value = false
+                    return@launch
+                }
+                
+                val inspeccion = _inspeccionFormState.value
+                val fechaHora = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
+                
+                android.util.Log.d("MuestraViewModel", "DocEntry a usar: $docEntry")
+                
+                val request = InspeccionDimensionalCreateRequest(
+                    muestraId = muestraId,
+                    horaInspeccion = fechaHora,
+                    temperaturaChiller = inspeccion.temperaturaChiller,
+                    temperaturaCiclo = inspeccion.temperaturaCiclo,
+                    numeroCavidad = inspeccion.numeroCavidad,
+                    peso = inspeccion.peso,
+                    diametroRoscaMedida1 = inspeccion.diametroRoscaMedida1,
+                    diametroRoscaMedida2 = inspeccion.diametroRoscaMedida2,
+                    alturaBocaMedida1 = inspeccion.alturaBocaMedida1,
+                    alturaBocaMedida2 = inspeccion.alturaBocaMedida2,
+                    alturaBocaMedida3 = inspeccion.alturaBocaMedida3,
+                    alturaBocaMedida4 = inspeccion.alturaBocaMedida4,
+                    diametroPrecintoMedida1 = inspeccion.diametroPrecintoMedida1,
+                    diametroPrecintoMedida2 = inspeccion.diametroPrecintoMedida2,
+                    diametroPrecintoMedida3 = inspeccion.diametroPrecintoMedida3,
+                    alturaTotalMedida1 = inspeccion.alturaTotalMedida1,
+                    alturaTotalMedida2 = inspeccion.alturaTotalMedida2,
+                    diametroInternoMedida1 = inspeccion.diametroInternoMedida1,
+                    diametroInternoMedida2 = inspeccion.diametroInternoMedida2,
+                    observacion = inspeccion.observacion
+                )
+                
+                val result = muestraRepository.crearInspeccionDimensional(docEntry, request)
+                
+                android.util.Log.d("MuestraViewModel", "Request enviado al repository")
+                
+                result.fold(
+                    onSuccess = { response ->
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Response.success: ${response.success}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Message: ${response.message}")
+                        
+                        if (response.success) {
+                            _successMessage.value = response.message
+                            
+                            // Agregar a la lista temporal primero
+                            val nuevaInspeccion = InspeccionDimensional(
+                                id = UUID.randomUUID().toString(),
+                                muestraId = muestraId,
+                                horaInspeccion = request.horaInspeccion,
+                                temperaturaChiller = request.temperaturaChiller,
+                                temperaturaCiclo = request.temperaturaCiclo,
+                                numeroCavidad = request.numeroCavidad,
+                                peso = request.peso,
+                                diametroRoscaMedida1 = request.diametroRoscaMedida1,
+                                diametroRoscaMedida2 = request.diametroRoscaMedida2,
+                                alturaBocaMedida1 = request.alturaBocaMedida1,
+                                alturaBocaMedida2 = request.alturaBocaMedida2,
+                                alturaBocaMedida3 = request.alturaBocaMedida3,
+                                alturaBocaMedida4 = request.alturaBocaMedida4,
+                                diametroPrecintoMedida1 = request.diametroPrecintoMedida1,
+                                diametroPrecintoMedida2 = request.diametroPrecintoMedida2,
+                                diametroPrecintoMedida3 = request.diametroPrecintoMedida3,
+                                alturaTotalMedida1 = request.alturaTotalMedida1,
+                                alturaTotalMedida2 = request.alturaTotalMedida2,
+                                diametroInternoMedida1 = request.diametroInternoMedida1,
+                                diametroInternoMedida2 = request.diametroInternoMedida2,
+                                observacion = request.observacion
+                            )
+                            val listaActual = _inspeccionesTemporales.value.toMutableList()
+                            listaActual.add(nuevaInspeccion)
+                            _inspeccionesTemporales.value = listaActual
+                            
+                            // Limpiar el formulario después de crear (esto calculará el siguiente número de cavidad)
+                            resetInspeccionForm()
+                            
+                            // Actualizar estado a "En Proceso" si hay al menos 1 Inspección
+                            actualizarEstadoMuestra(docEntry)
+                            
+                            // Refrescar el detalle de la muestra
+                            android.util.Log.d("MuestraViewModel", "Refrescando detalle de muestra")
+                            obtenerMuestraCompletaPorId(docEntry)
+                        } else {
+                            android.util.Log.e("MuestraViewModel", "ERROR - Response.message: ${response.message}")
+                            _errorMessage.value = response.message
+                        }
+                    },
+                    onFailure = { exception ->
+                        android.util.Log.e("MuestraViewModel", "FAILURE - Excepción: ${exception.message}", exception)
+                        _errorMessage.value = "Error al crear Inspección Dimensional: ${exception.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("MuestraViewModel", "EXCEPCIÓN INESPERADA", e)
+                _errorMessage.value = "Error inesperado: ${e.message}"
+            }
+            
+            _isCreating.value = false
+            android.util.Log.d("MuestraViewModel", "=== FIN CREAR INSPECCION DIMENSIONAL ===")
+        }
+    }
+
+    // Función para crear un Material Empleado
+    fun crearMaterialEmpleado(muestraId: String) {
+        viewModelScope.launch {
+            android.util.Log.d("MuestraViewModel", "=== CREANDO MATERIAL EMPLEADO ===")
+            android.util.Log.d("MuestraViewModel", "DocEntry (currentMuestraId): $_currentMuestraId.value")
+            
+            _isCreating.value = true
+            _errorMessage.value = null
+            
+            try {
+                val material = _materialFormState.value
+                val fechaHora = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
+                
+                // Usar el docEntry de la muestra actual
+                val docEntry = _currentMuestraId.value ?: muestraId
+                android.util.Log.d("MuestraViewModel", "DocEntry a usar: $docEntry")
+                
+                val request = MaterialEmpleadoCreateRequest(
+                    material = material.material,
+                    marca = material.marca,
+                    codigo = material.codigo,
+                    lote = material.lote,
+                    fecReg = fechaHora
+                )
+                
+                val result = muestraRepository.crearMaterialEmpleado(docEntry, request)
+                
+                android.util.Log.d("MuestraViewModel", "Request enviado al repository")
+                
+                result.fold(
+                    onSuccess = { response ->
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Response.success: ${response.success}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Message: ${response.message}")
+                        
+                        if (response.success) {
+                            _successMessage.value = response.message
+                            // Limpiar el formulario después de crear
+                            resetMaterialForm()
+                            // Agregar a la lista temporal
+                            val nuevoMaterial = MaterialEmpleado(
+                                id = UUID.randomUUID().toString(),
+                                muestraId = muestraId,
+                                material = request.material,
+                                marca = request.marca,
+                                codigo = request.codigo,
+                                lote = request.lote
+                            )
+                            val listaActual = _materialesTemporales.value.toMutableList()
+                            listaActual.add(nuevoMaterial)
+                            _materialesTemporales.value = listaActual
+                            
+                            // Refrescar el detalle de la muestra
+                            android.util.Log.d("MuestraViewModel", "Refrescando detalle de muestra")
+                            obtenerMuestraCompletaPorId(docEntry)
+                        } else {
+                            android.util.Log.e("MuestraViewModel", "ERROR - Response.message: ${response.message}")
+                            _errorMessage.value = response.message
+                        }
+                    },
+                    onFailure = { exception ->
+                        android.util.Log.e("MuestraViewModel", "FAILURE - Excepción: ${exception.message}", exception)
+                        _errorMessage.value = "Error al crear Material Empleado: ${exception.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("MuestraViewModel", "EXCEPCIÓN INESPERADA", e)
+                _errorMessage.value = "Error inesperado: ${e.message}"
+            }
+            
+            _isCreating.value = false
+            android.util.Log.d("MuestraViewModel", "=== FIN CREAR MATERIAL EMPLEADO ===")
+        }
+    }
+
+    // Función para crear una Evaluación de Producción
+    fun crearEvaluacionProduccion(muestraId: String) {
+        viewModelScope.launch {
+            android.util.Log.d("MuestraViewModel", "=== CREANDO EVALUACION PRODUCCION ===")
+            android.util.Log.d("MuestraViewModel", "DocEntry (currentMuestraId): $_currentMuestraId.value")
+            
+            _isCreating.value = true
+            _errorMessage.value = null
+            
+            try {
+                // Validar que tenemos un muestraId
+                val docEntry = _currentMuestraId.value ?: muestraId
+                if (docEntry.isEmpty()) {
+                    _errorMessage.value = "Error: No se encontró el ID de la muestra"
+                    _isCreating.value = false
+                    return@launch
+                }
+                
+                // Validar que la muestra no esté completada
+                if (isMuestraCompletada(docEntry)) {
+                    _errorMessage.value = "No se puede enviar la evaluación. La muestra ya está completada."
+                    _isCreating.value = false
+                    return@launch
+                }
+                
+                val evaluacion = _evaluacionFormState.value
+                val fechaHora = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
+                
+                android.util.Log.d("MuestraViewModel", "DocEntry a usar: $docEntry")
+                
+                val request = EvaluacionProduccionCreateRequest(
+                    equipo = evaluacion.equipo,
+                    estado = "completado", // Dejar vacío según requerimiento
+                    paletasAprobadas = evaluacion.paletasAprobadas.ifEmpty { "0" },
+                    paletasObservadas = evaluacion.paletasObservadas.ifEmpty { "0" },
+                    paletasRechazadas = evaluacion.paletasRechazadas.ifEmpty { "0" },
+                    bolsasAprobadas = evaluacion.bolsasAprobadas.ifEmpty { "0" },
+                    bolsasObservadas = evaluacion.bolsasObservadas.ifEmpty { "0" },
+                    bolsasRechazadas = evaluacion.bolsasRechazadas.ifEmpty { "0" },
+                    criteriosEvaluacion = evaluacion.criteriosEvaluacion,
+                    fecReg = fechaHora
+                )
+                
+                val result = muestraRepository.crearEvaluacionProduccion(docEntry, request)
+                
+                android.util.Log.d("MuestraViewModel", "Request enviado al repository")
+                
+                result.fold(
+                    onSuccess = { response ->
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Response.success: ${response.success}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Message: ${response.message}")
+                        
+                        if (response.success) {
+                            _successMessage.value = response.message ?: "Evaluación registrada exitosamente"
+                            // Limpiar el formulario después de crear
+                            resetEvaluacionForm()
+                            
+                            // Actualizar estado a "Completado" cuando se envía la evaluación
+                            actualizarEstadoMuestra(docEntry, esCompletado = true)
+                            
+                            // Refrescar el detalle de la muestra
+                            android.util.Log.d("MuestraViewModel", "Refrescando detalle de muestra")
+                            obtenerMuestraCompletaPorId(docEntry)
+                        } else {
+                            android.util.Log.e("MuestraViewModel", "ERROR - Response.message: ${response.message}")
+                            _errorMessage.value = response.message
+                        }
+                    },
+                    onFailure = { exception ->
+                        android.util.Log.e("MuestraViewModel", "FAILURE - Excepción: ${exception.message}", exception)
+                        _errorMessage.value = "Error al crear Evaluación de Producción: ${exception.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("MuestraViewModel", "EXCEPCIÓN INESPERADA", e)
+                _errorMessage.value = "Error inesperado: ${e.message}"
+            }
+            
+            _isCreating.value = false
+            android.util.Log.d("MuestraViewModel", "=== FIN CREAR EVALUACION PRODUCCION ===")
+        }
+    }
+
     // Funciones para agregar elementos a las listas temporales
     fun agregarMaterial() {
-        val material = MaterialEmpleado(
-            id = UUID.randomUUID().toString(),
-            muestraId = "",
-            material = _materialFormState.value.material,
-            marca = _materialFormState.value.marca,
-            codigo = _materialFormState.value.codigo,
-            lote = _materialFormState.value.lote
-        )
-        val listaActual = _materialesTemporales.value.toMutableList()
-        listaActual.add(material)
-        _materialesTemporales.value = listaActual
-        resetMaterialForm()
+        // Validar que tenemos un muestraId
+        val muestraId = _currentMuestraId.value
+        if (muestraId.isNullOrEmpty()) {
+            _errorMessage.value = "Error: No se encontró el ID de la muestra"
+            return
+        }
         
-        // Guardar automáticamente si está en modo edición
-        guardarCambiosAutomaticamente()
+        // Llamar a la función que usa el API
+        crearMaterialEmpleado(muestraId)
     }
 
     fun agregarInspeccion() {
-        val inspeccion = InspeccionDimensional(
-            id = UUID.randomUUID().toString(),
-            muestraId = "",
-            horaInspeccion = _inspeccionFormState.value.horaInspeccion,
-            temperaturaChiller = _inspeccionFormState.value.temperaturaChiller,
-            temperaturaCiclo = _inspeccionFormState.value.temperaturaCiclo,
-            numeroCavidad = _inspeccionFormState.value.numeroCavidad,
-            peso = _inspeccionFormState.value.peso,
-            diametroRoscaMedida1 = _inspeccionFormState.value.diametroRoscaMedida1,
-            diametroRoscaMedida2 = _inspeccionFormState.value.diametroRoscaMedida2,
-            alturaBocaMedida1 = _inspeccionFormState.value.alturaBocaMedida1,
-            alturaBocaMedida2 = _inspeccionFormState.value.alturaBocaMedida2,
-            alturaBocaMedida3 = _inspeccionFormState.value.alturaBocaMedida3,
-            alturaBocaMedida4 = _inspeccionFormState.value.alturaBocaMedida4,
-            diametroPrecintoMedida1 = _inspeccionFormState.value.diametroPrecintoMedida1,
-            diametroPrecintoMedida2 = _inspeccionFormState.value.diametroPrecintoMedida2,
-            diametroPrecintoMedida3 = _inspeccionFormState.value.diametroPrecintoMedida3,
-            alturaTotalMedida1 = _inspeccionFormState.value.alturaTotalMedida1,
-            alturaTotalMedida2 = _inspeccionFormState.value.alturaTotalMedida2,
-            diametroInternoMedida1 = _inspeccionFormState.value.diametroInternoMedida1,
-            diametroInternoMedida2 = _inspeccionFormState.value.diametroInternoMedida2,
-            observacion = _inspeccionFormState.value.observacion
-        )
-        val listaActual = _inspeccionesTemporales.value.toMutableList()
-        listaActual.add(inspeccion)
-        _inspeccionesTemporales.value = listaActual
-        resetInspeccionForm()
+        // Validar que tenemos un muestraId
+        val muestraId = _currentMuestraId.value
+        if (muestraId.isNullOrEmpty()) {
+            _errorMessage.value = "Error: No se encontró el ID de la muestra"
+            return
+        }
         
-        // Guardar automáticamente si está en modo edición
-        guardarCambiosAutomaticamente()
+        // Validar que la muestra no esté completada
+        if (isMuestraCompletada(muestraId)) {
+            _errorMessage.value = "No se pueden agregar más inspecciones. La muestra está completada."
+            return
+        }
+        
+        // Llamar a la función que usa el API
+        crearInspeccionDimensional(muestraId)
     }
 
     fun agregarCheckList() {
@@ -530,6 +945,12 @@ class MuestraViewModel @Inject constructor(
         val muestraId = _currentMuestraId.value
         if (muestraId.isNullOrEmpty()) {
             _errorMessage.value = "Error: No se encontró el ID de la muestra"
+            return
+        }
+        
+        // Validar que la muestra no esté completada
+        if (isMuestraCompletada(muestraId)) {
+            _errorMessage.value = "No se pueden agregar más checklists. La muestra está completada."
             return
         }
         
@@ -571,7 +992,19 @@ class MuestraViewModel @Inject constructor(
     }
 
     fun resetInspeccionForm() {
+        // No resetear numeroCavidad si hay inspecciones previas
+        val numeroCavidadActual = _inspeccionFormState.value.numeroCavidad
         _inspeccionFormState.value = InspeccionDimensionalFormState()
+        
+        // Si hay inspecciones, mantener el siguiente número de cavidad
+        if (_inspeccionesTemporales.value.isNotEmpty()) {
+            val ultimoNumero = _inspeccionesTemporales.value.lastOrNull()?.numeroCavidad?.toIntOrNull()
+            if (ultimoNumero != null) {
+                _inspeccionFormState.value = _inspeccionFormState.value.copy(
+                    numeroCavidad = (ultimoNumero + 1).toString()
+                )
+            }
+        }
     }
 
     fun resetCheckListForm() {
@@ -582,12 +1015,126 @@ class MuestraViewModel @Inject constructor(
         _evaluacionFormState.value = EvaluacionFormState()
     }
 
+    fun resetRegistroLlegadaForm() {
+        _registroLlegadaFormState.value = RegistroLlegadaFormState()
+        _muestrasDisponibles.value = emptyList() // Limpiar las muestras disponibles
+    }
+
+    fun agregarRegistroLlegada(currentUser: UserResponse? = null) {
+        viewModelScope.launch {
+            val formState = _registroLlegadaFormState.value
+            if (!formState.isFormValid) {
+                _errorMessage.value = "Por favor complete todos los campos"
+                return@launch
+            }
+
+            _isCreating.value = true
+            _errorMessage.value = null
+
+            try {
+                // Formatear fecha en formato ISO 8601 con timezone: "2026-02-06T09:27:58-05:00"
+                val fechaHora = java.time.ZonedDateTime.now(java.time.ZoneId.of("America/Lima"))
+                val fechaRegistro = fechaHora.format(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+
+                // Extraer solo el número antes del guion del número de muestra
+                // Ejemplo: "2-Muestra 2" -> "2"
+                val numeroMuestraLimpio = formState.numeroMuestra.split("-").firstOrNull()?.trim() ?: formState.numeroMuestra
+
+                val request = RegistroLlegadaCreateRequest(
+                    ordenFabricacion = formState.numeroOrdenFabricacion,
+                    nMuestra = numeroMuestraLimpio,
+                    codProducto = formState.codigoProducto,
+                    desProducto = formState.descripcionProducto,
+                    fechaRegistro = fechaRegistro,
+                    userRegister = currentUser?.dni ?: "70131373"
+                )
+
+                android.util.Log.d("MuestraViewModel", "=== CREANDO REGISTRO DE LLEGADA ===")
+                android.util.Log.d("MuestraViewModel", "Request: $request")
+
+                val result = muestraRepository.crearRegistroLlegada(request)
+
+                result.fold(
+                    onSuccess = { response ->
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Response.success: ${response.success}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Message: ${response.message}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Data: ${response.data}")
+
+                        if (response.statusCode == 201) {
+                            _successMessage.value = response.message ?: "Registro de llegada creado exitosamente"
+                            
+                            // Limpiar formulario
+                            resetRegistroLlegadaForm()
+                            
+                            // Recargar la lista de registros
+                            val fechaInicio = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+                            val fechaFin = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+                            obtenerRegistrosLlegada(fechaInicio, fechaFin, currentUser?.dni)
+                        } else {
+                            _errorMessage.value = response.message ?: "Error al crear registro"
+                        }
+                    },
+                    onFailure = { exception ->
+                        android.util.Log.e("MuestraViewModel", "FAILURE - Excepción: ${exception.message}", exception)
+                        _errorMessage.value = "Error al crear registro de llegada: ${exception.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("MuestraViewModel", "EXCEPCIÓN INESPERADA", e)
+                _errorMessage.value = "Error inesperado: ${e.message}"
+            }
+
+            _isCreating.value = false
+            android.util.Log.d("MuestraViewModel", "=== FIN CREAR REGISTRO DE LLEGADA ===")
+        }
+    }
+
+    fun obtenerRegistrosLlegada(fechaInicio: String? = null, fechaFin: String? = null, code: String? = null) {
+        viewModelScope.launch {
+            android.util.Log.d("MuestraViewModel", "=== OBTENIENDO REGISTROS DE LLEGADA ===")
+            android.util.Log.d("MuestraViewModel", "FechaInicio: $fechaInicio, FechaFin: $fechaFin, Code: $code")
+            
+            _isLoading.value = true
+            _errorMessage.value = null
+            
+            try {
+                val result = muestraRepository.obtenerRegistrosLlegada(fechaInicio, fechaFin, code)
+                
+                result.fold(
+                    onSuccess = { response ->
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Response.success: ${response.success}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Cantidad de registros: ${response.data.size}")
+                        
+                        if (response.success) {
+                            _registrosLlegada.value = response.data
+                            android.util.Log.d("MuestraViewModel", "Registros actualizados en el estado")
+                        } else {
+                            android.util.Log.e("MuestraViewModel", "ERROR - Response.message: ${response.message}")
+                            _errorMessage.value = response.message
+                        }
+                    },
+                    onFailure = { exception ->
+                        android.util.Log.e("MuestraViewModel", "FAILURE - Excepción: ${exception.message}", exception)
+                        _errorMessage.value = "Error al obtener registros de llegada: ${exception.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("MuestraViewModel", "EXCEPCIÓN INESPERADA", e)
+                _errorMessage.value = "Error inesperado: ${e.message}"
+            }
+            
+            _isLoading.value = false
+            android.util.Log.d("MuestraViewModel", "=== FIN OBTENIENDO REGISTROS DE LLEGADA ===")
+        }
+    }
+
     fun resetAllForms() {
         _cabeceraFormState.value = CabeceraFormState()
         _materialFormState.value = MaterialFormState()
         _inspeccionFormState.value = InspeccionDimensionalFormState()
         _checkListFormState.value = CheckListFormState()
         _evaluacionFormState.value = EvaluacionFormState()
+        _registroLlegadaFormState.value = RegistroLlegadaFormState()
         _materialesTemporales.value = emptyList()
         _inspeccionesTemporales.value = emptyList()
         _checkListsTemporales.value = emptyList()
@@ -601,13 +1148,13 @@ class MuestraViewModel @Inject constructor(
     // Navegación del wizard
     fun siguientePaso() {
         if (_pasoActual.value < 5) {
-            _pasoActual.value = _pasoActual.value + 3 // HASTA HABILITAR LOS MODULOS
+            _pasoActual.value = _pasoActual.value + 1 // HASTA HABILITAR LOS MODULOS
         }
     }
 
     fun pasoAnterior() {
         if (_pasoActual.value > 1) {
-            _pasoActual.value = _pasoActual.value - 3 // HASTA HABILITAR LOS MODULOS
+            _pasoActual.value = _pasoActual.value - 1 // HASTA HABILITAR LOS MODULOS
         }
     }
 
@@ -628,14 +1175,15 @@ class MuestraViewModel @Inject constructor(
                 val fechaActual = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
                 // Crear el request con el formato requerido por el API
                 val request = MuestraCreateRequest(
-                    codeProd = cabeceraForm.codigo,
+                    codeProd = cabeceraForm.lote,
                     producto = cabeceraForm.producto,
-                    lote = cabeceraForm.lote, // NO SE ENVIA
+                    lote = cabeceraForm.codigo,
                     embalaje = cabeceraForm.embalaje, // NO SE ENVIA
                     userRegister = currentUser.dni,
                     fecRegister = fechaActual,
                     turno = cabeceraForm.turno,
-                    maquina = cabeceraForm.maquina, // NO SE ENVIA
+                    maquina = cabeceraForm.maquina,
+                    codigoMaquina = cabeceraForm.codigoMaquina,
                     encargadoProd = cabeceraForm.encargadoProduccion, // NO SE ENVIA
                     estado = "NUEVO"
                 )
@@ -674,6 +1222,7 @@ class MuestraViewModel @Inject constructor(
         android.util.Log.d("MuestraViewModel", "Activando modo edición para muestra: $muestraId")
         _isEditMode.value = true
         _currentMuestraId.value = muestraId
+        // El estado se cargará cuando se obtenga el detalle
     }
     
     // Función para cargar una muestra para edición
@@ -688,6 +1237,7 @@ class MuestraViewModel @Inject constructor(
                 fechaRegistro = muestra.cabecera.fechaRegistro,
                 codigo = muestra.cabecera.codigo,
                 lote = muestra.cabecera.lote,
+                codigoMaquina = muestra.cabecera.codigoMaquina,
                 embalaje = muestra.cabecera.embalaje,
                 maquina = muestra.cabecera.maquina,
                 turno = muestra.cabecera.turno,
@@ -708,9 +1258,14 @@ class MuestraViewModel @Inject constructor(
             // Cargar evaluación existente
             muestra.evaluacionProduccion?.let { evaluacion ->
                 _evaluacionFormState.value = EvaluacionFormState(
+                    equipo = evaluacion.equipo,
                     estado = evaluacion.estado,
-                    paletas = evaluacion.paletas,
-                    bolsas = evaluacion.bolsas,
+                    paletasAprobadas = evaluacion.paletasAprobadas,
+                    paletasObservadas = evaluacion.paletasObservadas,
+                    paletasRechazadas = evaluacion.paletasRechazadas,
+                    bolsasAprobadas = evaluacion.bolsasAprobadas,
+                    bolsasObservadas = evaluacion.bolsasObservadas,
+                    bolsasRechazadas = evaluacion.bolsasRechazadas,
                     criteriosEvaluacion = evaluacion.criteriosEvaluacion
                 )
             }
@@ -743,12 +1298,22 @@ class MuestraViewModel @Inject constructor(
                     val materialesCompletado = _materialesTemporales.value.isNotEmpty()
                     val inspeccionesCompletado = _inspeccionesTemporales.value.isNotEmpty()
                     val checkListsCompletado = _checkListsTemporales.value.isNotEmpty()
-                    val evaluacionCompletado = _evaluacionFormState.value.estado.isNotEmpty()
+                    // La evaluación está completada cuando tiene equipo y al menos un valor en paletas o bolsas
+                    val evaluacionCompletado = _evaluacionFormState.value.equipo.isNotEmpty() &&
+                        ((_evaluacionFormState.value.paletasAprobadas.isNotEmpty() || 
+                          _evaluacionFormState.value.paletasObservadas.isNotEmpty() || 
+                          _evaluacionFormState.value.paletasRechazadas.isNotEmpty()) ||
+                         (_evaluacionFormState.value.bolsasAprobadas.isNotEmpty() || 
+                          _evaluacionFormState.value.bolsasObservadas.isNotEmpty() || 
+                          _evaluacionFormState.value.bolsasRechazadas.isNotEmpty()))
                     
-                    // Determinar el estado de la cabecera basado en la completitud
+                    // Determinar el estado de la cabecera basado en la nueva lógica:
+                    // - "Nuevo": Solo cuando se crea la muestra (solo Información General)
+                    // - "En Proceso": Cuando hay al menos 1 Inspección Dimensional O al menos 1 CheckList
+                    // - "Completado": Cuando se envía la Evaluación final
                     val estadoCabecera = when {
-                        materialesCompletado && inspeccionesCompletado && checkListsCompletado && evaluacionCompletado -> "Completado"
-                        materialesCompletado || inspeccionesCompletado || checkListsCompletado || evaluacionCompletado -> "En Proceso"
+                        evaluacionCompletado -> "Completado"
+                        inspeccionesCompletado || checkListsCompletado -> "En Proceso"
                         else -> "Nuevo"
                     }
                     
@@ -757,13 +1322,17 @@ class MuestraViewModel @Inject constructor(
                         materiales = _materialesTemporales.value,
                         inspeccionesDimensionales = _inspeccionesTemporales.value,
                         checkLists = _checkListsTemporales.value,
-                        evaluacionProduccion = if (_evaluacionFormState.value.estado.isNotEmpty()) {
+                        evaluacionProduccion = if (evaluacionCompletado) {
                             EvaluacionProduccion(
                                 id = UUID.randomUUID().toString(),
                                 muestraId = muestraId,
                                 estado = _evaluacionFormState.value.estado,
-                                paletas = _evaluacionFormState.value.paletas,
-                                bolsas = _evaluacionFormState.value.bolsas,
+                                paletasAprobadas = _evaluacionFormState.value.paletasAprobadas,
+                                paletasObservadas = _evaluacionFormState.value.paletasObservadas,
+                                paletasRechazadas = _evaluacionFormState.value.paletasRechazadas,
+                                bolsasAprobadas = _evaluacionFormState.value.bolsasAprobadas,
+                                bolsasObservadas = _evaluacionFormState.value.bolsasObservadas,
+                                bolsasRechazadas = _evaluacionFormState.value.bolsasRechazadas,
                                 criteriosEvaluacion = _evaluacionFormState.value.criteriosEvaluacion
                             )
                         } else null,
@@ -793,6 +1362,7 @@ class MuestraViewModel @Inject constructor(
     fun clearMessages() {
         _errorMessage.value = null
         _successMessage.value = null
+        _productoEncontrado.value = null
     }
 
     fun resetForm() {
@@ -834,6 +1404,41 @@ class MuestraViewModel @Inject constructor(
         }
     }
 
+    // Función para actualizar el estado de la muestra
+    private fun actualizarEstadoMuestra(muestraId: String, esCompletado: Boolean = false) {
+        viewModelScope.launch {
+            val listaActual = _muestras.value.toMutableList()
+            val indice = listaActual.indexOfFirst { it.id == muestraId }
+            
+            if (indice != -1) {
+                val muestra = listaActual[indice]
+                val nuevoEstado = when {
+                    esCompletado -> "completado"
+                    _inspeccionesTemporales.value.isNotEmpty() || _checkListsTemporales.value.isNotEmpty() -> "en proceso"
+                    else -> "nuevo"
+                }
+                
+                listaActual[indice] = muestra.copy(estado = nuevoEstado)
+                _muestras.value = listaActual
+            }
+        }
+    }
+    
+    // Función para verificar si la muestra está completada
+    fun isMuestraCompletada(muestraId: String?): Boolean {
+        if (muestraId.isNullOrEmpty()) return false
+        
+        // Buscar en la lista de muestras
+        val muestra = _muestras.value.firstOrNull { it.id == muestraId }
+        if (muestra != null) {
+            return muestra.estado == "completado"
+        }
+        
+        // Si no está en _muestras, buscar en _muestrasCompletas
+        val muestraCompleta = _muestrasCompletas.value.firstOrNull { it.cabecera.id == muestraId }
+        return muestraCompleta?.cabecera?.estado == "completado"
+    }
+    
     // Función para obtener una muestra completa por ID
     fun obtenerMuestraCompletaPorId(id: String) {
         viewModelScope.launch {
@@ -849,12 +1454,15 @@ class MuestraViewModel @Inject constructor(
                 result.fold(
                     onSuccess = { response ->
                         android.util.Log.d("MuestraViewModel", "SUCCESS - Response.success: ${response.success}")
-                        android.util.Log.d("MuestraViewModel", "SUCCESS - DocEntry: ${response.data.docEntry}")
-                        android.util.Log.d("MuestraViewModel", "SUCCESS - CheckLists: ${response.data.checkList.size}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - DocEntry: ${response.data[0].docEntry}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - CheckLists: ${response.data[0].checkList.size}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Materiales: ${response.data[0].materialEmpleado.size}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Inspecciones: ${response.data[0].inspeccionDimencional.size}")
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Evaluaciones: ${response.data[0].evaluacion.size}")
                         
                         if (response.success) {
                             // Mapear la respuesta del API a MuestraCompleta
-                            val muestraDetalle = response.data
+                            val muestraDetalle = response.data[0]
                             
                             // Crear la cabecera
                             val cabecera = MuestraCabecera(
@@ -888,30 +1496,89 @@ class MuestraViewModel @Inject constructor(
                                 )
                             }
                             
+                            // Mapear Materiales Empleados
+                            val materiales = muestraDetalle.materialEmpleado.map { materialAPI ->
+                                MaterialEmpleado(
+                                    id = UUID.randomUUID().toString(),
+                                    muestraId = id,
+                                    material = materialAPI.material ?: "",
+                                    marca = materialAPI.marca ?: "",
+                                    codigo = materialAPI.codigo ?: "",
+                                    lote = materialAPI.lote ?: ""
+                                )
+                            }
+                            
+                            // Mapear Inspecciones Dimensionales
+                            val inspecciones = muestraDetalle.inspeccionDimencional.map { inspeccionAPI ->
+                                InspeccionDimensional(
+                                    id = UUID.randomUUID().toString(),
+                                    muestraId = id,
+                                    horaInspeccion = inspeccionAPI.horaInspeccion ?: "",
+                                    temperaturaChiller = inspeccionAPI.temperaturaChiller ?: "",
+                                    temperaturaCiclo = inspeccionAPI.temperaturaCiclo ?: "",
+                                    numeroCavidad = inspeccionAPI.numeroCavidad ?: "",
+                                    peso = inspeccionAPI.peso ?: "",
+                                    diametroRoscaMedida1 = inspeccionAPI.diametroRoscaMedida1 ?: "",
+                                    diametroRoscaMedida2 = inspeccionAPI.diametroRoscaMedida2 ?: "",
+                                    alturaBocaMedida1 = inspeccionAPI.alturaBocaMedida1 ?: "",
+                                    alturaBocaMedida2 = inspeccionAPI.alturaBocaMedida2 ?: "",
+                                    alturaBocaMedida3 = inspeccionAPI.alturaBocaMedida3 ?: "",
+                                    alturaBocaMedida4 = inspeccionAPI.alturaBocaMedida4 ?: "",
+                                    diametroPrecintoMedida1 = inspeccionAPI.diametroPrecintoMedida1 ?: "",
+                                    diametroPrecintoMedida2 = inspeccionAPI.diametroPrecintoMedida2 ?: "",
+                                    diametroPrecintoMedida3 = inspeccionAPI.diametroPrecintoMedida3 ?: "",
+                                    alturaTotalMedida1 = inspeccionAPI.alturaTotalMedida1 ?: "",
+                                    alturaTotalMedida2 = inspeccionAPI.alturaTotalMedida2 ?: "",
+                                    diametroInternoMedida1 = inspeccionAPI.diametroInternoMedida1 ?: "",
+                                    diametroInternoMedida2 = inspeccionAPI.diametroInternoMedida2 ?: "",
+                                    observacion = inspeccionAPI.observacion ?: ""
+                                )
+                            }
+                            
+                            // Mapear Evaluación (tomar solo el primero)
+                            val evaluacion = muestraDetalle.evaluacion.firstOrNull()?.let { evaluacionAPI ->
+                                EvaluacionProduccion(
+                                    id = UUID.randomUUID().toString(),
+                                    muestraId = id,
+                                    equipo = evaluacionAPI.equipo ?: "",
+                                    estado = evaluacionAPI.estado ?: "",
+                                    paletasAprobadas = evaluacionAPI.paletasAprobadas ?: "",
+                                    paletasObservadas = evaluacionAPI.paletasObservadas ?: "",
+                                    paletasRechazadas = evaluacionAPI.paletasRechazadas ?: "",
+                                    bolsasAprobadas = evaluacionAPI.bolsasAprobadas ?: "",
+                                    bolsasObservadas = evaluacionAPI.bolsasObservadas ?: "",
+                                    bolsasRechazadas = evaluacionAPI.bolsasRechazadas ?: "",
+                                    criteriosEvaluacion = evaluacionAPI.criteriosEvaluacion ?: ""
+                                )
+                            }
+                            
                             // Crear MuestraCompleta
                             val muestraCompleta = MuestraCompleta(
                                 cabecera = cabecera,
-                                materiales = emptyList(), // Por ahora vacío
-                                inspeccionesDimensionales = emptyList(), // Por ahora vacío
+                                materiales = materiales,
+                                inspeccionesDimensionales = inspecciones,
                                 checkLists = checkLists,
-                                evaluacionProduccion = null,
-                                materialesCompletado = false,
-                                inspeccionesCompletado = false,
+                                evaluacionProduccion = evaluacion,
+                                materialesCompletado = materiales.isNotEmpty(),
+                                inspeccionesCompletado = inspecciones.isNotEmpty(),
                                 checkListsCompletado = checkLists.isNotEmpty(),
-                                evaluacionCompletado = false,
+                                evaluacionCompletado = evaluacion != null,
                                 fechaUltimaActualizacion = muestraDetalle.fecRegister
                             )
                             
                             // Guardar el docEntry para usar en checkList
                             _currentMuestraId.value = muestraDetalle.docEntry
                             
-                            // Si está en modo edición, cargar los datos en el formulario de cabecera
+                            // Si está en modo edición, cargar los datos en los formularios
                             if (_isEditMode.value) {
-                                android.util.Log.d("MuestraViewModel", "Cargando datos en formulario de cabecera para edición")
+                                android.util.Log.d("MuestraViewModel", "Cargando datos en formularios para edición")
+                                
+                                // Cargar cabecera
                                 _cabeceraFormState.value = CabeceraFormState(
                                     fechaRegistro = cabecera.fechaRegistro,
                                     codigo = cabecera.codigo,
                                     lote = cabecera.lote,
+                                    codigoMaquina = cabecera.codigoMaquina,
                                     embalaje = cabecera.embalaje,
                                     maquina = cabecera.maquina,
                                     turno = cabecera.turno,
@@ -921,7 +1588,47 @@ class MuestraViewModel @Inject constructor(
                                     encargadoProduccion = cabecera.encargadoProduccion,
                                     isFormValid = true // En modo edición siempre es válido
                                 )
-                                android.util.Log.d("MuestraViewModel", "Datos de cabecera cargados en el formulario")
+
+                                // Cargar materiales
+                                _materialesTemporales.value = materiales
+                                
+                                // Cargar inspecciones
+                                _inspeccionesTemporales.value = inspecciones
+
+                                // Cargar checkLists
+                                _checkListsTemporales.value = checkLists.toMutableList()
+                                
+                                // Cargar evaluación (solo el primero, en el formulario)
+                                evaluacion?.let { eval ->
+                                    android.util.Log.d("MuestraViewModel", "Cargando evaluación en formulario:")
+                                    android.util.Log.d("MuestraViewModel", "  - Equipo: ${eval.equipo}")
+                                    android.util.Log.d("MuestraViewModel", "  - Paletas Aprobadas: ${eval.paletasAprobadas}")
+                                    android.util.Log.d("MuestraViewModel", "  - Paletas Observadas: ${eval.paletasObservadas}")
+                                    android.util.Log.d("MuestraViewModel", "  - Paletas Rechazadas: ${eval.paletasRechazadas}")
+                                    android.util.Log.d("MuestraViewModel", "  - Bolsas Aprobadas: ${eval.bolsasAprobadas}")
+                                    android.util.Log.d("MuestraViewModel", "  - Bolsas Observadas: ${eval.bolsasObservadas}")
+                                    android.util.Log.d("MuestraViewModel", "  - Bolsas Rechazadas: ${eval.bolsasRechazadas}")
+                                    android.util.Log.d("MuestraViewModel", "  - Criterios: ${eval.criteriosEvaluacion}")
+                                    
+                                    _evaluacionFormState.value = EvaluacionFormState(
+                                        equipo = eval.equipo,
+                                        estado = eval.estado,
+                                        paletasAprobadas = eval.paletasAprobadas,
+                                        paletasObservadas = eval.paletasObservadas,
+                                        paletasRechazadas = eval.paletasRechazadas,
+                                        bolsasAprobadas = eval.bolsasAprobadas,
+                                        bolsasObservadas = eval.bolsasObservadas,
+                                        bolsasRechazadas = eval.bolsasRechazadas,
+                                        criteriosEvaluacion = eval.criteriosEvaluacion,
+                                        isFormValid = true
+                                    )
+                                } ?: run {
+                                    android.util.Log.d("MuestraViewModel", "No hay evaluación para cargar")
+                                    // Si no hay evaluación, limpiar el formulario
+                                    _evaluacionFormState.value = EvaluacionFormState()
+                                }
+
+                                android.util.Log.d("MuestraViewModel", "Datos cargados en todos los formularios")
                             }
                             
                             // Agregar o actualizar en el cache
@@ -935,6 +1642,15 @@ class MuestraViewModel @Inject constructor(
                             }
                             
                             _muestrasCompletas.value = listaActual
+                            
+                            // Actualizar también la lista de muestras para mantener sincronizado el estado
+                            val listaMuestras = _muestras.value.toMutableList()
+                            val indiceMuestra = listaMuestras.indexOfFirst { it.id == id }
+                            if (indiceMuestra != -1) {
+                                listaMuestras[indiceMuestra] = listaMuestras[indiceMuestra].copy(estado = muestraCompleta.cabecera.estado)
+                                _muestras.value = listaMuestras
+                            }
+                            
                             android.util.Log.d("MuestraViewModel", "Muestra actualizada en el cache")
                         } else {
                             android.util.Log.e("MuestraViewModel", "ERROR - Response.message: ${response.message}")
@@ -1011,18 +1727,24 @@ class MuestraViewModel @Inject constructor(
                         android.util.Log.d("MuestraViewModel", "SUCCESS - Cantidad de productos: ${response.data.size}")
                         
                         if (response.success && response.data.isNotEmpty()) {
-                            val producto = response.data.first().itemName
-                            android.util.Log.d("MuestraViewModel", "Producto encontrado: $producto")
+                            val ordenFabricacion = response.data.first()
+                            android.util.Log.d("MuestraViewModel", "Producto encontrado: $ordenFabricacion")
                             
                             // Actualizar el campo producto en el formulario
                             val current = _cabeceraFormState.value
-                            _cabeceraFormState.value = current.copy(producto = producto)
+                            _cabeceraFormState.value = current.copy(
+                                codigo = ordenFabricacion.lote,
+                                producto = ordenFabricacion.descripcion,
+                                lote = ordenFabricacion.codigo,
+                                codigoMaquina = ordenFabricacion.codMaquina,
+                                maquina = ordenFabricacion.maquina,
+                            )
                             validateCabeceraForm()
                         } else {
                             android.util.Log.w("MuestraViewModel", "No se encontró producto para código: $codigo")
                             // Limpiar el campo producto si no se encuentra
                             val current = _cabeceraFormState.value
-                            _cabeceraFormState.value = current.copy(producto = "")
+                            _cabeceraFormState.value = current.copy(producto = "", lote = "", maquina = "")
                             validateCabeceraForm()
                         }
                     },
@@ -1030,18 +1752,80 @@ class MuestraViewModel @Inject constructor(
                         android.util.Log.e("MuestraViewModel", "FAILURE - Excepción: ${exception.message}", exception)
                         // Limpiar el campo producto en caso de error
                         val current = _cabeceraFormState.value
-                        _cabeceraFormState.value = current.copy(producto = "")
+                        _cabeceraFormState.value = current.copy(producto = "", lote = "", maquina = "")
                         validateCabeceraForm()
                     }
                 )
             } catch (e: Exception) {
                 android.util.Log.e("MuestraViewModel", "EXCEPCIÓN INESPERADA", e)
                 val current = _cabeceraFormState.value
-                _cabeceraFormState.value = current.copy(producto = "")
+                _cabeceraFormState.value = current.copy(producto = "", lote = "", maquina = "")
                 validateCabeceraForm()
             }
             
             android.util.Log.d("MuestraViewModel", "=== FIN CONSULTAR PRODUCTO ===")
+        }
+    }
+
+    fun consultarProductoRegistroLlegada(codigo: String) {
+        viewModelScope.launch {
+            android.util.Log.d("MuestraViewModel", "=== CONSULTANDO PRODUCTO REGISTRO LLEGADA ===")
+            android.util.Log.d("MuestraViewModel", "Código a consultar: $codigo")
+            
+            try {
+                val result = muestraRepository.consultarProductoMuestra(codigo)
+                
+                result.fold(
+                    onSuccess = { response ->
+                        if (response.success && response.data.isNotEmpty()) {
+                            val ordenFabricacion = response.data.first()
+                            
+                            // Actualizar las muestras disponibles desde el API
+                            _muestrasDisponibles.value = ordenFabricacion.muestras
+                            android.util.Log.d("MuestraViewModel", "Muestras disponibles: ${ordenFabricacion.muestras}")
+                            
+                            // Mostrar alert de producto encontrado
+                            _productoEncontrado.value = "Orden de fabricación encontrada: ${ordenFabricacion.descripcion}"
+                            
+                            // Actualizar el formulario de RegistroLlegada
+                            val current = _registroLlegadaFormState.value
+                            _registroLlegadaFormState.value = current.copy(
+                                codigoProducto = ordenFabricacion.codigo,
+                                descripcionProducto = ordenFabricacion.descripcion,
+                                maquina = ordenFabricacion.maquina,
+                                numeroMuestra = "" // Limpiar la muestra seleccionada cuando cambia la orden
+                            )
+                            validateRegistroLlegadaForm()
+                        } else {
+                            // Limpiar campos si no se encuentra
+                            _muestrasDisponibles.value = emptyList()
+                            _productoEncontrado.value = null
+                            val current = _registroLlegadaFormState.value
+                            _registroLlegadaFormState.value = current.copy(
+                                codigoProducto = "",
+                                descripcionProducto = "",
+                                maquina = "",
+                                numeroMuestra = ""
+                            )
+                        }
+                    },
+                    onFailure = { exception ->
+                        android.util.Log.e("MuestraViewModel", "Error consultando producto", exception)
+                        _muestrasDisponibles.value = emptyList()
+                        _productoEncontrado.value = null
+                        val current = _registroLlegadaFormState.value
+                        _registroLlegadaFormState.value = current.copy(
+                            codigoProducto = "",
+                            descripcionProducto = "",
+                            maquina = "",
+                            numeroMuestra = ""
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("MuestraViewModel", "Excepción consultando producto", e)
+                _muestrasDisponibles.value = emptyList()
+            }
         }
     }
 

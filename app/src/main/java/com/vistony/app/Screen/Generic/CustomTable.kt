@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.vistony.app.Entidad.Parada
-
+/*
 @Composable
 fun TableScreen(data: List<Parada>, onClickAction: () -> Unit) {
     // Just a fake data... a Pair of Int and String
@@ -95,4 +95,4 @@ fun RowScope.TableCell(
     ) {
         content()
     }
-}
+}*/
