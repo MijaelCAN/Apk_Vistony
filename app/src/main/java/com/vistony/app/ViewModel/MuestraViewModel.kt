@@ -59,6 +59,7 @@ class MuestraViewModel @Inject constructor(
         var fechaRegistro: String = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
         var codigo: String = "",
         var lote: String = "",
+        var codigoMaquina: String = "",
         var embalaje: String = "",
         var maquina: String = "",
         var turno: String = "",
@@ -305,6 +306,7 @@ class MuestraViewModel @Inject constructor(
             "lote" -> current.copy(lote = value)
             "embalaje" -> current.copy(embalaje = value)
             "maquina" -> current.copy(maquina = value)
+            "codigoMaquina" -> current.copy(codigoMaquina = value)
             "turno" -> current.copy(turno = value)
             "ot" -> current.copy(ot = value)
             "producto" -> current.copy(producto = value)
@@ -1181,6 +1183,7 @@ class MuestraViewModel @Inject constructor(
                     fecRegister = fechaActual,
                     turno = cabeceraForm.turno,
                     maquina = cabeceraForm.maquina,
+                    codigoMaquina = cabeceraForm.codigoMaquina,
                     encargadoProd = cabeceraForm.encargadoProduccion, // NO SE ENVIA
                     estado = "NUEVO"
                 )
@@ -1234,6 +1237,7 @@ class MuestraViewModel @Inject constructor(
                 fechaRegistro = muestra.cabecera.fechaRegistro,
                 codigo = muestra.cabecera.codigo,
                 lote = muestra.cabecera.lote,
+                codigoMaquina = muestra.cabecera.codigoMaquina,
                 embalaje = muestra.cabecera.embalaje,
                 maquina = muestra.cabecera.maquina,
                 turno = muestra.cabecera.turno,
@@ -1574,6 +1578,7 @@ class MuestraViewModel @Inject constructor(
                                     fechaRegistro = cabecera.fechaRegistro,
                                     codigo = cabecera.codigo,
                                     lote = cabecera.lote,
+                                    codigoMaquina = cabecera.codigoMaquina,
                                     embalaje = cabecera.embalaje,
                                     maquina = cabecera.maquina,
                                     turno = cabecera.turno,
@@ -1731,6 +1736,7 @@ class MuestraViewModel @Inject constructor(
                                 codigo = ordenFabricacion.lote,
                                 producto = ordenFabricacion.descripcion,
                                 lote = ordenFabricacion.codigo,
+                                codigoMaquina = ordenFabricacion.codMaquina,
                                 maquina = ordenFabricacion.maquina,
                             )
                             validateCabeceraForm()

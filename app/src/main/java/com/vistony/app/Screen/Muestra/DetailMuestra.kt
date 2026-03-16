@@ -82,6 +82,7 @@ fun DetailMuestra(
                             "Código" to muestra.cabecera.codigo,
                             "Lote" to muestra.cabecera.lote,
                             "Embalaje" to muestra.cabecera.embalaje,
+                            "Código Máquina" to muestra.cabecera.codigoMaquina,
                             "Máquina" to muestra.cabecera.maquina,
                             "Turno" to muestra.cabecera.turno,
                             "Producto" to muestra.cabecera.producto,

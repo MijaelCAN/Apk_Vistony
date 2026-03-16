@@ -371,7 +371,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     } else {
-                        NoInternetScreen()
+                        NoInternetScreen(networkStatusViewModel = networkStatusViewModel)
                     }
 
                 }
