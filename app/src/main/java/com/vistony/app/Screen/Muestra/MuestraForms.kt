@@ -1,5 +1,6 @@
 package com.vistony.app.Screen.Muestra
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -403,13 +404,6 @@ fun InspeccionDimensionalForm(
 
     // Cuando la muestra ya está completada, a veces las listas "temporales" vienen vacías.
     // En ese caso, mostramos las inspecciones desde el cache de `muestrasCompletas`.
-    val inspeccionesParaMostrar = if (isCompletado && inspecciones.isEmpty()) {
-        currentMuestraId
-            ?.let { id -> muestrasCompletas.firstOrNull { it.cabecera.id == id }?.inspeccionesDimensionales }
-            ?: emptyList()
-    } else {
-        inspecciones
-    }
 
     // Estado para el modal de detalle
     var selectedInspeccion by remember { mutableStateOf<InspeccionDimensional?>(null) }
@@ -500,9 +494,7 @@ fun InspeccionDimensionalForm(
             colors = CardDefaults.cardColors(containerColor = Color(0xFFF9FAFB)),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
+            Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text = "Nueva Inspección",
                     fontSize = 16.sp,
@@ -1203,63 +1195,63 @@ fun InspeccionDimensionalForm(
                 }
             }
         }
+    }
+    Spacer(modifier = Modifier.height(24.dp))
 
-        Spacer(modifier = Modifier.height(24.dp))
+    // Lista de inspecciones agregadas
+    if (inspecciones.isNotEmpty()) {
+        Log.i("Inspecciones", "Total Inspecciones: ${inspecciones.size}")
+        Text(
+            text = "Inspecciones Agregadas (${inspecciones.size})",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF111827)
+        )
 
-        // Lista de inspecciones agregadas
-        if (inspeccionesParaMostrar.isNotEmpty()) {
-            Text(
-                text = "Inspecciones Agregadas (${inspeccionesParaMostrar.size})",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF111827)
-            )
+        Spacer(modifier = Modifier.height(12.dp))
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                inspeccionesParaMostrar.forEach { inspeccion ->
-                    InspeccionItemCard(
-                        inspeccion = inspeccion,
-                        onClick = {
-                            selectedInspeccion = inspeccion
-                            scope.launch {
-                                sheetState.show()
-                            }
-                        },
-                        onDelete = { muestraViewModel.eliminarInspeccion(inspeccion.id) }
-                    )
-                }
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            inspecciones.forEach { inspeccion ->
+                InspeccionItemCard(
+                    inspeccion = inspeccion,
+                    onClick = {
+                        selectedInspeccion = inspeccion
+                        scope.launch {
+                            sheetState.show()
+                        }
+                    },
+                    onDelete = { muestraViewModel.eliminarInspeccion(inspeccion.id) }
+                )
             }
         }
+    }
 
-        // Modal para mostrar detalle de la Inspección
-        selectedInspeccion?.let { inspeccion ->
-            ModalBottomSheet(
-                onDismissRequest = {
+    // Modal para mostrar detalle de la Inspección
+    selectedInspeccion?.let { inspeccion ->
+        ModalBottomSheet(
+            onDismissRequest = {
+                scope.launch {
+                    sheetState.hide()
+                }.invokeOnCompletion {
+                    selectedInspeccion = null
+                }
+            },
+            sheetState = sheetState,
+            containerColor = Color(0xFFF7F7F7)
+        ) {
+            InspeccionDetailModal(
+                inspeccion = inspeccion,
+                muestraViewModel = muestraViewModel,
+                onClose = {
                     scope.launch {
                         sheetState.hide()
                     }.invokeOnCompletion {
                         selectedInspeccion = null
                     }
-                },
-                sheetState = sheetState,
-                containerColor = Color(0xFFF7F7F7)
-            ) {
-                InspeccionDetailModal(
-                    inspeccion = inspeccion,
-                    muestraViewModel = muestraViewModel,
-                    onClose = {
-                        scope.launch {
-                            sheetState.hide()
-                        }.invokeOnCompletion {
-                            selectedInspeccion = null
-                        }
-                    }
-                )
-            }
+                }
+            )
         }
     }
 }
@@ -2076,9 +2068,7 @@ fun InspeccionDimensionalForm(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFF9FAFB)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "Nuevo Check List",
                         fontSize = 16.sp,
