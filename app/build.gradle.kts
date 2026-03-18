@@ -105,7 +105,11 @@ dependencies {
     implementation("com.google.firebase:firebase-ml-vision-barcode-model:16.0.1")*/
     implementation(platform("com.google.firebase:firebase-bom:33.2.0"))
     implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-messaging:24.0.1")
+    implementation("com.google.firebase:firebase-messaging")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-auth-ktx")
+
+
 
     //Zxing
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")

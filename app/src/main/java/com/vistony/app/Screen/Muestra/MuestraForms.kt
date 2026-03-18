@@ -399,6 +399,17 @@ fun InspeccionDimensionalForm(
     val cabeceraFormState by muestraViewModel.cabeceraFormState.collectAsState()
     val especificacion by muestraViewModel.especificacionSoplado.collectAsState()
     val currentMuestraId by muestraViewModel.currentMuestraId.collectAsState()
+    val muestrasCompletas by muestraViewModel.muestrasCompletas.collectAsState()
+
+    // Cuando la muestra ya está completada, a veces las listas "temporales" vienen vacías.
+    // En ese caso, mostramos las inspecciones desde el cache de `muestrasCompletas`.
+    val inspeccionesParaMostrar = if (isCompletado && inspecciones.isEmpty()) {
+        currentMuestraId
+            ?.let { id -> muestrasCompletas.firstOrNull { it.cabecera.id == id }?.inspeccionesDimensionales }
+            ?: emptyList()
+    } else {
+        inspecciones
+    }
 
     // Estado para el modal de detalle
     var selectedInspeccion by remember { mutableStateOf<InspeccionDimensional?>(null) }
@@ -1196,9 +1207,9 @@ fun InspeccionDimensionalForm(
         Spacer(modifier = Modifier.height(24.dp))
 
         // Lista de inspecciones agregadas
-        if (inspecciones.isNotEmpty()) {
+        if (inspeccionesParaMostrar.isNotEmpty()) {
             Text(
-                text = "Inspecciones Agregadas (${inspecciones.size})",
+                text = "Inspecciones Agregadas (${inspeccionesParaMostrar.size})",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF111827)
@@ -1209,7 +1220,7 @@ fun InspeccionDimensionalForm(
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                inspecciones.forEach { inspeccion ->
+                inspeccionesParaMostrar.forEach { inspeccion ->
                     InspeccionItemCard(
                         inspeccion = inspeccion,
                         onClick = {
