@@ -36,15 +36,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.vistony.app.Entidad.UserState
-import com.vistony.app.Service.ConnectivityObserver
-import com.vistony.app.ViewModel.NetworkStatusViewModel
 import com.vistony.app.ViewModel.SharedViewModel
 import com.vistony.app.ui.theme.theme.AppTheme
 import com.vistony.app.Screen.Admin.DashboardAdmin
 import com.vistony.app.Screen.Inspeccion.DetalleScreen
 import com.vistony.app.Screen.Inspeccion.ListScreen
 import com.vistony.app.Screen.Login2
-import com.vistony.app.Screen.NoInternetScreen
 import com.vistony.app.Screen.NoModulesScreen
 import com.vistony.app.Screen.Parada.ListParada
 import com.vistony.app.Screen.ParadaMantenimiento.ListActividad
@@ -133,10 +130,8 @@ class MainActivity : ComponentActivity() {
                     val loginViewModel: LoginViewModel = hiltViewModel()
                     var navController = rememberNavController()
                     val sharedViewModel: SharedViewModel = hiltViewModel()
-                    val networkStatusViewModel: NetworkStatusViewModel = hiltViewModel()
                     val temperaturaViewModel: TemperaturaViewModel = hiltViewModel()
                     val muestraViewModel: MuestraViewModel = hiltViewModel()
-                    val status by networkStatusViewModel.status.collectAsState()
                     var usuario = "70131373"
                     val user by loginViewModel.userData.collectAsState()
                     LaunchedEffect(user) {
@@ -145,8 +140,7 @@ class MainActivity : ComponentActivity() {
                     val scanViewModel: ScanViewModel = hiltViewModel()
 
 
-                    if (status == ConnectivityObserver.Status.Available) {
-                        NavHost(startDestination = "login", navController = navController) {
+                    NavHost(startDestination = "login", navController = navController) {
                             composable("login") {
                                 Login2(navController,loginViewModel, userState)
                                 //LoginScreen(navController)
@@ -387,9 +381,6 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
-                        }
-                    } else {
-                        NoInternetScreen(networkStatusViewModel = networkStatusViewModel)
                     }
 
                 }
