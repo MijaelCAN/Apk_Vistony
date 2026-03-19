@@ -6,6 +6,11 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+// Asegura que Kotlin/Kapt compilen contra la misma versión de Java (17).
+kotlin {
+    jvmToolchain(17)
+}
+
 android {
     namespace = "com.vistony.app"
     compileSdk = 34
@@ -108,6 +113,13 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging")
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-storage-ktx")
+
+    // Trabajo en segundo plano (subir evidencias cuando vuelva internet)
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+    // EXIF para rotar correctamente imágenes (vertical)
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
 
 
 
