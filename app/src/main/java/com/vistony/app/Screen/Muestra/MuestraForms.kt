@@ -506,27 +506,11 @@ fun InspeccionDimensionalForm(
 
                 // Lógica para N° Cavidad
                 val listaVacia = inspecciones.isEmpty()
+                // Usamos el último registro agregado para calcular la sugerencia (no el max).
                 val ultimoNumeroCavidad =
-                    inspecciones.mapNotNull { it.numeroCavidad.toIntOrNull() }.maxOrNull()
-                val siguienteNumeroCavidad = if (ultimoNumeroCavidad != null) {
-                    (ultimoNumeroCavidad + 1).toString()
-                } else {
-                    ""
-                }
-
-                // Auto-completar número de cavidad si hay registros previos
-                LaunchedEffect(ultimoNumeroCavidad) {
-                    if (ultimoNumeroCavidad != null && !listaVacia) {
-                        muestraViewModel.updateInspeccion("numeroCavidad", siguienteNumeroCavidad)
-                    }
-                }
-
-                // Valor a mostrar en el campo
-                val valorMostrar = if (listaVacia) {
-                    formState.numeroCavidad
-                } else {
-                    siguienteNumeroCavidad
-                }
+                    inspecciones.lastOrNull()?.numeroCavidad?.trim()?.toIntOrNull()
+                val siguienteNumeroCavidad =
+                    (ultimoNumeroCavidad?.plus(1))?.toString() ?: "1"
 
                 // Hora y Parámetros de máquina
                 Row(
@@ -549,21 +533,27 @@ fun InspeccionDimensionalForm(
                 )*/
 
                     MuestraTextField(
-                        value = valorMostrar,
+                        value = formState.numeroCavidad,
                         onValueChange = { nuevoValor ->
-                            if (listaVacia && !isCompletado) {
-                                // Solo permitir 1 o 5 si la lista está vacía
+                            if (isCompletado) return@MuestraTextField
+
+                            if (listaVacia) {
+                                // Primera inspección: solo permitir 1 o 5 (o vacío para borrar)
                                 if (nuevoValor.isEmpty() || nuevoValor == "1" || nuevoValor == "5") {
                                     muestraViewModel.updateInspeccion("numeroCavidad", nuevoValor)
                                 }
+                            } else {
+                                // Siguientes: sugerimos siguiente cavidad, pero dejamos editar (solo números)
+                                if (nuevoValor.isEmpty() || nuevoValor.all { it.isDigit() }) {
+                                    muestraViewModel.updateInspeccion("numeroCavidad", nuevoValor)
+                                }
                             }
-                            // Si hay registros, no permitir edición (ya está deshabilitado)
                         },
                         label = "N° Cavidad",
                         modifier = Modifier.weight(1f),
                         keyboardType = KeyboardType.Number,
-                        enabled = listaVacia && !isCompletado, // Solo habilitado si la lista está vacía y no está completado
-                        readOnly = !listaVacia || isCompletado, // Solo lectura si hay registros o está completado
+                        enabled = !isCompletado,
+                        readOnly = isCompletado,
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Numbers,
@@ -579,7 +569,7 @@ fun InspeccionDimensionalForm(
                 if (!listaVacia && ultimoNumeroCavidad != null) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Número de cavidad asignado automáticamente: $siguienteNumeroCavidad",
+                        text = "Sugerencia (editable): $siguienteNumeroCavidad",
                         fontSize = 12.sp,
                         color = Color(0xFF6B7280),
                         fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
