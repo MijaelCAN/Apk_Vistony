@@ -84,7 +84,6 @@ import com.vistony.app.Screen.Generic.Drawers.BottomBar
 import com.vistony.app.Screen.Generic.Drawers.BottomCurtainDrawer
 import com.vistony.app.Screen.Generic.Drawers.CustomDrawer
 import com.vistony.app.Screen.Generic.Drawers.RightCurtainDrawer
-import com.vistony.app.Screen.Generic.Recursos.UnsplashImages
 import com.vistony.app.Screen.Generic.TopBar
 import com.vistony.app.Screen.Inspeccion.backGroundLigth
 import com.vistony.app.Screen.Inspeccion.blueDarkVistony
@@ -471,13 +470,11 @@ fun BodyListActividad(
             else -> {
                 // Estado con datos - mostrar lista
                 LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                    itemsIndexed(listaFiltrada) { index,item ->
-                        val imageUrl = UnsplashImages.urls[index % UnsplashImages.urls.size]
+                    itemsIndexed(listaFiltrada) { _, item ->
                         TarjetaActividad(
                             actividad = item,
                             viewModel = viewModel,
                             navController = navController,
-                            imageUrl = imageUrl,
                             function = { function(item) }
                         )
                     }
@@ -493,9 +490,20 @@ fun TarjetaActividad(
     actividad: semiActivity,
     viewModel: ActividadViewModel,
     navController: NavController,
-    imageUrl: String,
     function: (semiActivity) -> Unit
 ){
+    val imageUrls = actividad.U_imageUrls
+    var currentImageIndex by remember(actividad.DocEntry) { mutableStateOf(0) }
+
+    LaunchedEffect(actividad.DocEntry) {
+        if (imageUrls.size > 1) {
+            while (true) {
+                delay(7000)
+                currentImageIndex = (currentImageIndex + 1) % imageUrls.size
+            }
+        }
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -514,19 +522,33 @@ fun TarjetaActividad(
             // Columna imagen / círculo
             Box(
                 modifier = Modifier
-                    //.weight(0.7f)
                     .size(75.dp)
-                    .clip(CircleShape)
-                    .clickable {},
+                    .clip(CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-
-                AsyncImage(
-                    model = imageUrl,
-                    contentDescription = "Imagen de la máquina",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
+                if (imageUrls.isNotEmpty()) {
+                    AsyncImage(
+                        model = imageUrls[currentImageIndex],
+                        contentDescription = "Imagen de la actividad",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    val letra = actividad.U_area.firstOrNull()?.uppercaseChar()?.toString() ?: "A"
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(blueDarkVistony, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = letra,
+                            color = Color.White,
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.width(16.dp))

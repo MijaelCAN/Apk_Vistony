@@ -330,6 +330,12 @@ class ActividadViewModel @Inject constructor(
                     val finalHourStr = closeData["finalHour"] as? String ?: ""
                     val lineTec = closeData["lineTec"] as? String ?: ""
 
+                    val evidencesList = closeData["evidences"] as? List<*> ?: emptyList<Any>()
+                    val imageUrls = evidencesList.mapNotNull { ev ->
+                        val map = ev as? Map<*, *> ?: return@mapNotNull null
+                        map["downloadUrl"] as? String
+                    }
+
                     semiActivity(
                         DocEntry = doc.id,
                         U_OT = activityData["OT"] as? String ?: "",
@@ -344,7 +350,8 @@ class ActividadViewModel @Inject constructor(
                         U_equipment = activityData["equipment"] as? String ?: "",
                         U_LineTec = lineTec,
                         U_InitialHour = initialHourStr,
-                        U_FinalHour = finalHourStr
+                        U_FinalHour = finalHourStr,
+                        U_imageUrls = imageUrls
                     )
                 }
 

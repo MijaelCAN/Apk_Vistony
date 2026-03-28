@@ -205,7 +205,8 @@ data class semiActivity(
     val U_equipment: String = "",
     val U_LineTec: String = "",
     val U_InitialHour: String? = null,
-    val U_FinalHour: String? = null
+    val U_FinalHour: String? = null,
+    val U_imageUrls: List<String> = emptyList()
 )
 
 data class ResponseCreated(
