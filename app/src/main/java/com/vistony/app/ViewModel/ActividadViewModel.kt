@@ -36,7 +36,9 @@ import com.vistony.app.Entidad.semiActivity
 import com.vistony.app.Repository.ActividadRepository
 import com.vistony.app.Utils.ImageEvidenceProcessor
 import com.vistony.app.Workers.UploadParadaMantenimientoEvidenceWorker
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -109,6 +111,14 @@ class ActividadViewModel @Inject constructor(
 
     private val firestore = FirebaseFirestore.getInstance()
     private val collectionParadasMantenimiento = "paradas_mantenimiento"
+
+    private var actividadesListener: ListenerRegistration? = null
+    private var listeningForUserId: String = ""
+    private var rawActividades: List<semiActivity> = emptyList()
+    @RequiresApi(Build.VERSION_CODES.O)
+    private var currentFechaIni: LocalDateTime = LocalDateTime.now().minusDays(1)
+    @RequiresApi(Build.VERSION_CODES.O)
+    private var currentFechaFin: LocalDateTime = LocalDateTime.now()
 
     private companion object {
         const val STATUS_READY_CREATE_ACTIVITY = "ready_create_activity"
@@ -307,71 +317,81 @@ class ActividadViewModel @Inject constructor(
 
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun getAllActividades(user: UserResponse, fechaIni: LocalDateTime = LocalDateTime.now().minusDays(1), fechaFin: LocalDateTime = LocalDateTime.now()) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            try {
-                val userId = user.id.toString()
-                val snapshot = firestore
-                    .collection(collectionParadasMantenimiento)
-                    .whereEqualTo("activityData.userId", userId)
-                    .get()
-                    .await()
+    fun getAllActividades(
+        user: UserResponse,
+        fechaIni: LocalDateTime = LocalDateTime.now().minusDays(1),
+        fechaFin: LocalDateTime = LocalDateTime.now()
+    ) {
+        val userId = user.id.toString()
+        currentFechaIni = fechaIni
+        currentFechaFin = fechaFin
 
-                val actividadesFiltradas = snapshot.documents.mapNotNull { doc ->
-                    val activityData = doc.get("activityData") as? Map<*, *> ?: return@mapNotNull null
-                    val closeData = doc.get("closeData") as? Map<*, *> ?: emptyMap<Any?, Any?>()
-
-                    val initialHourStr = activityData["initialHour"] as? String ?: ""
-                    val initialHour = parseLocalDateTime(initialHourStr) ?: return@mapNotNull null
-
-                    if (initialHour.isBefore(fechaIni) || initialHour.isAfter(fechaFin)) return@mapNotNull null
-
-                    val finalHourStr = closeData["finalHour"] as? String ?: ""
-                    val lineTec = closeData["lineTec"] as? String ?: ""
-
-                    val evidencesList = closeData["evidences"] as? List<*> ?: emptyList<Any>()
-                    val imageUrls = evidencesList.mapNotNull { ev ->
-                        val map = ev as? Map<*, *> ?: return@mapNotNull null
-                        map["downloadUrl"] as? String
-                    }
-
-                    semiActivity(
-                        DocEntry = doc.id,
-                        U_OT = activityData["OT"] as? String ?: "",
-                        U_description_OT = activityData["description_OT"] as? String ?: "",
-                        U_unidad_medida_OT = activityData["unidad_medida_OT"] as? String ?: "",
-                        U_cantidad_OT = activityData["cantidad_OT"] as? String ?: "",
-                        U_userId = activityData["userId"] as? String ?: "",
-                        U_userName = activityData["userName"] as? String ?: "",
-                        U_userPosition = activityData["userPosition"] as? String ?: "",
-                        U_area = activityData["area"] as? String ?: "",
-                        U_machine = activityData["machine"] as? String ?: "",
-                        U_equipment = activityData["equipment"] as? String ?: "",
-                        U_LineTec = lineTec,
-                        U_InitialHour = initialHourStr,
-                        U_FinalHour = finalHourStr,
-                        U_imageUrls = imageUrls
-                    )
-                }
-
-                _uiState.update {
-                    it.copy(
-                        actividades = actividadesFiltradas.sortedByDescending { it.U_InitialHour },
-                        isLoading = false,
-                        error = null
-                    )
-                }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        actividades = emptyList(),
-                        isLoading = false,
-                        error = e.message
-                    )
-                }
-            }
+        // Si el listener ya está activo para este usuario, solo re-aplica el filtro de fechas
+        // sin hacer ninguna lectura nueva a Firestore
+        if (actividadesListener != null && listeningForUserId == userId) {
+            applyDateFilter()
+            return
         }
+
+        // Cancela listener anterior y registra uno nuevo
+        actividadesListener?.remove()
+        listeningForUserId = userId
+        _uiState.update { it.copy(isLoading = true, error = null) }
+
+        actividadesListener = firestore
+            .collection(collectionParadasMantenimiento)
+            .whereEqualTo("activityData.userId", userId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    _uiState.update { it.copy(isLoading = false, error = error.message) }
+                    return@addSnapshotListener
+                }
+                rawActividades = snapshot?.documents?.mapNotNull { doc ->
+                    mapDocToSemiActivity(doc)
+                } ?: emptyList()
+                applyDateFilter()
+            }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun applyDateFilter() {
+        val filtered = rawActividades
+            .filter { actividad ->
+                val initialHour = parseLocalDateTime(actividad.U_InitialHour) ?: return@filter false
+                !initialHour.isBefore(currentFechaIni) && !initialHour.isAfter(currentFechaFin)
+            }
+            .sortedByDescending { it.U_InitialHour }
+        _uiState.update { it.copy(actividades = filtered, isLoading = false, error = null) }
+    }
+
+    private fun mapDocToSemiActivity(doc: DocumentSnapshot): semiActivity? {
+        val activityData = doc.get("activityData") as? Map<*, *> ?: return null
+        val closeData = doc.get("closeData") as? Map<*, *> ?: emptyMap<Any?, Any?>()
+        val initialHourStr = activityData["initialHour"] as? String ?: ""
+        val finalHourStr = closeData["finalHour"] as? String ?: ""
+        val lineTec = closeData["lineTec"] as? String ?: ""
+        val evidencesList = closeData["evidences"] as? List<*> ?: emptyList<Any>()
+        val imageUrls = evidencesList.mapNotNull { ev ->
+            val map = ev as? Map<*, *> ?: return@mapNotNull null
+            map["downloadUrl"] as? String
+        }
+        return semiActivity(
+            DocEntry = doc.id,
+            U_OT = activityData["OT"] as? String ?: "",
+            U_description_OT = activityData["description_OT"] as? String ?: "",
+            U_unidad_medida_OT = activityData["unidad_medida_OT"] as? String ?: "",
+            U_cantidad_OT = activityData["cantidad_OT"] as? String ?: "",
+            U_userId = activityData["userId"] as? String ?: "",
+            U_userName = activityData["userName"] as? String ?: "",
+            U_userPosition = activityData["userPosition"] as? String ?: "",
+            U_area = activityData["area"] as? String ?: "",
+            U_machine = activityData["machine"] as? String ?: "",
+            U_equipment = activityData["equipment"] as? String ?: "",
+            U_LineTec = lineTec,
+            U_InitialHour = initialHourStr,
+            U_FinalHour = finalHourStr,
+            U_imageUrls = imageUrls
+        )
     }
 
     fun getDetailActivity(docEntry: String, context: Context) {
@@ -587,7 +607,7 @@ class ActividadViewModel @Inject constructor(
                         error = null
                     )
                 }
-                getAllActividades(user = _uiState.value.userCurrent)
+                // El listener detecta el nuevo documento automáticamente
 
             } catch (e: Exception) {
                 _uiState.update {
@@ -683,8 +703,7 @@ class ActividadViewModel @Inject constructor(
                         error = null
                     )
                 }
-
-                getAllActividades(user = _uiState.value.userCurrent)
+                // El listener detecta el cambio automáticamente
 
             } catch (e: Exception) {
                 _uiState.update {
@@ -699,6 +718,11 @@ class ActividadViewModel @Inject constructor(
         }
     }
 
+
+    override fun onCleared() {
+        super.onCleared()
+        actividadesListener?.remove()
+    }
 
     fun actualizarActividad(parada: Parada) {
 
