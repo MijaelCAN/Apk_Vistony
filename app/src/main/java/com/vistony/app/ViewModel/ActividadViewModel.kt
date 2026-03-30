@@ -98,7 +98,8 @@ data class ActivityUi_State @RequiresApi(Build.VERSION_CODES.O) constructor(
     val createSuccess: Boolean = false,
     val createError: String? = null,
     val createdActivityId: String? = null,
-    val isButtonEnabled: Boolean = false
+    val isButtonEnabled: Boolean = false,
+    val activityStatus: String = ""
 
 
 )
@@ -113,6 +114,7 @@ class ActividadViewModel @Inject constructor(
     private val collectionParadasMantenimiento = "paradas_mantenimiento"
 
     private var actividadesListener: ListenerRegistration? = null
+    private var detailListener: ListenerRegistration? = null
     private var listeningForUserId: String = ""
     private var rawActividades: List<semiActivity> = emptyList()
     @RequiresApi(Build.VERSION_CODES.O)
@@ -121,9 +123,9 @@ class ActividadViewModel @Inject constructor(
     private var currentFechaFin: LocalDateTime = LocalDateTime.now()
 
     private companion object {
-        const val STATUS_READY_CREATE_ACTIVITY = "ready_create_activity"
+        const val STATUS_ACTIVE = "active"
         const val STATUS_WAITING_PHOTOS_UPLOAD = "waiting_photos_upload"
-        const val STATUS_READY_CLOSE_ACTIVITY = "ready_close_activity"
+        const val STATUS_COMPLETED = "completed"
     }
 
 
@@ -355,10 +357,13 @@ class ActividadViewModel @Inject constructor(
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun applyDateFilter() {
+        // Usar el máximo entre currentFechaFin y now() para que registros creados
+        // después de cargar la pantalla no queden fuera del rango por el tope congelado.
+        val effectiveFechaFin = if (currentFechaFin.isBefore(LocalDateTime.now())) LocalDateTime.now() else currentFechaFin
         val filtered = rawActividades
             .filter { actividad ->
                 val initialHour = parseLocalDateTime(actividad.U_InitialHour) ?: return@filter false
-                !initialHour.isBefore(currentFechaIni) && !initialHour.isAfter(currentFechaFin)
+                !initialHour.isBefore(currentFechaIni) && !initialHour.isAfter(effectiveFechaFin)
             }
             .sortedByDescending { it.U_InitialHour }
         _uiState.update { it.copy(actividades = filtered, isLoading = false, error = null) }
@@ -395,23 +400,32 @@ class ActividadViewModel @Inject constructor(
     }
 
     fun getDetailActivity(docEntry: String, context: Context) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            try {
-                val doc = firestore.collection(collectionParadasMantenimiento).document(docEntry).get().await()
-                if (!doc.exists()) {
+        detailListener?.remove()
+        _uiState.update { it.copy(isLoading = true, error = null) }
+
+        detailListener = firestore
+            .collection(collectionParadasMantenimiento)
+            .document(docEntry)
+            .addSnapshotListener { doc, error ->
+                if (error != null) {
+                    _uiState.update { it.copy(isLoading = false, error = error.message) }
+                    return@addSnapshotListener
+                }
+                if (doc == null || !doc.exists()) {
                     _uiState.update {
                         it.copy(
                             selectedActividad = Activity2(),
+                            activityStatus = "",
                             isLoading = false,
                             error = "Actividad no encontrada"
                         )
                     }
-                    return@launch
+                    return@addSnapshotListener
                 }
 
                 val activityData = doc.get("activityData") as? Map<*, *> ?: emptyMap<Any?, Any?>()
                 val closeData = doc.get("closeData") as? Map<*, *> ?: emptyMap<Any?, Any?>()
+                val status = doc.getString("status") ?: ""
 
                 val initialHourStr = activityData["initialHour"] as? String ?: ""
                 val initialHour = parseLocalDateTime(initialHourStr)
@@ -458,21 +472,12 @@ class ActividadViewModel @Inject constructor(
                             initialHour = initialHour,
                             finalHour = finalHour
                         ),
+                        activityStatus = status,
                         isLoading = false,
                         error = null
                     )
                 }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        selectedActividad = Activity2(),
-                        isLoading = false,
-                        error = e.message
-                    )
-                }
-                Log.e("Actividad", "Excepción: ${e.message}", e)
             }
-        }
     }
 
 
@@ -591,9 +596,8 @@ class ActividadViewModel @Inject constructor(
 
                 docRef.set(
                     mapOf(
-                        "status" to STATUS_READY_CREATE_ACTIVITY,
+                        "status" to STATUS_ACTIVE,
                         "activityData" to activityData,
-                        "sap" to mapOf<String, Any?>(),
                         "closeData" to mapOf<String, Any?>(),
                         "updatedAt" to com.google.firebase.Timestamp.now()
                     )
@@ -722,6 +726,7 @@ class ActividadViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         actividadesListener?.remove()
+        detailListener?.remove()
     }
 
     fun actualizarActividad(parada: Parada) {

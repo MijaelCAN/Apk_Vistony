@@ -284,8 +284,8 @@ object StaticData {
 
     // Tipos de fallas
     val failureTypes = listOf(
-        FailureType(1, "Electrico"),
-        FailureType(2, "Mecanico"),
+        FailureType(1, "Electrica"),
+        FailureType(2, "Mecanica"),
         FailureType(3, "Neumatico"),
         FailureType(4, "Operacional"),
         FailureType(5, "Hidraulico"),

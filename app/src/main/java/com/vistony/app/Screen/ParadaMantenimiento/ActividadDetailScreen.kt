@@ -43,6 +43,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.ui.window.Dialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -578,6 +580,36 @@ fun DetalleActividad(
 
     if (actividad == null) return
 
+    // Modal de carga mientras se obtienen los datos de Firestore
+    if (uiState.isLoading) {
+        Dialog(onDismissRequest = {}) {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(40.dp), strokeWidth = 3.dp)
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        text = "Cargando datos...",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "Por favor espere",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -740,6 +772,47 @@ fun DetalleActividad(
             fontSize = 15.sp,
         )
         Spacer(Modifier.height(8.dp))
+
+        // Banner visible mientras el Worker sube las imágenes al Storage
+        if (uiState.activityStatus == "waiting_photos_upload") {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1))
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                            color = Color(0xFFF57F17)
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            text = "Cargando imágenes...",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = Color(0xFFF57F17)
+                        )
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Color(0xFFF57F17),
+                        trackColor = Color(0xFFFFE0B2)
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = "Las fotos se están subiendo en segundo plano. Aparecerán aquí al terminar.",
+                        fontSize = 12.sp,
+                        color = Color(0xFF795548),
+                        lineHeight = 16.sp
+                    )
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+
         ImagePickerExample(
             images = images,
             onAddImage = {uri ->
