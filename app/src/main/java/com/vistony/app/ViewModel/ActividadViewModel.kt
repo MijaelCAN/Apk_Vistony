@@ -36,7 +36,9 @@ import com.vistony.app.Entidad.semiActivity
 import com.vistony.app.Repository.ActividadRepository
 import com.vistony.app.Utils.ImageEvidenceProcessor
 import com.vistony.app.Workers.UploadParadaMantenimientoEvidenceWorker
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -96,7 +98,9 @@ data class ActivityUi_State @RequiresApi(Build.VERSION_CODES.O) constructor(
     val createSuccess: Boolean = false,
     val createError: String? = null,
     val createdActivityId: String? = null,
-    val isButtonEnabled: Boolean = false
+    val isButtonEnabled: Boolean = false,
+    val activityStatus: String = "",
+    val isLoadingOT: Boolean = false
 
 
 )
@@ -110,10 +114,19 @@ class ActividadViewModel @Inject constructor(
     private val firestore = FirebaseFirestore.getInstance()
     private val collectionParadasMantenimiento = "paradas_mantenimiento"
 
+    private var actividadesListener: ListenerRegistration? = null
+    private var detailListener: ListenerRegistration? = null
+    private var listeningForUserId: String = ""
+    private var rawActividades: List<semiActivity> = emptyList()
+    @RequiresApi(Build.VERSION_CODES.O)
+    private var currentFechaIni: LocalDateTime = LocalDateTime.now().minusDays(1)
+    @RequiresApi(Build.VERSION_CODES.O)
+    private var currentFechaFin: LocalDateTime = LocalDateTime.now()
+
     private companion object {
-        const val STATUS_READY_CREATE_ACTIVITY = "ready_create_activity"
+        const val STATUS_ACTIVE = "active"
         const val STATUS_WAITING_PHOTOS_UPLOAD = "waiting_photos_upload"
-        const val STATUS_READY_CLOSE_ACTIVITY = "ready_close_activity"
+        const val STATUS_COMPLETED = "completed"
     }
 
 
@@ -307,84 +320,121 @@ class ActividadViewModel @Inject constructor(
 
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun getAllActividades(user: UserResponse, fechaIni: LocalDateTime = LocalDateTime.now().minusDays(1), fechaFin: LocalDateTime = LocalDateTime.now()) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            try {
-                val userId = user.id.toString()
-                val snapshot = firestore
-                    .collection(collectionParadasMantenimiento)
-                    .whereEqualTo("activityData.userId", userId)
-                    .get()
-                    .await()
+    fun getAllActividades(
+        user: UserResponse,
+        fechaIni: LocalDateTime = LocalDateTime.now().minusDays(1),
+        fechaFin: LocalDateTime = LocalDateTime.now()
+    ) {
+        val userId = user.id.toString()
+        currentFechaIni = fechaIni
+        currentFechaFin = fechaFin
 
-                val actividadesFiltradas = snapshot.documents.mapNotNull { doc ->
-                    val activityData = doc.get("activityData") as? Map<*, *> ?: return@mapNotNull null
-                    val closeData = doc.get("closeData") as? Map<*, *> ?: emptyMap<Any?, Any?>()
+        // Si el listener ya está activo para este usuario, solo re-aplica el filtro de fechas
+        // sin hacer ninguna lectura nueva a Firestore
+        if (actividadesListener != null && listeningForUserId == userId) {
+            applyDateFilter()
+            return
+        }
 
-                    val initialHourStr = activityData["initialHour"] as? String ?: ""
-                    val initialHour = parseLocalDateTime(initialHourStr) ?: return@mapNotNull null
+        // Cancela listener anterior y registra uno nuevo
+        actividadesListener?.remove()
+        listeningForUserId = userId
+        _uiState.update { it.copy(isLoading = true, error = null) }
 
-                    if (initialHour.isBefore(fechaIni) || initialHour.isAfter(fechaFin)) return@mapNotNull null
-
-                    val finalHourStr = closeData["finalHour"] as? String ?: ""
-                    val lineTec = closeData["lineTec"] as? String ?: ""
-
-                    semiActivity(
-                        DocEntry = doc.id,
-                        U_OT = activityData["OT"] as? String ?: "",
-                        U_description_OT = activityData["description_OT"] as? String ?: "",
-                        U_unidad_medida_OT = activityData["unidad_medida_OT"] as? String ?: "",
-                        U_cantidad_OT = activityData["cantidad_OT"] as? String ?: "",
-                        U_userId = activityData["userId"] as? String ?: "",
-                        U_userName = activityData["userName"] as? String ?: "",
-                        U_userPosition = activityData["userPosition"] as? String ?: "",
-                        U_area = activityData["area"] as? String ?: "",
-                        U_machine = activityData["machine"] as? String ?: "",
-                        U_equipment = activityData["equipment"] as? String ?: "",
-                        U_LineTec = lineTec,
-                        U_InitialHour = initialHourStr,
-                        U_FinalHour = finalHourStr
-                    )
+        actividadesListener = firestore
+            .collection(collectionParadasMantenimiento)
+            .whereEqualTo("activityData.userId", userId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    _uiState.update { it.copy(isLoading = false, error = error.message) }
+                    return@addSnapshotListener
                 }
+                rawActividades = snapshot?.documents?.mapNotNull { doc ->
+                    mapDocToSemiActivity(doc)
+                } ?: emptyList()
+                applyDateFilter()
+            }
+    }
 
-                _uiState.update {
-                    it.copy(
-                        actividades = actividadesFiltradas.sortedByDescending { it.U_InitialHour },
-                        isLoading = false,
-                        error = null
-                    )
-                }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        actividades = emptyList(),
-                        isLoading = false,
-                        error = e.message
-                    )
-                }
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun applyDateFilter() {
+        // Usar el máximo entre currentFechaFin y now() para que registros creados
+        // después de cargar la pantalla no queden fuera del rango por el tope congelado.
+        val effectiveFechaFin = if (currentFechaFin.isBefore(LocalDateTime.now())) LocalDateTime.now() else currentFechaFin
+        val filtered = rawActividades
+            .filter { actividad ->
+                val initialHour = parseLocalDateTime(actividad.U_InitialHour) ?: return@filter false
+                !initialHour.isBefore(currentFechaIni) && !initialHour.isAfter(effectiveFechaFin)
+            }
+            .sortedByDescending { it.U_InitialHour }
+        _uiState.update { it.copy(actividades = filtered, isLoading = false, error = null) }
+    }
+
+    private fun mapDocToSemiActivity(doc: DocumentSnapshot): semiActivity? {
+        val activityData = doc.get("activityData") as? Map<*, *> ?: return null
+        val closeData = doc.get("closeData") as? Map<*, *> ?: emptyMap<Any?, Any?>()
+        val initialHourStr = activityData["initialHour"] as? String ?: ""
+        val finalHourStr = closeData["finalHour"] as? String ?: ""
+        val lineTec = closeData["lineTec"] as? String ?: ""
+        val evidencesList = closeData["evidences"] as? List<*> ?: emptyList<Any>()
+        val imageUrls = evidencesList.mapNotNull { ev ->
+            val map = ev as? Map<*, *> ?: return@mapNotNull null
+            val downloadUrl = map["downloadUrl"] as? String
+            val localPath = map["localPath"] as? String
+            when {
+                !downloadUrl.isNullOrBlank() -> downloadUrl
+                !localPath.isNullOrBlank() -> "file://$localPath"
+                else -> null
             }
         }
+        val docStatus = doc.getString("status") ?: ""
+        return semiActivity(
+            DocEntry = doc.id,
+            U_OT = activityData["OT"] as? String ?: "",
+            U_description_OT = activityData["description_OT"] as? String ?: "",
+            U_unidad_medida_OT = activityData["unidad_medida_OT"] as? String ?: "",
+            U_cantidad_OT = activityData["cantidad_OT"] as? String ?: "",
+            U_userId = activityData["userId"] as? String ?: "",
+            U_userName = activityData["userName"] as? String ?: "",
+            U_userPosition = activityData["userPosition"] as? String ?: "",
+            U_area = activityData["area"] as? String ?: "",
+            U_machine = activityData["machine"] as? String ?: "",
+            U_equipment = activityData["equipment"] as? String ?: "",
+            U_LineTec = lineTec,
+            U_InitialHour = initialHourStr,
+            U_FinalHour = finalHourStr,
+            U_imageUrls = imageUrls,
+            U_status = docStatus
+        )
     }
 
     fun getDetailActivity(docEntry: String, context: Context) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            try {
-                val doc = firestore.collection(collectionParadasMantenimiento).document(docEntry).get().await()
-                if (!doc.exists()) {
+        detailListener?.remove()
+        _uiState.update { it.copy(isLoading = true, error = null) }
+
+        detailListener = firestore
+            .collection(collectionParadasMantenimiento)
+            .document(docEntry)
+            .addSnapshotListener { doc, error ->
+                if (error != null) {
+                    _uiState.update { it.copy(isLoading = false, error = error.message) }
+                    return@addSnapshotListener
+                }
+                if (doc == null || !doc.exists()) {
                     _uiState.update {
                         it.copy(
                             selectedActividad = Activity2(),
+                            activityStatus = "",
                             isLoading = false,
                             error = "Actividad no encontrada"
                         )
                     }
-                    return@launch
+                    return@addSnapshotListener
                 }
 
                 val activityData = doc.get("activityData") as? Map<*, *> ?: emptyMap<Any?, Any?>()
                 val closeData = doc.get("closeData") as? Map<*, *> ?: emptyMap<Any?, Any?>()
+                val status = doc.getString("status") ?: ""
 
                 val initialHourStr = activityData["initialHour"] as? String ?: ""
                 val initialHour = parseLocalDateTime(initialHourStr)
@@ -401,8 +451,13 @@ class ActividadViewModel @Inject constructor(
                 val evidencesList = closeData["evidences"] as? List<*> ?: emptyList<Any>()
                 val evidenceUris = evidencesList.mapNotNull { ev ->
                     val map = ev as? Map<*, *> ?: return@mapNotNull null
-                    val downloadUrl = map["downloadUrl"] as? String ?: return@mapNotNull null
-                    Uri.parse(downloadUrl)
+                    val downloadUrl = map["downloadUrl"] as? String
+                    val localPath = map["localPath"] as? String
+                    when {
+                        !downloadUrl.isNullOrBlank() -> Uri.parse(downloadUrl)
+                        !localPath.isNullOrBlank() -> Uri.fromFile(java.io.File(localPath))
+                        else -> null
+                    }
                 }
 
                 _uiState.update {
@@ -431,27 +486,18 @@ class ActividadViewModel @Inject constructor(
                             initialHour = initialHour,
                             finalHour = finalHour
                         ),
+                        activityStatus = status,
                         isLoading = false,
                         error = null
                     )
                 }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        selectedActividad = Activity2(),
-                        isLoading = false,
-                        error = e.message
-                    )
-                }
-                Log.e("Actividad", "Excepción: ${e.message}", e)
             }
-        }
     }
 
 
     fun getAllOT(new_ot: String) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update { it.copy(isLoadingOT = true, error = null) }
             try {
                 val selected = _uiState.value.selectedActividad
                 Log.d("OT", new_ot)
@@ -464,7 +510,7 @@ class ActividadViewModel @Inject constructor(
                         _uiState.update {
                             it.copy(
                                 listOT = body.data,
-                                isLoading = false,
+                                isLoadingOT = false,
                                 error = null
                             )
                         }
@@ -473,7 +519,7 @@ class ActividadViewModel @Inject constructor(
                         _uiState.update {
                             it.copy(
                                 listOT = emptyList(),
-                                isLoading = false,
+                                isLoadingOT = false,
                                 error = errorMessage
                             )
                         }
@@ -483,7 +529,7 @@ class ActividadViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         listOT = emptyList(),
-                        isLoading = false,
+                        isLoadingOT = false,
                         error = e.message
                     )
                 }
@@ -562,15 +608,18 @@ class ActividadViewModel @Inject constructor(
                     .collection(collectionParadasMantenimiento)
                     .document(activityId)
 
+                // Sin .await(): Firestore escribe al caché local inmediatamente (offline-first).
+                // Si hay red, sincroniza ahora. Si no hay red, sincroniza cuando vuelva.
                 docRef.set(
                     mapOf(
-                        "status" to STATUS_READY_CREATE_ACTIVITY,
+                        "status" to STATUS_ACTIVE,
                         "activityData" to activityData,
-                        "sap" to mapOf<String, Any?>(),
                         "closeData" to mapOf<String, Any?>(),
                         "updatedAt" to com.google.firebase.Timestamp.now()
                     )
-                ).await()
+                ).addOnFailureListener { e ->
+                    Log.e("Actividad", "Error al sincronizar con servidor: ${e.message}")
+                }
 
                 _uiState.update {
                     it.copy(
@@ -580,7 +629,6 @@ class ActividadViewModel @Inject constructor(
                         error = null
                     )
                 }
-                getAllActividades(user = _uiState.value.userCurrent)
 
             } catch (e: Exception) {
                 _uiState.update {
@@ -622,8 +670,18 @@ class ActividadViewModel @Inject constructor(
                     evidenceUris = selected.evidences.toList()
                 )
 
-                // 2) Persistir los datos de cierre en Firestore, dejando evidencias vacías
-                //    hasta que el Worker suba a Storage y complete evidences con downloadUrl+storagePath.
+                // 2) Persistir los datos de cierre en Firestore con paths locales como placeholder.
+                //    El Worker los reemplazará con downloadUrl cuando haya internet.
+                val evidenciasLocales = localEvidencePaths.mapIndexed { index, path ->
+                    mapOf(
+                        "fileName" to "evidence_$index.jpg",
+                        "contentType" to "image/jpeg",
+                        "localPath" to path,
+                        "downloadUrl" to "",
+                        "storagePath" to ""
+                    )
+                }
+
                 val closeData = mapOf(
                     "reason" to otherReasonName,
                     "description" to selected.description,
@@ -633,13 +691,14 @@ class ActividadViewModel @Inject constructor(
                     "paradaDocEntry" to selected.paradaDocEntry,
                     "lineTec" to selected.lineTec,
                     "finalHour" to (formattedFinalHour ?: ""),
-                    "evidences" to emptyList<Map<String, Any?>>()
+                    "evidences" to evidenciasLocales
                 )
 
                 val docRef = firestore
                     .collection(collectionParadasMantenimiento)
                     .document(activityId)
 
+                // Sin .await(): caché local inmediata, sincroniza al servidor cuando haya red.
                 docRef.set(
                     mapOf(
                         "status" to STATUS_WAITING_PHOTOS_UPLOAD,
@@ -647,7 +706,9 @@ class ActividadViewModel @Inject constructor(
                         "updatedAt" to com.google.firebase.Timestamp.now()
                     ),
                     com.google.firebase.firestore.SetOptions.merge()
-                ).await()
+                ).addOnFailureListener { e ->
+                    Log.e("Actividad", "Error al sincronizar cierre con servidor: ${e.message}")
+                }
 
                 // 3) Encolar el Worker para subir evidencias cuando haya internet
                 val localPathsJson = JSONArray(localEvidencePaths).toString()
@@ -676,8 +737,7 @@ class ActividadViewModel @Inject constructor(
                         error = null
                     )
                 }
-
-                getAllActividades(user = _uiState.value.userCurrent)
+                // El listener detecta el cambio automáticamente
 
             } catch (e: Exception) {
                 _uiState.update {
@@ -692,6 +752,12 @@ class ActividadViewModel @Inject constructor(
         }
     }
 
+
+    override fun onCleared() {
+        super.onCleared()
+        actividadesListener?.remove()
+        detailListener?.remove()
+    }
 
     fun actualizarActividad(parada: Parada) {
 

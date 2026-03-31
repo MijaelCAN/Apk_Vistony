@@ -205,7 +205,9 @@ data class semiActivity(
     val U_equipment: String = "",
     val U_LineTec: String = "",
     val U_InitialHour: String? = null,
-    val U_FinalHour: String? = null
+    val U_FinalHour: String? = null,
+    val U_imageUrls: List<String> = emptyList(),
+    val U_status: String = ""
 )
 
 data class ResponseCreated(
@@ -283,8 +285,8 @@ object StaticData {
 
     // Tipos de fallas
     val failureTypes = listOf(
-        FailureType(1, "Electrico"),
-        FailureType(2, "Mecanico"),
+        FailureType(1, "Electrica"),
+        FailureType(2, "Mecanica"),
         FailureType(3, "Neumatico"),
         FailureType(4, "Operacional"),
         FailureType(5, "Hidraulico"),

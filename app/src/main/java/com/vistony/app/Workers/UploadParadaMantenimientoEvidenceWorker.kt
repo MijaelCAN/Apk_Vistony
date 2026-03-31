@@ -70,7 +70,7 @@ class UploadParadaMantenimientoEvidenceWorker(
             Result.success()
         } catch (e: Exception) {
             Log.e(TAG, "UploadParadaMantenimientoEvidenceWorker failed", e)
-            // Dejar estado para que se pueda visualizar error; Functions no debe disparar.
+            // Dejar estado de error para visualización.
             val docRef = firestore.collection(COLLECTION_PARADAS_MANTENIMIENTO).document(activityId)
             docRef.update(
                 mapOf(
@@ -91,7 +91,7 @@ class UploadParadaMantenimientoEvidenceWorker(
     companion object {
         private const val TAG = "EvidenceUploadWorker"
         private const val COLLECTION_PARADAS_MANTENIMIENTO = "paradas_mantenimiento"
-        private const val READY_CLOSE_ACTIVITY = "ready_close_activity"
+        private const val READY_CLOSE_ACTIVITY = "completed"
 
         const val KEY_ACTIVITY_ID = "activityId"
         const val KEY_LOCAL_EVIDENCE_PATHS_JSON = "localEvidencePathsJson"
