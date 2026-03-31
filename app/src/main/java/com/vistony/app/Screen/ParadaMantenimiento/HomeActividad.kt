@@ -7,6 +7,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -42,6 +43,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
@@ -111,6 +113,7 @@ fun BodyActividad(
     var new_ot by rememberSaveable { mutableStateOf("") }
     val otraMaquina = rememberSaveable { mutableStateOf("") }
     val otroEquipo = rememberSaveable { mutableStateOf("") }
+    var attempted by rememberSaveable { mutableStateOf(false) }
 
     // ============================ LISTAS Y VARIABLES DE CONTROL  ============================
 
@@ -130,8 +133,8 @@ fun BodyActividad(
                 viewModel.onOTChange(new_ot)
 
             } else {
-                //ot = "Codigo de barra, no válido"
-                viewModel.onOTChange("Codigo de barra, no válido")
+                //ot = "Código de barras no válido"
+                viewModel.onOTChange("Código de barras no válido")
             }
 
         }
@@ -238,7 +241,7 @@ fun BodyActividad(
         CustomOutlinedTextField( // ---- OT ----
             value = uiState.selectedActividad.OT,
             onValueChange = viewModel::onOTChange,
-            label = "OT Mezcla",
+            label = "OT Mezcla *",
             trailingIcon = {
                 IconButton(onClick = { scanLauncher.launch(ScanOptions()) }
                 ) {
@@ -250,7 +253,7 @@ fun BodyActividad(
         )
         Spacer(Modifier.height(8.dp))
         GenericDropdownMenu2(
-            label = "OT Envazado",
+            label = "OT Envasado *",
             options = uiState.listOT,
             selectedOption = uiState.selectedOT,
             onOptionSelected = {
@@ -263,9 +266,29 @@ fun BodyActividad(
             expanded = uiState.expandedOT,
             onExpandedChange = viewModel::onExpandedOTChange
         )
+        if (uiState.isLoadingOT) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(14.dp),
+                    strokeWidth = 2.dp,
+                    color = Color(0xFF01398D)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "Buscando OT...",
+                    fontSize = 11.sp,
+                    color = Color(0xFF01398D)
+                )
+            }
+        }
         Spacer(Modifier.height(8.dp))
         GenericDropdownMenu2(
-            label = "Area",
+            label = "Área *",
             options = uiState.listAreas,
             selectedOption = uiState.selectedActividad.area,
             onOptionSelected = {
@@ -279,7 +302,7 @@ fun BodyActividad(
         )
         Spacer(Modifier.height(8.dp))
         GenericDropdownMenu2(
-            label = "Máquina",
+            label = "Máquina *",
             options = uiState.listMaquinas,
             selectedOption = uiState.selectedActividad.machine,
             onOptionSelected = viewModel::onMachineChange,
@@ -287,16 +310,16 @@ fun BodyActividad(
             expanded = uiState.expandedMaquina,
             onExpandedChange = viewModel::onExpandedMaquinaChange
         )
-0
-        if(uiState.selectedActividad.machine.name == "Otro"){
-            Spacer(Modifier.height(8.dp))
-            CustomOutlinedTextField(
-                value = otraMaquina.value,
-                onValueChange = {otraMaquina.value = it},
-                label = "Otra máquina",
-                readOnly = false
-            )
-
+        Column(modifier = Modifier.animateContentSize()) {
+            if(uiState.selectedActividad.machine.name == "Otro"){
+                Spacer(Modifier.height(8.dp))
+                CustomOutlinedTextField(
+                    value = otraMaquina.value,
+                    onValueChange = {otraMaquina.value = it},
+                    label = "Otro nombre de máquina",
+                    readOnly = false
+                )
+            }
         }
         Spacer(Modifier.height(8.dp))
         Text(
@@ -307,7 +330,7 @@ fun BodyActividad(
         )
         Spacer(Modifier.height(8.dp))
         GenericDropdownMenu2(
-            label = "Equipo",
+            label = "Equipo *",
             options = uiState.listEquipos,
             selectedOption = uiState.selectedActividad.equipment,
             onOptionSelected = viewModel::onEquipamentChange,
@@ -316,26 +339,56 @@ fun BodyActividad(
             onExpandedChange = viewModel::onExpandedEquipoChange
         )
         Spacer(Modifier.height(8.dp))
-        if(uiState.selectedActividad.equipment.name == "Otro"){
-            Spacer(Modifier.height(8.dp))
-            CustomOutlinedTextField(
-                value = otroEquipo.value,
-                onValueChange = {otroEquipo.value = it},
-                label = "Otro equipo",
-                readOnly = false
-            )
-
+        Column(modifier = Modifier.animateContentSize()) {
+            if(uiState.selectedActividad.equipment.name == "Otro"){
+                Spacer(Modifier.height(8.dp))
+                CustomOutlinedTextField(
+                    value = otroEquipo.value,
+                    onValueChange = {otroEquipo.value = it},
+                    label = "Otro nombre de equipo",
+                    readOnly = false
+                )
+            }
         }
         Spacer(Modifier.height(8.dp))
 
 
-        Spacer(modifier = Modifier.height(32.dp)) // En caso d eque no haya espacio suficiente
+        // Banner de validación: solo visible si intentó enviar y faltan campos
+        if (attempted && !uiState.isButtonEnabled) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFFFEBEE), RoundedCornerShape(8.dp))
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.CameraAlt,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = Color(0xFFC62828)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "Completa los campos obligatorios (*) para continuar",
+                    fontSize = 12.sp,
+                    color = Color(0xFFC62828),
+                    lineHeight = 16.sp
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
         Spacer(modifier = Modifier.weight(1f))
         Button(
-            enabled = uiState.isButtonEnabled && !uiState.isCreating,
+            enabled = !uiState.isCreating,
             onClick = {
-                viewModel.onInitialChange(userState.currentUser)
-                viewModel.crearActividad(otraMaquina, otroEquipo)
+                attempted = true
+                if (uiState.isButtonEnabled) {
+                    viewModel.onInitialChange(userState.currentUser)
+                    viewModel.crearActividad(otraMaquina, otroEquipo)
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -344,8 +397,7 @@ fun BodyActividad(
                 .clip(RoundedCornerShape(0.dp)),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
-                //containerColor = Color(0xFFFC6A68),
-                containerColor = Color(0xFF01398D),
+                containerColor = if (uiState.isButtonEnabled) Color(0xFF01398D) else Color(0xFF90A4AE),
                 contentColor = Color.White
             )
         ) {

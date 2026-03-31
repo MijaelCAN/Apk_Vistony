@@ -84,7 +84,7 @@ class MuestraViewModel @Inject constructor(
         var horaInspeccion: String = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm")),
         var temperaturaChiller: String = "",
         var temperaturaCiclo: String = "",
-        var numeroCavidad: String = "",
+        var numeroCavidad: String = "1",
         var peso: String = "",
         var diametroRoscaMedida1: String = "",
         var diametroRoscaMedida2: String = "",

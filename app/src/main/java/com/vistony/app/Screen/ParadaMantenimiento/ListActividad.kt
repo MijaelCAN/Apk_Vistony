@@ -84,7 +84,6 @@ import com.vistony.app.Screen.Generic.Drawers.BottomBar
 import com.vistony.app.Screen.Generic.Drawers.BottomCurtainDrawer
 import com.vistony.app.Screen.Generic.Drawers.CustomDrawer
 import com.vistony.app.Screen.Generic.Drawers.RightCurtainDrawer
-import com.vistony.app.Screen.Generic.Recursos.UnsplashImages
 import com.vistony.app.Screen.Generic.TopBar
 import com.vistony.app.Screen.Inspeccion.backGroundLigth
 import com.vistony.app.Screen.Inspeccion.blueDarkVistony
@@ -220,6 +219,7 @@ fun ListActividad(
                         paddingValues = paddingValues,
                         navController = navController,
                         viewModel = viewModel,
+                        onCreateClick = { showDrawerActivity = true },
                         function = {
                             actividadSeleccionada = Activity2(
                                 DocEntry = it.DocEntry,
@@ -342,7 +342,8 @@ fun BodyListActividad(
     paddingValues: PaddingValues,
     navController: NavController,
     viewModel: ActividadViewModel,
-    function: (semiActivity) -> Unit
+    function: (semiActivity) -> Unit,
+    onCreateClick: () -> Unit = {}
 ) {
 
     val uiState by viewModel.uiState.collectAsState()
@@ -384,10 +385,23 @@ fun BodyListActividad(
 
         Text(
             modifier = Modifier.padding(horizontal = 16.dp),
-            text = "Se lista las actividades desarrolladas en este horario",
+            text = "Actividades registradas en este período",
             color = textColorSubTitle,
             fontSize = 12.sp
         )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.End
+        ) {
+            androidx.compose.material3.TextButton(
+                onClick = { viewModel.getAllActividades(viewModel.uiState.value.userCurrent) }
+            ) {
+                Text("↻ Actualizar", fontSize = 12.sp, color = Color(0xFF01398D))
+            }
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -434,6 +448,39 @@ fun BodyListActividad(
                     }
                 }
             }
+            uiState.error != null -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.WorkOutline,
+                            contentDescription = "Error",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFFEF5350).copy(alpha = 0.6f)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "No se pudieron cargar las actividades",
+                            color = textColorTitle,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        androidx.compose.material3.TextButton(
+                            onClick = { viewModel.getAllActividades(viewModel.uiState.value.userCurrent) }
+                        ) {
+                            Text("Reintentar", color = Color(0xFF01398D))
+                        }
+                    }
+                }
+            }
             listaFiltrada.isEmpty() -> {
                 // Estado vacío
                 Box(
@@ -453,31 +500,40 @@ fun BodyListActividad(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "No tiene registros en estas fechas",
+                            text = "No tiene registros en este período",
                             color = textColorTitle,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
                             textAlign = TextAlign.Center
                         )
-                        Text(
-                            text = "Registre uno",
-                            color = textColorSubTitle,
-                            fontSize = 10.sp,
-                            textAlign = TextAlign.Center
-                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        androidx.compose.material3.Button(
+                            onClick = onCreateClick,
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF01398D),
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text("Registrar actividad", fontSize = 13.sp)
+                        }
                     }
                 }
             }
             else -> {
                 // Estado con datos - mostrar lista
                 LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                    itemsIndexed(listaFiltrada) { index,item ->
-                        val imageUrl = UnsplashImages.urls[index % UnsplashImages.urls.size]
+                    itemsIndexed(listaFiltrada) { _, item ->
                         TarjetaActividad(
                             actividad = item,
                             viewModel = viewModel,
                             navController = navController,
-                            imageUrl = imageUrl,
                             function = { function(item) }
                         )
                     }
@@ -493,9 +549,23 @@ fun TarjetaActividad(
     actividad: semiActivity,
     viewModel: ActividadViewModel,
     navController: NavController,
-    imageUrl: String,
     function: (semiActivity) -> Unit
 ){
+    val imageUrls = actividad.U_imageUrls
+    var currentImageIndex by remember(actividad.DocEntry) { mutableStateOf(0) }
+    var isCarouselPaused by remember(actividad.DocEntry) { mutableStateOf(false) }
+
+    LaunchedEffect(actividad.DocEntry, isCarouselPaused) {
+        if (imageUrls.size > 1 && !isCarouselPaused) {
+            while (true) {
+                delay(7000)
+                if (!isCarouselPaused) {
+                    currentImageIndex = (currentImageIndex + 1) % imageUrls.size
+                }
+            }
+        }
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -514,19 +584,35 @@ fun TarjetaActividad(
             // Columna imagen / círculo
             Box(
                 modifier = Modifier
-                    //.weight(0.7f)
                     .size(75.dp)
-                    .clip(CircleShape)
-                    .clickable {},
+                    .clip(CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-
-                AsyncImage(
-                    model = imageUrl,
-                    contentDescription = "Imagen de la máquina",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
+                if (imageUrls.isNotEmpty()) {
+                    AsyncImage(
+                        model = imageUrls[currentImageIndex],
+                        contentDescription = "Imagen de la actividad",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable { isCarouselPaused = !isCarouselPaused },
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    val letra = actividad.U_area.firstOrNull()?.uppercaseChar()?.toString() ?: "A"
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(blueDarkVistony, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = letra,
+                            color = Color.White,
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -544,25 +630,42 @@ fun TarjetaActividad(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        val chipColor = when {
+                            actividad.U_status == "waiting_photos_upload" -> Color(0xFFF57F17)
+                            isActivityFinished(actividad) -> Color(0xFF4CAF50)
+                            else -> Color(0xFFFF9800)
+                        }
+                        val chipLabel = when {
+                            actividad.U_status == "waiting_photos_upload" -> "Subiendo fotos"
+                            isActivityFinished(actividad) -> "Finalizada"
+                            else -> "En progreso"
+                        }
                         Box(
                             modifier = Modifier
-                                .size(8.dp)
-                                .background(
-                                    getActivityStatusColor(actividad),
-                                    CircleShape
+                                .background(chipColor.copy(alpha = 0.12f), RoundedCornerShape(4.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .background(chipColor, CircleShape)
                                 )
-                        )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = chipLabel,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = chipColor
+                                )
+                            }
+                        }
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = if (isActivityFinished(actividad)) "Finalizada - " else "En progreso - ",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = getActivityStatusColor(actividad)
-                        )
+                        Text(text = "- ", fontSize = 10.sp, color = chipColor, fontWeight = FontWeight.Bold)
                         LiveTimer(
                             startTime = actividad.U_InitialHour,
                             finishTime = actividad.U_FinalHour,
-                            color = getActivityStatusColor(actividad)
+                            color = chipColor
                         )
                     }
                     
@@ -665,7 +768,7 @@ fun isActivityFinished(actividad: semiActivity): Boolean {
 
 @RequiresApi(Build.VERSION_CODES.O)
 fun formatTimeDuration(startTime: String?, endTime: String?): String {
-    if (startTime.isNullOrBlank()) return "Hora desconocida"
+    if (startTime.isNullOrBlank()) return "--"
     
     return try {
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
@@ -686,7 +789,7 @@ fun formatTimeDuration(startTime: String?, endTime: String?): String {
         result
     } catch (e: Exception) {
         android.util.Log.e("TimeDuration", "Error parsing time: ${e.message}")
-        "Hora desconocida"
+        "--"
     }
 }
 

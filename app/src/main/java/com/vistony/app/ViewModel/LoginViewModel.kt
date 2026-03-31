@@ -13,6 +13,8 @@ import com.vistony.app.Entidad.Data
 import com.vistony.app.Entidad.LoginRequest
 import com.vistony.app.Entidad.LoginResponse
 import com.vistony.app.Entidad.UserResponse
+import com.google.firebase.messaging.FirebaseMessaging
+import com.vistony.app.Repository.FirestoreRepository
 import com.vistony.app.Service.RetrofitInstance
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,11 +22,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val application: Application
+    private val application: Application,
+    private val firestoreRepository: FirestoreRepository
 ) : ViewModel() {
 
     private val authService = RetrofitInstance.loginService
@@ -93,6 +97,43 @@ class LoginViewModel @Inject constructor(
                             )
                             _userData.value = body.data
                             _isLoading.value = EstadoLogin.Exitoso
+                            
+                            // Guardar información del usuario en SharedPreferences para FCM
+                            sharedPreferences.edit()
+                                .putString("current_user_id", body.data.dni)
+                                .putString("current_user_role", body.data.role)
+                                .putString("current_user_name", body.data.name)
+                                .apply()
+                            
+                            // Obtener y guardar el token FCM en Firestore
+                            launch {
+                                try {
+                                    val fcmPrefs = application.getSharedPreferences("fcm_prefs", Context.MODE_PRIVATE)
+                                    var token = fcmPrefs.getString("fcm_token", null)
+                                    
+                                    // Si no hay token guardado, obtenerlo de Firebase
+                                    if (token == null) {
+                                        token = FirebaseMessaging.getInstance().token.await()
+                                        fcmPrefs.edit().putString("fcm_token", token).apply()
+                                    }
+                                    
+                                    // Guardar token en Firestore
+                                    if (token != null) {
+                                        firestoreRepository.saveUserToken(
+                                            userId = body.data.dni,
+                                            token = token,
+                                            userRole = body.data.role,
+                                            userName = body.data.name
+                                        ).onSuccess {
+                                            Log.d("LoginViewModel", "Token FCM guardado exitosamente")
+                                        }.onFailure { error ->
+                                            Log.e("LoginViewModel", "Error al guardar token FCM", error)
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("LoginViewModel", "Error al obtener/guardar token FCM", e)
+                                }
+                            }
 
                         } else { handleError("Usuario no registrado") }
                     }else { handleError("Error en la respuesta del servidor") }
@@ -108,7 +149,24 @@ class LoginViewModel @Inject constructor(
     }
 
     fun clearUserData() {
+        // Obtener userId antes de limpiar SharedPreferences
+        val userId = sharedPreferences.getString("current_user_id", null)
+        
         _userData.value = null
+        
+        // Limpiar información del usuario de SharedPreferences
+        sharedPreferences.edit()
+            .remove("current_user_id")
+            .remove("current_user_role")
+            .remove("current_user_name")
+            .apply()
+        
+        // Opcional: Eliminar token de Firestore al cerrar sesión
+        if (userId != null) {
+            viewModelScope.launch {
+                firestoreRepository.deleteUserToken(userId)
+            }
+        }
     }
 }
 data class ResponseState(

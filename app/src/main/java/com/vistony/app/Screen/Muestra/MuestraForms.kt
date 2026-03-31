@@ -1,5 +1,6 @@
 package com.vistony.app.Screen.Muestra
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -399,6 +400,10 @@ fun InspeccionDimensionalForm(
     val cabeceraFormState by muestraViewModel.cabeceraFormState.collectAsState()
     val especificacion by muestraViewModel.especificacionSoplado.collectAsState()
     val currentMuestraId by muestraViewModel.currentMuestraId.collectAsState()
+    val muestrasCompletas by muestraViewModel.muestrasCompletas.collectAsState()
+
+    // Cuando la muestra ya está completada, a veces las listas "temporales" vienen vacías.
+    // En ese caso, mostramos las inspecciones desde el cache de `muestrasCompletas`.
 
     // Estado para el modal de detalle
     var selectedInspeccion by remember { mutableStateOf<InspeccionDimensional?>(null) }
@@ -489,9 +494,7 @@ fun InspeccionDimensionalForm(
             colors = CardDefaults.cardColors(containerColor = Color(0xFFF9FAFB)),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
+            Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text = "Nueva Inspección",
                     fontSize = 16.sp,
@@ -503,27 +506,11 @@ fun InspeccionDimensionalForm(
 
                 // Lógica para N° Cavidad
                 val listaVacia = inspecciones.isEmpty()
+                // Usamos el último registro agregado para calcular la sugerencia (no el max).
                 val ultimoNumeroCavidad =
-                    inspecciones.mapNotNull { it.numeroCavidad.toIntOrNull() }.maxOrNull()
-                val siguienteNumeroCavidad = if (ultimoNumeroCavidad != null) {
-                    (ultimoNumeroCavidad + 1).toString()
-                } else {
-                    ""
-                }
-
-                // Auto-completar número de cavidad si hay registros previos
-                LaunchedEffect(ultimoNumeroCavidad) {
-                    if (ultimoNumeroCavidad != null && !listaVacia) {
-                        muestraViewModel.updateInspeccion("numeroCavidad", siguienteNumeroCavidad)
-                    }
-                }
-
-                // Valor a mostrar en el campo
-                val valorMostrar = if (listaVacia) {
-                    formState.numeroCavidad
-                } else {
-                    siguienteNumeroCavidad
-                }
+                    inspecciones.lastOrNull()?.numeroCavidad?.trim()?.toIntOrNull()
+                val siguienteNumeroCavidad =
+                    (ultimoNumeroCavidad?.plus(1))?.toString() ?: "1"
 
                 // Hora y Parámetros de máquina
                 Row(
@@ -546,21 +533,27 @@ fun InspeccionDimensionalForm(
                 )*/
 
                     MuestraTextField(
-                        value = valorMostrar,
+                        value = formState.numeroCavidad,
                         onValueChange = { nuevoValor ->
-                            if (listaVacia && !isCompletado) {
-                                // Solo permitir 1 o 5 si la lista está vacía
+                            if (isCompletado) return@MuestraTextField
+
+                            if (listaVacia) {
+                                // Primera inspección: solo permitir 1 o 5 (o vacío para borrar)
                                 if (nuevoValor.isEmpty() || nuevoValor == "1" || nuevoValor == "5") {
                                     muestraViewModel.updateInspeccion("numeroCavidad", nuevoValor)
                                 }
+                            } else {
+                                // Siguientes: sugerimos siguiente cavidad, pero dejamos editar (solo números)
+                                if (nuevoValor.isEmpty() || nuevoValor.all { it.isDigit() }) {
+                                    muestraViewModel.updateInspeccion("numeroCavidad", nuevoValor)
+                                }
                             }
-                            // Si hay registros, no permitir edición (ya está deshabilitado)
                         },
                         label = "N° Cavidad",
                         modifier = Modifier.weight(1f),
                         keyboardType = KeyboardType.Number,
-                        enabled = listaVacia && !isCompletado, // Solo habilitado si la lista está vacía y no está completado
-                        readOnly = !listaVacia || isCompletado, // Solo lectura si hay registros o está completado
+                        enabled = !isCompletado,
+                        readOnly = isCompletado,
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Numbers,
@@ -576,7 +569,7 @@ fun InspeccionDimensionalForm(
                 if (!listaVacia && ultimoNumeroCavidad != null) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Número de cavidad asignado automáticamente: $siguienteNumeroCavidad",
+                        text = "Sugerencia (editable): $siguienteNumeroCavidad",
                         fontSize = 12.sp,
                         color = Color(0xFF6B7280),
                         fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
@@ -1192,63 +1185,63 @@ fun InspeccionDimensionalForm(
                 }
             }
         }
+    }
+    Spacer(modifier = Modifier.height(24.dp))
 
-        Spacer(modifier = Modifier.height(24.dp))
+    // Lista de inspecciones agregadas
+    if (inspecciones.isNotEmpty()) {
+        Log.i("Inspecciones", "Total Inspecciones: ${inspecciones.size}")
+        Text(
+            text = "Inspecciones Agregadas (${inspecciones.size})",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF111827)
+        )
 
-        // Lista de inspecciones agregadas
-        if (inspecciones.isNotEmpty()) {
-            Text(
-                text = "Inspecciones Agregadas (${inspecciones.size})",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF111827)
-            )
+        Spacer(modifier = Modifier.height(12.dp))
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                inspecciones.forEach { inspeccion ->
-                    InspeccionItemCard(
-                        inspeccion = inspeccion,
-                        onClick = {
-                            selectedInspeccion = inspeccion
-                            scope.launch {
-                                sheetState.show()
-                            }
-                        },
-                        onDelete = { muestraViewModel.eliminarInspeccion(inspeccion.id) }
-                    )
-                }
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            inspecciones.forEach { inspeccion ->
+                InspeccionItemCard(
+                    inspeccion = inspeccion,
+                    onClick = {
+                        selectedInspeccion = inspeccion
+                        scope.launch {
+                            sheetState.show()
+                        }
+                    },
+                    onDelete = { muestraViewModel.eliminarInspeccion(inspeccion.id) }
+                )
             }
         }
+    }
 
-        // Modal para mostrar detalle de la Inspección
-        selectedInspeccion?.let { inspeccion ->
-            ModalBottomSheet(
-                onDismissRequest = {
+    // Modal para mostrar detalle de la Inspección
+    selectedInspeccion?.let { inspeccion ->
+        ModalBottomSheet(
+            onDismissRequest = {
+                scope.launch {
+                    sheetState.hide()
+                }.invokeOnCompletion {
+                    selectedInspeccion = null
+                }
+            },
+            sheetState = sheetState,
+            containerColor = Color(0xFFF7F7F7)
+        ) {
+            InspeccionDetailModal(
+                inspeccion = inspeccion,
+                muestraViewModel = muestraViewModel,
+                onClose = {
                     scope.launch {
                         sheetState.hide()
                     }.invokeOnCompletion {
                         selectedInspeccion = null
                     }
-                },
-                sheetState = sheetState,
-                containerColor = Color(0xFFF7F7F7)
-            ) {
-                InspeccionDetailModal(
-                    inspeccion = inspeccion,
-                    muestraViewModel = muestraViewModel,
-                    onClose = {
-                        scope.launch {
-                            sheetState.hide()
-                        }.invokeOnCompletion {
-                            selectedInspeccion = null
-                        }
-                    }
-                )
-            }
+                }
+            )
         }
     }
 }
@@ -2065,9 +2058,7 @@ fun InspeccionDimensionalForm(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFF9FAFB)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "Nuevo Check List",
                         fontSize = 16.sp,

@@ -7,6 +7,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import com.vistony.app.Entidad.Area
 import com.vistony.app.Entidad.AreaResponse
 import com.vistony.app.Entidad.ListaRequest
@@ -18,6 +19,7 @@ import com.vistony.app.Entidad.ParadaResponse
 import com.vistony.app.Entidad.PostParada
 import com.vistony.app.Extras.formatoServidor
 import com.vistony.app.Repository.ParadaRepository
+import com.vistony.app.Service.NotificationService
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,7 +30,10 @@ import java.time.LocalDateTime
 import javax.inject.Inject
 
 @RequiresApi(Build.VERSION_CODES.O)
-class ParadaViewModel @Inject constructor() : ViewModel() {
+@HiltViewModel
+class ParadaViewModel @Inject constructor(
+    private val notificationService: NotificationService
+) : ViewModel() {
     private val paradaRepository = ParadaRepository()
 
     private val _paradas = MutableStateFlow(ParadaResponseState())
@@ -133,6 +138,18 @@ class ParadaViewModel @Inject constructor() : ViewModel() {
                             ParadaResponseState(state = true, paradaResponse = body, message = body.message)
                         _estadoParada.value = EstadoParada.Exitoso
                         Log.d("Envío-AfterBody", body.toString())
+                        
+                        // Enviar notificación a usuarios de mantenimiento
+                        val docEntry = body.data.firstOrNull()?.DocEntry
+                        notificationService.sendParadaNotification(
+                            maquina = parada.U_Maquina,
+                            area = parada.U_Area,
+                            motivo = parada.U_MotivoParaMaq,
+                            usuario = parada.U_Usuario,
+                            docEntry = docEntry
+                        ).onFailure { error ->
+                            Log.e("ParadaViewModel", "Error al enviar notificación", error)
+                        }
                     }else{
                         Log.d("ELSE", body.toString());
                     }

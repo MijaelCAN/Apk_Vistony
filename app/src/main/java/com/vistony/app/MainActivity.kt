@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -13,6 +14,8 @@ import androidx.annotation.RequiresApi
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -33,15 +36,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.vistony.app.Entidad.UserState
-import com.vistony.app.Service.ConnectivityObserver
-import com.vistony.app.ViewModel.NetworkStatusViewModel
 import com.vistony.app.ViewModel.SharedViewModel
 import com.vistony.app.ui.theme.theme.AppTheme
 import com.vistony.app.Screen.Admin.DashboardAdmin
 import com.vistony.app.Screen.Inspeccion.DetalleScreen
 import com.vistony.app.Screen.Inspeccion.ListScreen
 import com.vistony.app.Screen.Login2
-import com.vistony.app.Screen.NoInternetScreen
 import com.vistony.app.Screen.NoModulesScreen
 import com.vistony.app.Screen.Parada.ListParada
 import com.vistony.app.Screen.ParadaMantenimiento.ListActividad
@@ -84,6 +84,21 @@ class MainActivity : ComponentActivity() {
             addCategory(Intent.CATEGORY_DEFAULT)
         }
 
+        // Android 13+ requiere permiso en runtime para poder mostrar notificaciones
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val hasPermission = ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!hasPermission) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    1001
+                )
+            }
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(scanReceiver, intentFilter, Context.RECEIVER_EXPORTED)
         } else {
@@ -115,10 +130,8 @@ class MainActivity : ComponentActivity() {
                     val loginViewModel: LoginViewModel = hiltViewModel()
                     var navController = rememberNavController()
                     val sharedViewModel: SharedViewModel = hiltViewModel()
-                    val networkStatusViewModel: NetworkStatusViewModel = hiltViewModel()
                     val temperaturaViewModel: TemperaturaViewModel = hiltViewModel()
                     val muestraViewModel: MuestraViewModel = hiltViewModel()
-                    val status by networkStatusViewModel.status.collectAsState()
                     var usuario = "70131373"
                     val user by loginViewModel.userData.collectAsState()
                     LaunchedEffect(user) {
@@ -127,8 +140,7 @@ class MainActivity : ComponentActivity() {
                     val scanViewModel: ScanViewModel = hiltViewModel()
 
 
-                    if (status == ConnectivityObserver.Status.Available) {
-                        NavHost(startDestination = "login", navController = navController) {
+                    NavHost(startDestination = "login", navController = navController) {
                             composable("login") {
                                 Login2(navController,loginViewModel, userState)
                                 //LoginScreen(navController)
@@ -369,9 +381,6 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
-                        }
-                    } else {
-                        NoInternetScreen(networkStatusViewModel = networkStatusViewModel)
                     }
 
                 }
