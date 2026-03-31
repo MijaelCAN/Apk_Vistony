@@ -99,7 +99,8 @@ data class ActivityUi_State @RequiresApi(Build.VERSION_CODES.O) constructor(
     val createError: String? = null,
     val createdActivityId: String? = null,
     val isButtonEnabled: Boolean = false,
-    val activityStatus: String = ""
+    val activityStatus: String = "",
+    val isLoadingOT: Boolean = false
 
 
 )
@@ -378,8 +379,15 @@ class ActividadViewModel @Inject constructor(
         val evidencesList = closeData["evidences"] as? List<*> ?: emptyList<Any>()
         val imageUrls = evidencesList.mapNotNull { ev ->
             val map = ev as? Map<*, *> ?: return@mapNotNull null
-            map["downloadUrl"] as? String
+            val downloadUrl = map["downloadUrl"] as? String
+            val localPath = map["localPath"] as? String
+            when {
+                !downloadUrl.isNullOrBlank() -> downloadUrl
+                !localPath.isNullOrBlank() -> "file://$localPath"
+                else -> null
+            }
         }
+        val docStatus = doc.getString("status") ?: ""
         return semiActivity(
             DocEntry = doc.id,
             U_OT = activityData["OT"] as? String ?: "",
@@ -395,7 +403,8 @@ class ActividadViewModel @Inject constructor(
             U_LineTec = lineTec,
             U_InitialHour = initialHourStr,
             U_FinalHour = finalHourStr,
-            U_imageUrls = imageUrls
+            U_imageUrls = imageUrls,
+            U_status = docStatus
         )
     }
 
@@ -442,8 +451,13 @@ class ActividadViewModel @Inject constructor(
                 val evidencesList = closeData["evidences"] as? List<*> ?: emptyList<Any>()
                 val evidenceUris = evidencesList.mapNotNull { ev ->
                     val map = ev as? Map<*, *> ?: return@mapNotNull null
-                    val downloadUrl = map["downloadUrl"] as? String ?: return@mapNotNull null
-                    Uri.parse(downloadUrl)
+                    val downloadUrl = map["downloadUrl"] as? String
+                    val localPath = map["localPath"] as? String
+                    when {
+                        !downloadUrl.isNullOrBlank() -> Uri.parse(downloadUrl)
+                        !localPath.isNullOrBlank() -> Uri.fromFile(java.io.File(localPath))
+                        else -> null
+                    }
                 }
 
                 _uiState.update {
@@ -483,7 +497,7 @@ class ActividadViewModel @Inject constructor(
 
     fun getAllOT(new_ot: String) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update { it.copy(isLoadingOT = true, error = null) }
             try {
                 val selected = _uiState.value.selectedActividad
                 Log.d("OT", new_ot)
@@ -496,7 +510,7 @@ class ActividadViewModel @Inject constructor(
                         _uiState.update {
                             it.copy(
                                 listOT = body.data,
-                                isLoading = false,
+                                isLoadingOT = false,
                                 error = null
                             )
                         }
@@ -505,7 +519,7 @@ class ActividadViewModel @Inject constructor(
                         _uiState.update {
                             it.copy(
                                 listOT = emptyList(),
-                                isLoading = false,
+                                isLoadingOT = false,
                                 error = errorMessage
                             )
                         }
@@ -515,7 +529,7 @@ class ActividadViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         listOT = emptyList(),
-                        isLoading = false,
+                        isLoadingOT = false,
                         error = e.message
                     )
                 }
@@ -594,6 +608,8 @@ class ActividadViewModel @Inject constructor(
                     .collection(collectionParadasMantenimiento)
                     .document(activityId)
 
+                // Sin .await(): Firestore escribe al caché local inmediatamente (offline-first).
+                // Si hay red, sincroniza ahora. Si no hay red, sincroniza cuando vuelva.
                 docRef.set(
                     mapOf(
                         "status" to STATUS_ACTIVE,
@@ -601,7 +617,9 @@ class ActividadViewModel @Inject constructor(
                         "closeData" to mapOf<String, Any?>(),
                         "updatedAt" to com.google.firebase.Timestamp.now()
                     )
-                ).await()
+                ).addOnFailureListener { e ->
+                    Log.e("Actividad", "Error al sincronizar con servidor: ${e.message}")
+                }
 
                 _uiState.update {
                     it.copy(
@@ -611,7 +629,6 @@ class ActividadViewModel @Inject constructor(
                         error = null
                     )
                 }
-                // El listener detecta el nuevo documento automáticamente
 
             } catch (e: Exception) {
                 _uiState.update {
@@ -653,8 +670,18 @@ class ActividadViewModel @Inject constructor(
                     evidenceUris = selected.evidences.toList()
                 )
 
-                // 2) Persistir los datos de cierre en Firestore, dejando evidencias vacías
-                //    hasta que el Worker suba a Storage y complete evidences con downloadUrl+storagePath.
+                // 2) Persistir los datos de cierre en Firestore con paths locales como placeholder.
+                //    El Worker los reemplazará con downloadUrl cuando haya internet.
+                val evidenciasLocales = localEvidencePaths.mapIndexed { index, path ->
+                    mapOf(
+                        "fileName" to "evidence_$index.jpg",
+                        "contentType" to "image/jpeg",
+                        "localPath" to path,
+                        "downloadUrl" to "",
+                        "storagePath" to ""
+                    )
+                }
+
                 val closeData = mapOf(
                     "reason" to otherReasonName,
                     "description" to selected.description,
@@ -664,13 +691,14 @@ class ActividadViewModel @Inject constructor(
                     "paradaDocEntry" to selected.paradaDocEntry,
                     "lineTec" to selected.lineTec,
                     "finalHour" to (formattedFinalHour ?: ""),
-                    "evidences" to emptyList<Map<String, Any?>>()
+                    "evidences" to evidenciasLocales
                 )
 
                 val docRef = firestore
                     .collection(collectionParadasMantenimiento)
                     .document(activityId)
 
+                // Sin .await(): caché local inmediata, sincroniza al servidor cuando haya red.
                 docRef.set(
                     mapOf(
                         "status" to STATUS_WAITING_PHOTOS_UPLOAD,
@@ -678,7 +706,9 @@ class ActividadViewModel @Inject constructor(
                         "updatedAt" to com.google.firebase.Timestamp.now()
                     ),
                     com.google.firebase.firestore.SetOptions.merge()
-                ).await()
+                ).addOnFailureListener { e ->
+                    Log.e("Actividad", "Error al sincronizar cierre con servidor: ${e.message}")
+                }
 
                 // 3) Encolar el Worker para subir evidencias cuando haya internet
                 val localPathsJson = JSONArray(localEvidencePaths).toString()

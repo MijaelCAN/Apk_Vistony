@@ -141,7 +141,8 @@ fun ImagePickerRow(
     cornerRadius: Dp = 12.dp,
     selectedBackgroundColor: Color = Color(0xFF01398D),//Color(0xFFFC6A68),
     unselectedBackgroundColor: Color = Color.Transparent,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    onImageClick: ((Int) -> Unit)? = null
 ) {
 
     val context = LocalContext.current
@@ -175,12 +176,17 @@ fun ImagePickerRow(
         }
 
         // Mostrar imágenes agregadas
-        images.forEach { uri ->
+        images.forEachIndexed { index, uri ->
             Box(
                 modifier = Modifier
                     .size(itemSize)
                     .clip(RoundedCornerShape(cornerRadius))
                     .border(1.dp, Color.LightGray, RoundedCornerShape(cornerRadius))
+                    .then(
+                        if (onImageClick != null)
+                            Modifier.clickable { onImageClick(index) }
+                        else Modifier
+                    )
             ) {
                 AsyncImage(
                     model = uri,
@@ -194,8 +200,6 @@ fun ImagePickerRow(
                     Box(
                         modifier = Modifier
                             .size(20.dp)
-                            //.offset(x = 10.dp, y = (-10).dp)
-                            //.background(Color(0x66000000), CircleShape)
                             .background(Color(0x66606060), CircleShape)
                             .align(Alignment.TopEnd)
                             .clickable { onRemoveImage(uri) },

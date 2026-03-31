@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -45,15 +46,20 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -577,8 +583,33 @@ fun DetalleActividad(
     // ============================ LISTAS Y VARIABLES DE CONTROL  ============================
     val data = Data()
     val otherReason = rememberSaveable { mutableStateOf("") }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    var showConfirmDialog by remember { mutableStateOf(false) }
+    var fullScreenImages by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    var fullScreenInitialPage by remember { mutableStateOf(0) }
 
     if (actividad == null) return
+
+    LaunchedEffect(uiState.createError) {
+        uiState.createError?.let { error ->
+            snackbarHostState.showSnackbar(
+                message = "Error: $error",
+                duration = androidx.compose.material3.SnackbarDuration.Long
+            )
+        }
+    }
+
+    // Visor de imagen a pantalla completa
+    if (fullScreenImages.isNotEmpty()) {
+        FullScreenImageViewer(
+            images = fullScreenImages,
+            initialPage = fullScreenInitialPage,
+            onDismiss = { fullScreenImages = emptyList() }
+        )
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
 
     // Modal de carga mientras se obtienen los datos de Firestore
     if (uiState.isLoading) {
@@ -608,6 +639,45 @@ fun DetalleActividad(
                 }
             }
         }
+    }
+
+    // Diálogo de confirmación para finalizar actividad
+    if (showConfirmDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showConfirmDialog = false },
+            title = {
+                Text(
+                    text = "¿Finalizar actividad?",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "Una vez finalizada, la actividad no podrá modificarse. ¿Confirmas el cierre?",
+                    fontSize = 14.sp
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.Button(
+                    onClick = {
+                        showConfirmDialog = false
+                        viewModel.UpdateActividad(context, actividad.DocEntry, otherReason)
+                    },
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF01398D)
+                    )
+                ) {
+                    Text("Confirmar", color = Color.White)
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = { showConfirmDialog = false }
+                ) {
+                    Text("Cancelar", color = Color(0xFF01398D))
+                }
+            }
+        )
     }
 
     Column(
@@ -773,8 +843,8 @@ fun DetalleActividad(
         )
         Spacer(Modifier.height(8.dp))
 
-        // Banner visible mientras el Worker sube las imágenes al Storage
-        if (uiState.activityStatus == "waiting_photos_upload") {
+        // Banner visible solo cuando el Worker aún no terminó Y no hay imágenes que mostrar
+        if (uiState.activityStatus == "waiting_photos_upload" && images.isEmpty()) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -823,7 +893,11 @@ fun DetalleActividad(
                 if(uiState.selectedActividad.endTime != null) return@ImagePickerExample
                 viewModel.removeImage(uri)
             },
-            enabled = uiState.selectedActividad.endTime == null
+            enabled = uiState.selectedActividad.endTime == null,
+            onImageClick = { index ->
+                fullScreenImages = images.toList()
+                fullScreenInitialPage = index
+            }
         )
 
         Spacer(Modifier.height(8.dp))
@@ -870,7 +944,7 @@ fun DetalleActividad(
         CustomOutlinedTextField(
             value = uiState.selectedActividad.lineTec,
             onValueChange = viewModel::onLineTecChange,
-            label = "Tecnico de linea",
+            label = "Técnico de Línea",
             readOnly = if(uiState.selectedActividad.endTime != null) true else false,
         )
 
@@ -1017,7 +1091,7 @@ fun DetalleActividad(
         Button(
             enabled = if(uiState.selectedActividad.endTime != null) false else !uiState.isCreating,
             onClick = {
-                viewModel.UpdateActividad(context, actividad.DocEntry, otherReason)
+                showConfirmDialog = true
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -1054,13 +1128,20 @@ fun DetalleActividad(
         }
         Spacer(modifier = Modifier.height(32.dp))
     }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
+    } // end Box
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ImageCarousel(
     images: List<Uri>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onImageClick: ((Int) -> Unit)? = null
 ) {
     if (images.isEmpty()) return
 
@@ -1083,7 +1164,13 @@ fun ImageCarousel(
                     AsyncImage(
                         model = images[page],
                         contentDescription = "Evidencia ${page + 1}",
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .then(
+                                if (onImageClick != null)
+                                    Modifier.clickable { onImageClick(page) }
+                                else Modifier
+                            ),
                         contentScale = ContentScale.Crop,
                         error = painterResource(id = android.R.drawable.ic_menu_report_image),
                         placeholder = painterResource(id = android.R.drawable.ic_menu_gallery)
@@ -1393,6 +1480,104 @@ fun ImageCarouselWithNavigation(
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+    }
+}
+
+// ======================= VISOR DE IMAGEN PANTALLA COMPLETA =======================
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun FullScreenImageViewer(
+    images: List<Uri>,
+    initialPage: Int = 0,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false
+        )
+    ) {
+        val pagerState = rememberPagerState(
+            initialPage = initialPage,
+            pageCount = { images.size }
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        ) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                AsyncImage(
+                    model = images[page],
+                    contentDescription = "Evidencia ${page + 1}",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Fit,
+                    error = painterResource(id = android.R.drawable.ic_menu_report_image),
+                    placeholder = painterResource(id = android.R.drawable.ic_menu_gallery)
+                )
+            }
+
+            // Botón cerrar (esquina superior derecha)
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+                    .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Cerrar",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
+            // Contador de páginas (esquina superior izquierda)
+            if (images.size > 1) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(16.dp)
+                        .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = "${pagerState.currentPage + 1} / ${images.size}",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                // Dots indicadores en la parte inferior
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 32.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    repeat(images.size) { index ->
+                        val isSelected = pagerState.currentPage == index
+                        Box(
+                            modifier = Modifier
+                                .size(if (isSelected) 10.dp else 7.dp)
+                                .background(
+                                    color = if (isSelected) Color.White else Color.White.copy(alpha = 0.5f),
+                                    shape = CircleShape
+                                )
+                        )
+                    }
+                }
+            }
         }
     }
 }

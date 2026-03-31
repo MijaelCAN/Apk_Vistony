@@ -27,7 +27,8 @@ fun ImagePickerExample(
     images: SnapshotStateList<Uri>,
     onAddImage: (Uri) -> Unit,
     onRemoveImage: (Uri) -> Unit,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    onImageClick: ((Int) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val photoFile = remember {
@@ -124,9 +125,9 @@ fun ImagePickerExample(
             images = images,
             itemSize = 90.dp,
             onAddClick = { handleImagePickerClick() },
-            //onRemoveImage = { uri -> images.remove(uri) }
             onRemoveImage = { uri -> onRemoveImage(uri) },
-            enabled = enabled
+            enabled = enabled,
+            onImageClick = onImageClick
         )
     }
 }
