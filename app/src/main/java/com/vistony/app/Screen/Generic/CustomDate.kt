@@ -1,5 +1,6 @@
 package com.vistony.app.Screen.Generic
 
+import android.R
 import android.app.Activity
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -30,6 +32,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDatePickerState
@@ -154,7 +157,7 @@ fun DateOutlinedTextField(
     }
 }
 
-@Preview
+
 @Composable
 fun CustomBasicTextField(){
     var text by remember { mutableStateOf("Texto inicial") }
@@ -255,6 +258,19 @@ fun TimeOutlinedTextField(
         )
     }
 }
+@Preview
+@Composable
+@RequiresApi(Build.VERSION_CODES.O)
+fun visulizar(){
+    TimePickerDialog(
+        selectedTime = LocalDateTime.now(),
+        onTimeSelected = { },
+        onDismiss = { },
+        is24HourFormat = true,
+        minTime = null
+    )
+}
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -276,11 +292,11 @@ fun TimePickerDialog(
             shape = MaterialTheme.shapes.large,
             color = MaterialTheme.colorScheme.surface,
             modifier = Modifier
-                .width(IntrinsicSize.Min)
+                .width(IntrinsicSize.Max)
                 .wrapContentHeight()
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier.padding(14.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Header
@@ -408,17 +424,17 @@ fun TimePickerDialog(
 
                 // Buttons
                 Row(
-                    horizontalArrangement = Arrangement.End,
+                    horizontalArrangement = Arrangement.Center,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 24.dp)
+                        .padding(top = 8.dp)
                 ) {
                     TextButton(
                         onClick = onDismiss,
                         text = "Cancelar"
                     )
 
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(0.dp))
 
                     TextButton(
                         onClick = { onTimeSelected(currentTime) },
@@ -452,7 +468,7 @@ fun TimeWheel(
             modifier = Modifier.size(40.dp)
         ) {
             Icon(
-                painter = painterResource(id = android.R.drawable.arrow_up_float),
+                painter = painterResource(id = R.drawable.arrow_up_float),
                 contentDescription = "Incrementar"
             )
         }
@@ -474,7 +490,7 @@ fun TimeWheel(
             modifier = Modifier.size(40.dp)
         ) {
             Icon(
-                painter = painterResource(id = android.R.drawable.arrow_down_float),
+                painter = painterResource(id = R.drawable.arrow_down_float),
                 contentDescription = "Decrementar"
             )
         }
@@ -488,7 +504,7 @@ fun TextButton(
     isPrimary: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    androidx.compose.material3.TextButton(
+    TextButton(
         onClick = onClick,
         modifier = modifier
     ) {

@@ -273,7 +273,8 @@ data class OTResponse(
 data class OTItem(
     val ItemName: String = "",
     val UomName: String = "",
-    val PlannedQty: String = ""
+    val PlannedQty: String = "",
+    val OT_Mezcla: Long = 0
 )
 
 

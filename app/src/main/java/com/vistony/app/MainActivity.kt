@@ -200,7 +200,13 @@ class MainActivity : ComponentActivity() {
                                 ListActividad(
                                     navController = navController,
                                     sharedViewModel = sharedViewModel,
-                                    userState = userState
+                                    userState = userState,
+                                    onLogout = {
+                                        loginViewModel.clearUserData()
+                                        navController.navigate("login") {
+                                            popUpTo(0) { inclusive = true }
+                                        }
+                                    }
                                 )
                             }
                             composable("manufacturingOrder",) {

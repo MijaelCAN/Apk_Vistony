@@ -249,6 +249,7 @@ fun BodyActividad(
                 }
             },
             keyboardOption = KeyboardOptions().copy(keyboardType = KeyboardType.Number),
+            maxLines = 1,
             readOnly = false
         )
         Spacer(Modifier.height(8.dp))

@@ -108,7 +108,8 @@ data class ActivityUi_State @RequiresApi(Build.VERSION_CODES.O) constructor(
 @RequiresApi(Build.VERSION_CODES.O)
 @HiltViewModel
 class ActividadViewModel @Inject constructor(
-    private val actividadRepository: ActividadRepository
+    private val actividadRepository: ActividadRepository,
+    private val firestoreRepository: com.vistony.app.Repository.FirestoreRepository
 ) : ViewModel() {
 
     private val firestore = FirebaseFirestore.getInstance()
@@ -498,42 +499,22 @@ class ActividadViewModel @Inject constructor(
     fun getAllOT(new_ot: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoadingOT = true, error = null) }
-            try {
-                val selected = _uiState.value.selectedActividad
-                Log.d("OT", new_ot)
-                Log.d("selected_OT", selected.OT)
 
-                val response = actividadRepository.getCodigoBarra(OTRequest(selected.OT))
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    if (body != null) {
-                        _uiState.update {
-                            it.copy(
-                                listOT = body.data,
-                                isLoadingOT = false,
-                                error = null
-                            )
-                        }
-                    } else {
-                        val errorMessage = response.message() ?: "Error desconocido del servidor"
-                        _uiState.update {
-                            it.copy(
-                                listOT = emptyList(),
-                                isLoadingOT = false,
-                                error = errorMessage
-                            )
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        listOT = emptyList(),
-                        isLoadingOT = false,
-                        error = e.message
-                    )
-                }
+            val otEnvase = new_ot.toLongOrNull()
+            if (otEnvase == null) {
+                Log.w("ActividadViewModel", "OT_Envase no es un número válido: $new_ot")
+                _uiState.update { it.copy(listOT = emptyList(), isLoadingOT = false) }
+                return@launch
             }
+
+            firestoreRepository.getOTMezcla(otEnvase)
+                .onSuccess { items ->
+                    _uiState.update { it.copy(listOT = items, isLoadingOT = false, error = null) }
+                }
+                .onFailure { e ->
+                    Log.e("ActividadViewModel", "Error al obtener OT Mezcla", e)
+                    _uiState.update { it.copy(listOT = emptyList(), isLoadingOT = false, error = e.message) }
+                }
         }
     }
     fun onResetSelectedActividad() {

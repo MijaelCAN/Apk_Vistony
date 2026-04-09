@@ -28,6 +28,14 @@ object RetrofitInstance {
         .writeTimeout(60, TimeUnit.SECONDS)
         .build()
 
+    // Cliente con timeout corto exclusivo para login:
+    // si no hay red, falla en 10s y cae al fallback de Firestore rápido
+    private val loginClient = OkHttpClient.Builder()
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(10, TimeUnit.SECONDS)
+        .writeTimeout(10, TimeUnit.SECONDS)
+        .build()
+
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
@@ -44,9 +52,16 @@ object RetrofitInstance {
             .build()
     }
 
+    private val retrofitLogin: Retrofit by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL_NEW)
+            .client(loginClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
     val loginService: AuthService by lazy {
-        //retrofit.create(AuthService::class.java)
-        retrofitNew.create(AuthService::class.java)
+        retrofitLogin.create(AuthService::class.java)
     }
 
     val operService: OperarioInterface by lazy {
