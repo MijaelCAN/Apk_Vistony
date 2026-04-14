@@ -46,6 +46,8 @@ import kotlinx.coroutines.launch
 import java.io.InputStream
 import java.io.File
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.UUID
@@ -117,10 +119,11 @@ class ActividadViewModel @Inject constructor(
 
     private var actividadesListener: ListenerRegistration? = null
     private var detailListener: ListenerRegistration? = null
-    private var listeningForUserId: String = ""
+    /** Clave de la suscripción actual: id y/o dni usados en la query (evita re-suscribir sin cambio). */
+    private var listeningForUserQueryKey: String = ""
     private var rawActividades: List<semiActivity> = emptyList()
     @RequiresApi(Build.VERSION_CODES.O)
-    private var currentFechaIni: LocalDateTime = LocalDateTime.now().minusDays(1)
+    private var currentFechaIni: LocalDateTime = LocalDateTime.now().minusDays(30)
     @RequiresApi(Build.VERSION_CODES.O)
     private var currentFechaFin: LocalDateTime = LocalDateTime.now()
 
@@ -323,51 +326,110 @@ class ActividadViewModel @Inject constructor(
     @RequiresApi(Build.VERSION_CODES.O)
     fun getAllActividades(
         user: UserResponse,
-        fechaIni: LocalDateTime = LocalDateTime.now().minusDays(1),
+        fechaIni: LocalDateTime = LocalDateTime.now().minusDays(30),
         fechaFin: LocalDateTime = LocalDateTime.now()
     ) {
-        val userId = user.id.toString()
+        // Algunos documentos guardan en userId el id numérico del login; otros el DNI. Cubrimos ambos.
+        val userKeys = buildList {
+            if (user.id != 0) add(user.id.toString())
+            if (user.dni.isNotBlank()) add(user.dni.trim())
+        }.distinct()
+        val queryKey = userKeys.sorted().joinToString("|").ifBlank { "_" }
+
         currentFechaIni = fechaIni
         currentFechaFin = fechaFin
 
-        // Si el listener ya está activo para este usuario, solo re-aplica el filtro de fechas
-        // sin hacer ninguna lectura nueva a Firestore
-        if (actividadesListener != null && listeningForUserId == userId) {
+        Log.d("FILTRO", "=== getAllActividades ===")
+        Log.d("FILTRO", "user.id=${user.id} user.dni=${user.dni} → activityData.userId IN $userKeys")
+        Log.d("FILTRO", "fechaIni: $fechaIni")
+        Log.d("FILTRO", "fechaFin: $fechaFin")
+
+        if (actividadesListener != null && listeningForUserQueryKey == queryKey) {
+            Log.d("FILTRO", "Listener ya activo → solo re-aplica filtro")
             applyDateFilter()
             return
         }
 
-        // Cancela listener anterior y registra uno nuevo
         actividadesListener?.remove()
-        listeningForUserId = userId
+        listeningForUserQueryKey = queryKey
         _uiState.update { it.copy(isLoading = true, error = null) }
 
-        actividadesListener = firestore
-            .collection(collectionParadasMantenimiento)
-            .whereEqualTo("activityData.userId", userId)
-            .addSnapshotListener { snapshot, error ->
+        if (userKeys.isEmpty()) {
+            Log.e("FILTRO", "Sin id ni dni de usuario: no se puede filtrar actividades")
+            rawActividades = emptyList()
+            applyDateFilter()
+            return
+        }
+
+        val collectionRef = firestore.collection(collectionParadasMantenimiento)
+        val query = when (userKeys.size) {
+            1 -> collectionRef.whereEqualTo("activityData.userId", userKeys.first())
+            else -> collectionRef.whereIn("activityData.userId", userKeys.take(10))
+        }
+
+        Log.d("FILTRO", "Iniciando SnapshotListener en Firestore (userId ∈ $userKeys)")
+
+        actividadesListener = query.addSnapshotListener { snapshot, error ->
                 if (error != null) {
+                    Log.e("FILTRO", "Error en SnapshotListener: ${error.message}")
                     _uiState.update { it.copy(isLoading = false, error = error.message) }
                     return@addSnapshotListener
                 }
+
+                val meta = snapshot?.metadata
+                val docsCount = snapshot?.documents?.size ?: 0
+                Log.d(
+                    "FILTRO",
+                    "Firestore devolvió $docsCount documentos (fromCache=${meta?.isFromCache} hasPendingWrites=${meta?.hasPendingWrites()})"
+                )
+                if (docsCount == 0) {
+                    Log.w(
+                        "FILTRO",
+                        "0 documentos: la query exige activityData.userId ∈ $userKeys. " +
+                            "Si en consola el doc tiene otro userId, no aparecerá en «Mis actividades»."
+                    )
+                }
+
                 rawActividades = snapshot?.documents?.mapNotNull { doc ->
                     mapDocToSemiActivity(doc)
                 } ?: emptyList()
+
+                Log.d("FILTRO", "rawActividades mapeados: ${rawActividades.size}")
+                rawActividades.forEach { a ->
+                    Log.d("FILTRO", "  doc=${a.DocEntry} | createdAt=${a.U_createdAt} | initialHour=${a.U_InitialHour}")
+                }
+
                 applyDateFilter()
             }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun applyDateFilter() {
-        // Usar el máximo entre currentFechaFin y now() para que registros creados
-        // después de cargar la pantalla no queden fuera del rango por el tope congelado.
-        val effectiveFechaFin = if (currentFechaFin.isBefore(LocalDateTime.now())) LocalDateTime.now() else currentFechaFin
+        Log.d("FILTRO", "--- applyDateFilter ---")
+        Log.d("FILTRO", "Rango: $currentFechaIni  →  $currentFechaFin")
+        Log.d("FILTRO", "Total rawActividades a filtrar: ${rawActividades.size}")
+
+        // Comparar por día calendario local: inicio inclusive, fin inclusive (toda la jornada del último día).
+        val rangeStart = currentFechaIni.toLocalDate().atStartOfDay()
+        val rangeEndExclusive = currentFechaFin.toLocalDate().plusDays(1).atStartOfDay()
+
         val filtered = rawActividades
             .filter { actividad ->
-                val initialHour = parseLocalDateTime(actividad.U_InitialHour) ?: return@filter false
-                !initialHour.isBefore(currentFechaIni) && !initialHour.isAfter(effectiveFechaFin)
+                val fechaActividad = parseActivityDateTime(actividad.U_createdAt)
+                    ?: parseActivityDateTime(actividad.U_InitialHour)
+
+                if (fechaActividad == null) {
+                    Log.w("FILTRO", "  SKIP doc=${actividad.DocEntry} → no se pudo parsear fecha (createdAt=${actividad.U_createdAt}, initialHour=${actividad.U_InitialHour})")
+                    return@filter false
+                }
+
+                val pasa = !fechaActividad.isBefore(rangeStart) && fechaActividad.isBefore(rangeEndExclusive)
+                Log.d("FILTRO", "  doc=${actividad.DocEntry} | fecha=$fechaActividad | pasa=$pasa")
+                pasa
             }
-            .sortedByDescending { it.U_InitialHour }
+            .sortedByDescending { it.U_createdAt ?: it.U_InitialHour }
+
+        Log.d("FILTRO", "Resultado filtrado: ${filtered.size} registros")
         _uiState.update { it.copy(actividades = filtered, isLoading = false, error = null) }
     }
 
@@ -389,6 +451,21 @@ class ActividadViewModel @Inject constructor(
             }
         }
         val docStatus = doc.getString("status") ?: ""
+        // createdAt: Timestamp nativo, string ISO (p. ej. consola / backend), o raíz legacy.
+        val rawCreated = activityData["createdAt"]
+        val createdAtStr = when (rawCreated) {
+            is com.google.firebase.Timestamp -> LocalDateTime.ofInstant(
+                rawCreated.toDate().toInstant(),
+                java.time.ZoneId.systemDefault()
+            ).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
+            is String -> parseActivityDateTime(rawCreated)?.format(
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+            )
+            else -> null
+        } ?: doc.getTimestamp("createdAt")?.toDate()?.let { date ->
+            LocalDateTime.ofInstant(date.toInstant(), java.time.ZoneId.systemDefault())
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
+        }
         return semiActivity(
             DocEntry = doc.id,
             U_OT = activityData["OT"] as? String ?: "",
@@ -405,7 +482,8 @@ class ActividadViewModel @Inject constructor(
             U_InitialHour = initialHourStr,
             U_FinalHour = finalHourStr,
             U_imageUrls = imageUrls,
-            U_status = docStatus
+            U_status = docStatus,
+            U_createdAt = createdAtStr
         )
     }
 
@@ -496,6 +574,10 @@ class ActividadViewModel @Inject constructor(
     }
 
 
+    fun clearOTList() {
+        _uiState.update { it.copy(listOT = emptyList(), isLoadingOT = false, error = null) }
+    }
+
     fun getAllOT(new_ot: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoadingOT = true, error = null) }
@@ -571,6 +653,7 @@ class ActividadViewModel @Inject constructor(
 
                 val activityId = UUID.randomUUID().toString()
 
+                val now = com.google.firebase.Timestamp.now()
                 val activityData = hashMapOf<String, Any?>(
                     "OT" to actividadRequest.OT,
                     "description_OT" to actividadRequest.description_OT,
@@ -582,7 +665,8 @@ class ActividadViewModel @Inject constructor(
                     "area" to actividadRequest.area,
                     "machine" to actividadRequest.machine,
                     "equipment" to actividadRequest.equipment,
-                    "initialHour" to actividadRequest.initialHour
+                    "initialHour" to actividadRequest.initialHour,
+                    "createdAt" to now
                 )
 
                 val docRef = firestore
@@ -596,7 +680,7 @@ class ActividadViewModel @Inject constructor(
                         "status" to STATUS_ACTIVE,
                         "activityData" to activityData,
                         "closeData" to mapOf<String, Any?>(),
-                        "updatedAt" to com.google.firebase.Timestamp.now()
+                        "updatedAt" to now
                     )
                 ).addOnFailureListener { e ->
                     Log.e("Actividad", "Error al sincronizar con servidor: ${e.message}")
@@ -821,13 +905,23 @@ class ActividadViewModel @Inject constructor(
         return now.format(formatter)
     }
 
-    private fun parseLocalDateTime(value: String?): LocalDateTime? {
+    private fun parseLocalDateTime(value: String?): LocalDateTime? = parseActivityDateTime(value)
+
+    /** Acepta "yyyy-MM-dd'T'HH:mm:ss", ISO con offset ("...-05:00") y variantes por datos externos a la app. */
+    private fun parseActivityDateTime(value: String?): LocalDateTime? {
         if (value.isNullOrBlank()) return null
+        try {
+            val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+            return LocalDateTime.parse(value, fmt)
+        } catch (_: Exception) { }
         return try {
-            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
-            LocalDateTime.parse(value, formatter)
+            OffsetDateTime.parse(value).toLocalDateTime()
         } catch (_: Exception) {
-            null
+            try {
+                ZonedDateTime.parse(value).toLocalDateTime()
+            } catch (_: Exception) {
+                null
+            }
         }
     }
 
