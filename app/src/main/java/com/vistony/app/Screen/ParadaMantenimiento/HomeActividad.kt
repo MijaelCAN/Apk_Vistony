@@ -141,19 +141,15 @@ fun BodyActividad(
     )
     val currentOt by rememberUpdatedState(uiState.selectedActividad.OT)
     LaunchedEffect(currentOt) {
-        if (currentOt.isNotEmpty()) {
-            //otViewModel.getCodigoBarra(currentOt)
+        if (currentOt.length >= 9) {
+            // Debounce: espera 800ms sin cambios antes de consultar Firestore.
+            // Si el usuario sigue escribiendo, este coroutine se cancela y reinicia.
+            // Para escaneo de código de barras (OT completa de golpe), también aplica el delay.
+            delay(800)
             viewModel.getAllOT(currentOt)
-            //um = otState.productoResponse?.data?.UM.toString()
-            //description = otState.productoResponse?.data?.Producto.toString()
-            //linea = otState.productoResponse?.data?.Linea.toString()
-            //newLinea.value = lineaState.lineaResponse?.data?.find { it.ID == linea }?.Descripcion ?: newLinea.value
-            Log.i("VER", "ENTRO AL NO VACIO")
         } else {
-            //7um = ""
-            //description = ""
-            //linea = ""
-            Log.i("VER", "ENTRO AL VACIO")
+            // OT incompleta → limpiar resultados anteriores
+            viewModel.clearOTList()
         }
     }
     LaunchedEffect(uiState.createSuccess, uiState.createError) {
@@ -249,6 +245,7 @@ fun BodyActividad(
                 }
             },
             keyboardOption = KeyboardOptions().copy(keyboardType = KeyboardType.Number),
+            maxLines = 1,
             readOnly = false
         )
         Spacer(Modifier.height(8.dp))

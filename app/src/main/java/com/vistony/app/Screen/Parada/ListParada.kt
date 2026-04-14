@@ -145,6 +145,11 @@ fun ListParada(
         }
     }
 
+    // Cargar áreas y máquinas una sola vez al entrar a la pantalla (usuario ya logueado)
+    LaunchedEffect(Unit) {
+        paradaViewModel.cargarDatosIniciales()
+    }
+
     // Inicializar paradas con DNI del usuario
     LaunchedEffect(userState.currentUser.dni) {
         if (userState.currentUser.dni.isNotEmpty()) {
