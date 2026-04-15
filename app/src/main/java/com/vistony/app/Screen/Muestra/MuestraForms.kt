@@ -665,468 +665,294 @@ fun InspeccionDimensionalForm(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Medidas de Diámetro de Rosca
-                val diametroRoscaRango = especificacion?.let {
-                    formatearRango(
-                        it.diametroRoscaMin,
-                        it.diametroRoscaMax,
-                        "mm"
-                    )
-                } ?: ""
-                val diametroRosca1Valido = especificacion?.let {
-                    validarValor(
-                        formState.diametroRoscaMedida1,
-                        it.diametroRoscaMin,
-                        it.diametroRoscaMax
-                    )
-                } ?: true
-                val diametroRosca2Valido = especificacion?.let {
-                    validarValor(
-                        formState.diametroRoscaMedida2,
-                        it.diametroRoscaMin,
-                        it.diametroRoscaMax
-                    )
-                } ?: true
-                val diametroRoscaErrores =
-                    listOf(!diametroRosca1Valido, !diametroRosca2Valido).count { it }
+                // ── Campos específicos según tipo de muestra ──────────────────────────
+                if (cabeceraFormState.tipo == "Tapa") {
+                    // ===== INSPECCIÓN DIMENSIONAL — TAPAS =====
 
-                Text(
-                    text = "Diámetro de Rosca $diametroRoscaRango",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF111827)
-                )
+                    // D. Interno Rosca
+                    val dIntRoscaRango = especificacion?.let {
+                        formatearRango(it.diametroInternoRoscaTapaMin, it.diametroInternoRoscaTapaMax, "mm")
+                    } ?: ""
+                    val dIntRoscaValido = especificacion?.let {
+                        validarValor(formState.diametroInternoRoscaTapa, it.diametroInternoRoscaTapaMin, it.diametroInternoRoscaTapaMax)
+                    } ?: true
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    MuestraTextField(
-                        value = formState.diametroRoscaMedida1,
-                        onValueChange = {
-                            muestraViewModel.updateInspeccion(
-                                "diametroRoscaMedida1",
-                                it
-                            )
-                        },
-                        label = "Medida 1",
-                        modifier = Modifier.weight(1f),
-                        keyboardType = KeyboardType.Decimal,
-                        isError = !diametroRosca1Valido
-                    )
-
-                    MuestraTextField(
-                        value = formState.diametroRoscaMedida2,
-                        onValueChange = {
-                            muestraViewModel.updateInspeccion(
-                                "diametroRoscaMedida2",
-                                it
-                            )
-                        },
-                        label = "Medida 2",
-                        modifier = Modifier.weight(1f),
-                        keyboardType = KeyboardType.Decimal,
-                        isError = !diametroRosca2Valido
-                    )
-                }
-
-                // Mensaje de error para Diámetro de Rosca
-                if (diametroRoscaErrores > 0) {
-                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "$diametroRoscaErrores ${if (diametroRoscaErrores == 1) "medida no se encuentra" else "medidas no se encuentran"} dentro del parámetro",
-                        fontSize = 12.sp,
-                        color = Color(0xFFDC2626),
-                        modifier = Modifier.padding(start = 4.dp)
+                        text = "D. Interno Rosca $dIntRoscaRango",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF111827)
                     )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Altura de Boca
-                val alturaBocaRango =
-                    especificacion?.let { formatearRango(it.alturaBocaMin, it.alturaBocaMax, "mm") }
-                        ?: ""
-                val alturaBoca1Valido = especificacion?.let {
-                    validarValor(
-                        formState.alturaBocaMedida1,
-                        it.alturaBocaMin,
-                        it.alturaBocaMax
-                    )
-                } ?: true
-                val alturaBoca2Valido = especificacion?.let {
-                    validarValor(
-                        formState.alturaBocaMedida2,
-                        it.alturaBocaMin,
-                        it.alturaBocaMax
-                    )
-                } ?: true
-                val alturaBoca3Valido = especificacion?.let {
-                    validarValor(
-                        formState.alturaBocaMedida3,
-                        it.alturaBocaMin,
-                        it.alturaBocaMax
-                    )
-                } ?: true
-                val alturaBoca4Valido = especificacion?.let {
-                    validarValor(
-                        formState.alturaBocaMedida4,
-                        it.alturaBocaMin,
-                        it.alturaBocaMax
-                    )
-                } ?: true
-                val alturaBocaErrores = listOf(
-                    !alturaBoca1Valido,
-                    !alturaBoca2Valido,
-                    !alturaBoca3Valido,
-                    !alturaBoca4Valido
-                ).count { it }
-
-                Text(
-                    text = "Altura de Boca $alturaBocaRango",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF111827)
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                    Spacer(modifier = Modifier.height(8.dp))
                     MuestraTextField(
-                        value = formState.alturaBocaMedida1,
-                        onValueChange = {
-                            muestraViewModel.updateInspeccion(
-                                "alturaBocaMedida1",
-                                it
-                            )
-                        },
-                        label = "M1",
-                        modifier = Modifier.weight(1f),
+                        value = formState.diametroInternoRoscaTapa,
+                        onValueChange = { muestraViewModel.updateInspeccion("diametroInternoRoscaTapa", it) },
+                        label = "D. Interno Rosca (mm)",
                         keyboardType = KeyboardType.Decimal,
-                        isError = !alturaBoca1Valido
+                        enabled = !isCompletado,
+                        isError = !dIntRoscaValido
                     )
+                    if (!dIntRoscaValido) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Medida fuera del parámetro",
+                            fontSize = 12.sp,
+                            color = Color(0xFFDC2626),
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
 
-                    MuestraTextField(
-                        value = formState.alturaBocaMedida2,
-                        onValueChange = {
-                            muestraViewModel.updateInspeccion(
-                                "alturaBocaMedida2",
-                                it
-                            )
-                        },
-                        label = "M2",
-                        modifier = Modifier.weight(1f),
-                        keyboardType = KeyboardType.Decimal,
-                        isError = !alturaBoca2Valido
-                    )
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    MuestraTextField(
-                        value = formState.alturaBocaMedida3,
-                        onValueChange = {
-                            muestraViewModel.updateInspeccion(
-                                "alturaBocaMedida3",
-                                it
-                            )
-                        },
-                        label = "M3",
-                        modifier = Modifier.weight(1f),
-                        keyboardType = KeyboardType.Decimal,
-                        isError = !alturaBoca3Valido
-                    )
+                    // D. Externo Rosca
+                    val dExtRoscaRango = especificacion?.let {
+                        formatearRango(it.diametroExternoRoscaTapaMin, it.diametroExternoRoscaTapaMax, "mm")
+                    } ?: ""
+                    val dExtRoscaValido = especificacion?.let {
+                        validarValor(formState.diametroExternoRoscaTapa, it.diametroExternoRoscaTapaMin, it.diametroExternoRoscaTapaMax)
+                    } ?: true
 
-                    MuestraTextField(
-                        value = formState.alturaBocaMedida4,
-                        onValueChange = {
-                            muestraViewModel.updateInspeccion(
-                                "alturaBocaMedida4",
-                                it
-                            )
-                        },
-                        label = "M4",
-                        modifier = Modifier.weight(1f),
-                        keyboardType = KeyboardType.Decimal,
-                        isError = !alturaBoca4Valido
-                    )
-                }
-
-                // Mensaje de error para Altura de Boca
-                if (alturaBocaErrores > 0) {
-                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "$alturaBocaErrores ${if (alturaBocaErrores == 1) "medida no se encuentra" else "medidas no se encuentran"} dentro del parámetro",
-                        fontSize = 12.sp,
-                        color = Color(0xFFDC2626),
-                        modifier = Modifier.padding(start = 4.dp)
+                        text = "D. Externo Rosca $dExtRoscaRango",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF111827)
                     )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Diámetro de Precinto
-                val diametroPrecintoRango = especificacion?.let {
-                    formatearRango(
-                        it.diametroPrecintoMin,
-                        it.diametroPrecintoMax,
-                        "mm"
-                    )
-                } ?: ""
-                val diametroPrecinto1Valido = especificacion?.let {
-                    validarValor(
-                        formState.diametroPrecintoMedida1,
-                        it.diametroPrecintoMin,
-                        it.diametroPrecintoMax
-                    )
-                } ?: true
-                val diametroPrecinto2Valido = especificacion?.let {
-                    validarValor(
-                        formState.diametroPrecintoMedida2,
-                        it.diametroPrecintoMin,
-                        it.diametroPrecintoMax
-                    )
-                } ?: true
-                val diametroPrecinto3Valido = especificacion?.let {
-                    validarValor(
-                        formState.diametroPrecintoMedida3,
-                        it.diametroPrecintoMin,
-                        it.diametroPrecintoMax
-                    )
-                } ?: true
-                val diametroPrecintoErrores = listOf(
-                    !diametroPrecinto1Valido,
-                    !diametroPrecinto2Valido,
-                    !diametroPrecinto3Valido
-                ).count { it }
-
-                Text(
-                    text = "Diametro de Precinto $diametroPrecintoRango",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF111827)
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                    Spacer(modifier = Modifier.height(8.dp))
                     MuestraTextField(
-                        value = formState.diametroPrecintoMedida1,
-                        onValueChange = {
-                            muestraViewModel.updateInspeccion(
-                                "diametroPrecintoMedida1",
-                                it
-                            )
-                        },
-                        label = "M1",
-                        modifier = Modifier.weight(1f),
+                        value = formState.diametroExternoRoscaTapa,
+                        onValueChange = { muestraViewModel.updateInspeccion("diametroExternoRoscaTapa", it) },
+                        label = "D. Externo Rosca (mm)",
                         keyboardType = KeyboardType.Decimal,
-                        isError = !diametroPrecinto1Valido
+                        enabled = !isCompletado,
+                        isError = !dExtRoscaValido
                     )
+                    if (!dExtRoscaValido) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Medida fuera del parámetro",
+                            fontSize = 12.sp,
+                            color = Color(0xFFDC2626),
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
 
-                    MuestraTextField(
-                        value = formState.diametroPrecintoMedida2,
-                        onValueChange = {
-                            muestraViewModel.updateInspeccion(
-                                "diametroPrecintoMedida2",
-                                it
-                            )
-                        },
-                        label = "M2",
-                        modifier = Modifier.weight(1f),
-                        keyboardType = KeyboardType.Decimal,
-                        isError = !diametroPrecinto2Valido
-                    )
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    MuestraTextField(
-                        value = formState.diametroPrecintoMedida3,
-                        onValueChange = {
-                            muestraViewModel.updateInspeccion(
-                                "diametroPrecintoMedida3",
-                                it
-                            )
-                        },
-                        label = "M3",
-                        modifier = Modifier.weight(1f),
-                        keyboardType = KeyboardType.Decimal,
-                        isError = !diametroPrecinto3Valido
-                    )
-                }
+                    // D. Interno Trinquete
+                    val dTrinqueteRango = especificacion?.let {
+                        formatearRango(it.diametroInternoTrinqueteMin, it.diametroInternoTrinqueteMax, "mm")
+                    } ?: ""
+                    val dTrinqueteValido = especificacion?.let {
+                        validarValor(formState.diametroInternoTrinquete, it.diametroInternoTrinqueteMin, it.diametroInternoTrinqueteMax)
+                    } ?: true
 
-                // Mensaje de error para Diámetro de Precinto
-                if (diametroPrecintoErrores > 0) {
-                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "$diametroPrecintoErrores ${if (diametroPrecintoErrores == 1) "medida no se encuentra" else "medidas no se encuentran"} dentro del parámetro",
-                        fontSize = 12.sp,
-                        color = Color(0xFFDC2626),
-                        modifier = Modifier.padding(start = 4.dp)
+                        text = "D. Interno Trinquete $dTrinqueteRango",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF111827)
                     )
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Altura Total
-                val alturaTotalRango = especificacion?.let {
-                    formatearRango(
-                        it.alturaTotalMin,
-                        it.alturaTotalMax,
-                        "mm"
+                    Spacer(modifier = Modifier.height(8.dp))
+                    MuestraTextField(
+                        value = formState.diametroInternoTrinquete,
+                        onValueChange = { muestraViewModel.updateInspeccion("diametroInternoTrinquete", it) },
+                        label = "D. Interno Trinquete (mm)",
+                        keyboardType = KeyboardType.Decimal,
+                        enabled = !isCompletado,
+                        isError = !dTrinqueteValido
                     )
-                } ?: ""
-                val alturaTotal1Valido = especificacion?.let {
-                    validarValor(
-                        formState.alturaTotalMedida1,
-                        it.alturaTotalMin,
-                        it.alturaTotalMax
+                    if (!dTrinqueteValido) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Medida fuera del parámetro",
+                            fontSize = 12.sp,
+                            color = Color(0xFFDC2626),
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Altura Total (1 medida para Tapas)
+                    val alturaTotalRangoTapa = especificacion?.let {
+                        formatearRango(it.alturaTotalMin, it.alturaTotalMax, "mm")
+                    } ?: ""
+                    val alturaTotal1ValidoTapa = especificacion?.let {
+                        validarValor(formState.alturaTotalMedida1, it.alturaTotalMin, it.alturaTotalMax)
+                    } ?: true
+
+                    Text(
+                        text = "Altura Total $alturaTotalRangoTapa",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF111827)
                     )
-                } ?: true
-                val alturaTotal2Valido = especificacion?.let {
-                    validarValor(
-                        formState.alturaTotalMedida2,
-                        it.alturaTotalMin,
-                        it.alturaTotalMax
-                    )
-                } ?: true
-                val alturaTotalErrores =
-                    listOf(!alturaTotal1Valido, !alturaTotal2Valido).count { it }
-
-                Text(
-                    text = "Altura Total $alturaTotalRango",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF111827)
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                    Spacer(modifier = Modifier.height(8.dp))
                     MuestraTextField(
                         value = formState.alturaTotalMedida1,
-                        onValueChange = {
-                            muestraViewModel.updateInspeccion(
-                                "alturaTotalMedida1",
-                                it
-                            )
-                        },
-                        label = "M1",
-                        modifier = Modifier.weight(1f),
+                        onValueChange = { muestraViewModel.updateInspeccion("alturaTotalMedida1", it) },
+                        label = "Altura Total (mm)",
                         keyboardType = KeyboardType.Decimal,
-                        isError = !alturaTotal1Valido
+                        enabled = !isCompletado,
+                        isError = !alturaTotal1ValidoTapa
                     )
+                    if (!alturaTotal1ValidoTapa) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Medida fuera del parámetro",
+                            fontSize = 12.sp,
+                            color = Color(0xFFDC2626),
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
 
-                    MuestraTextField(
-                        value = formState.alturaTotalMedida2,
-                        onValueChange = {
-                            muestraViewModel.updateInspeccion(
-                                "alturaTotalMedida2",
-                                it
-                            )
-                        },
-                        label = "M2",
-                        modifier = Modifier.weight(1f),
-                        keyboardType = KeyboardType.Decimal,
-                        isError = !alturaTotal2Valido
-                    )
-                }
+                } else {
+                    // ===== INSPECCIÓN DIMENSIONAL — ENVASES =====
 
-                // Mensaje de error para Altura Total
-                if (alturaTotalErrores > 0) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    // Diámetro de Rosca
+                    val diametroRoscaRango = especificacion?.let {
+                        formatearRango(it.diametroRoscaMin, it.diametroRoscaMax, "mm")
+                    } ?: ""
+                    val diametroRosca1Valido = especificacion?.let {
+                        validarValor(formState.diametroRoscaMedida1, it.diametroRoscaMin, it.diametroRoscaMax)
+                    } ?: true
+                    val diametroRosca2Valido = especificacion?.let {
+                        validarValor(formState.diametroRoscaMedida2, it.diametroRoscaMin, it.diametroRoscaMax)
+                    } ?: true
+                    val diametroRoscaErrores = listOf(!diametroRosca1Valido, !diametroRosca2Valido).count { it }
+
                     Text(
-                        text = "$alturaTotalErrores ${if (alturaTotalErrores == 1) "medida no se encuentra" else "medidas no se encuentran"} dentro del parámetro",
-                        fontSize = 12.sp,
-                        color = Color(0xFFDC2626),
-                        modifier = Modifier.padding(start = 4.dp)
+                        text = "Diámetro de Rosca $diametroRoscaRango",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF111827)
                     )
-                }
-                Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        MuestraTextField(
+                            value = formState.diametroRoscaMedida1,
+                            onValueChange = { muestraViewModel.updateInspeccion("diametroRoscaMedida1", it) },
+                            label = "Medida 1",
+                            modifier = Modifier.weight(1f),
+                            keyboardType = KeyboardType.Decimal,
+                            isError = !diametroRosca1Valido
+                        )
+                        MuestraTextField(
+                            value = formState.diametroRoscaMedida2,
+                            onValueChange = { muestraViewModel.updateInspeccion("diametroRoscaMedida2", it) },
+                            label = "Medida 2",
+                            modifier = Modifier.weight(1f),
+                            keyboardType = KeyboardType.Decimal,
+                            isError = !diametroRosca2Valido
+                        )
+                    }
+                    if (diametroRoscaErrores > 0) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "$diametroRoscaErrores ${if (diametroRoscaErrores == 1) "medida no se encuentra" else "medidas no se encuentran"} dentro del parámetro",
+                            fontSize = 12.sp,
+                            color = Color(0xFFDC2626),
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
 
-                // Diametro Interno
-                val diametroInternoRango = especificacion?.let {
-                    formatearRango(
-                        it.diametroInternoMin,
-                        it.diametroInternoMax,
-                        "mm"
-                    )
-                } ?: ""
-                val diametroInterno1Valido = especificacion?.let {
-                    validarValor(
-                        formState.diametroInternoMedida1,
-                        it.diametroInternoMin,
-                        it.diametroInternoMax
-                    )
-                } ?: true
-                val diametroInterno2Valido = especificacion?.let {
-                    validarValor(
-                        formState.diametroInternoMedida2,
-                        it.diametroInternoMin,
-                        it.diametroInternoMax
-                    )
-                } ?: true
-                val diametroInternoErrores =
-                    listOf(!diametroInterno1Valido, !diametroInterno2Valido).count { it }
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    text = "Diametro Interno $diametroInternoRango",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF111827),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                    // Altura de Boca
+                    val alturaBocaRango = especificacion?.let {
+                        formatearRango(it.alturaBocaMin, it.alturaBocaMax, "mm")
+                    } ?: ""
+                    val alturaBoca1Valido = especificacion?.let { validarValor(formState.alturaBocaMedida1, it.alturaBocaMin, it.alturaBocaMax) } ?: true
+                    val alturaBoca2Valido = especificacion?.let { validarValor(formState.alturaBocaMedida2, it.alturaBocaMin, it.alturaBocaMax) } ?: true
+                    val alturaBoca3Valido = especificacion?.let { validarValor(formState.alturaBocaMedida3, it.alturaBocaMin, it.alturaBocaMax) } ?: true
+                    val alturaBoca4Valido = especificacion?.let { validarValor(formState.alturaBocaMedida4, it.alturaBocaMin, it.alturaBocaMax) } ?: true
+                    val alturaBocaErrores = listOf(!alturaBoca1Valido, !alturaBoca2Valido, !alturaBoca3Valido, !alturaBoca4Valido).count { it }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    MuestraTextField(
-                        value = formState.diametroInternoMedida1,
-                        onValueChange = {
-                            muestraViewModel.updateInspeccion(
-                                "diametroInternoMedida1",
-                                it
-                            )
-                        },
-                        label = "M1",
-                        modifier = Modifier.weight(1f),
-                        keyboardType = KeyboardType.Decimal,
-                        isError = !diametroInterno1Valido
-                    )
-
-                    MuestraTextField(
-                        value = formState.diametroInternoMedida2,
-                        onValueChange = {
-                            muestraViewModel.updateInspeccion(
-                                "diametroInternoMedida2",
-                                it
-                            )
-                        },
-                        label = "M2",
-                        modifier = Modifier.weight(1f),
-                        keyboardType = KeyboardType.Decimal,
-                        isError = !diametroInterno2Valido
-                    )
-                }
-
-                // Mensaje de error para Diámetro Interno
-                if (diametroInternoErrores > 0) {
-                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "$diametroInternoErrores ${if (diametroInternoErrores == 1) "medida no se encuentra" else "medidas no se encuentran"} dentro del parámetro",
-                        fontSize = 12.sp,
-                        color = Color(0xFFDC2626),
-                        modifier = Modifier.padding(start = 4.dp)
+                        text = "Altura de Boca $alturaBocaRango",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF111827)
                     )
-                }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        MuestraTextField(value = formState.alturaBocaMedida1, onValueChange = { muestraViewModel.updateInspeccion("alturaBocaMedida1", it) }, label = "M1", modifier = Modifier.weight(1f), keyboardType = KeyboardType.Decimal, isError = !alturaBoca1Valido)
+                        MuestraTextField(value = formState.alturaBocaMedida2, onValueChange = { muestraViewModel.updateInspeccion("alturaBocaMedida2", it) }, label = "M2", modifier = Modifier.weight(1f), keyboardType = KeyboardType.Decimal, isError = !alturaBoca2Valido)
+                        MuestraTextField(value = formState.alturaBocaMedida3, onValueChange = { muestraViewModel.updateInspeccion("alturaBocaMedida3", it) }, label = "M3", modifier = Modifier.weight(1f), keyboardType = KeyboardType.Decimal, isError = !alturaBoca3Valido)
+                        MuestraTextField(value = formState.alturaBocaMedida4, onValueChange = { muestraViewModel.updateInspeccion("alturaBocaMedida4", it) }, label = "M4", modifier = Modifier.weight(1f), keyboardType = KeyboardType.Decimal, isError = !alturaBoca4Valido)
+                    }
+                    if (alturaBocaErrores > 0) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = "$alturaBocaErrores ${if (alturaBocaErrores == 1) "medida no se encuentra" else "medidas no se encuentran"} dentro del parámetro", fontSize = 12.sp, color = Color(0xFFDC2626), modifier = Modifier.padding(start = 4.dp))
+                    }
 
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Diámetro de Precinto
+                    val diametroPrecintoRango = especificacion?.let { formatearRango(it.diametroPrecintoMin, it.diametroPrecintoMax, "mm") } ?: ""
+                    val diametroPrecinto1Valido = especificacion?.let { validarValor(formState.diametroPrecintoMedida1, it.diametroPrecintoMin, it.diametroPrecintoMax) } ?: true
+                    val diametroPrecinto2Valido = especificacion?.let { validarValor(formState.diametroPrecintoMedida2, it.diametroPrecintoMin, it.diametroPrecintoMax) } ?: true
+                    val diametroPrecinto3Valido = especificacion?.let { validarValor(formState.diametroPrecintoMedida3, it.diametroPrecintoMin, it.diametroPrecintoMax) } ?: true
+                    val diametroPrecintoErrores = listOf(!diametroPrecinto1Valido, !diametroPrecinto2Valido, !diametroPrecinto3Valido).count { it }
+
+                    Text(text = "Diametro de Precinto $diametroPrecintoRango", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF111827))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        MuestraTextField(value = formState.diametroPrecintoMedida1, onValueChange = { muestraViewModel.updateInspeccion("diametroPrecintoMedida1", it) }, label = "M1", modifier = Modifier.weight(1f), keyboardType = KeyboardType.Decimal, isError = !diametroPrecinto1Valido)
+                        MuestraTextField(value = formState.diametroPrecintoMedida2, onValueChange = { muestraViewModel.updateInspeccion("diametroPrecintoMedida2", it) }, label = "M2", modifier = Modifier.weight(1f), keyboardType = KeyboardType.Decimal, isError = !diametroPrecinto2Valido)
+                        MuestraTextField(value = formState.diametroPrecintoMedida3, onValueChange = { muestraViewModel.updateInspeccion("diametroPrecintoMedida3", it) }, label = "M3", modifier = Modifier.weight(1f), keyboardType = KeyboardType.Decimal, isError = !diametroPrecinto3Valido)
+                    }
+                    if (diametroPrecintoErrores > 0) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = "$diametroPrecintoErrores ${if (diametroPrecintoErrores == 1) "medida no se encuentra" else "medidas no se encuentran"} dentro del parámetro", fontSize = 12.sp, color = Color(0xFFDC2626), modifier = Modifier.padding(start = 4.dp))
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Altura Total (2 medidas para Envases)
+                    val alturaTotalRango = especificacion?.let { formatearRango(it.alturaTotalMin, it.alturaTotalMax, "mm") } ?: ""
+                    val alturaTotal1Valido = especificacion?.let { validarValor(formState.alturaTotalMedida1, it.alturaTotalMin, it.alturaTotalMax) } ?: true
+                    val alturaTotal2Valido = especificacion?.let { validarValor(formState.alturaTotalMedida2, it.alturaTotalMin, it.alturaTotalMax) } ?: true
+                    val alturaTotalErrores = listOf(!alturaTotal1Valido, !alturaTotal2Valido).count { it }
+
+                    Text(text = "Altura Total $alturaTotalRango", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF111827))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        MuestraTextField(value = formState.alturaTotalMedida1, onValueChange = { muestraViewModel.updateInspeccion("alturaTotalMedida1", it) }, label = "M1", modifier = Modifier.weight(1f), keyboardType = KeyboardType.Decimal, isError = !alturaTotal1Valido)
+                        MuestraTextField(value = formState.alturaTotalMedida2, onValueChange = { muestraViewModel.updateInspeccion("alturaTotalMedida2", it) }, label = "M2", modifier = Modifier.weight(1f), keyboardType = KeyboardType.Decimal, isError = !alturaTotal2Valido)
+                    }
+                    if (alturaTotalErrores > 0) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = "$alturaTotalErrores ${if (alturaTotalErrores == 1) "medida no se encuentra" else "medidas no se encuentran"} dentro del parámetro", fontSize = 12.sp, color = Color(0xFFDC2626), modifier = Modifier.padding(start = 4.dp))
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Diámetro Interno
+                    val diametroInternoRango = especificacion?.let { formatearRango(it.diametroInternoMin, it.diametroInternoMax, "mm") } ?: ""
+                    val diametroInterno1Valido = especificacion?.let { validarValor(formState.diametroInternoMedida1, it.diametroInternoMin, it.diametroInternoMax) } ?: true
+                    val diametroInterno2Valido = especificacion?.let { validarValor(formState.diametroInternoMedida2, it.diametroInternoMin, it.diametroInternoMax) } ?: true
+                    val diametroInternoErrores = listOf(!diametroInterno1Valido, !diametroInterno2Valido).count { it }
+
+                    Text(text = "Diametro Interno $diametroInternoRango", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF111827), modifier = Modifier.fillMaxWidth())
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        MuestraTextField(value = formState.diametroInternoMedida1, onValueChange = { muestraViewModel.updateInspeccion("diametroInternoMedida1", it) }, label = "M1", modifier = Modifier.weight(1f), keyboardType = KeyboardType.Decimal, isError = !diametroInterno1Valido)
+                        MuestraTextField(value = formState.diametroInternoMedida2, onValueChange = { muestraViewModel.updateInspeccion("diametroInternoMedida2", it) }, label = "M2", modifier = Modifier.weight(1f), keyboardType = KeyboardType.Decimal, isError = !diametroInterno2Valido)
+                    }
+                    if (diametroInternoErrores > 0) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = "$diametroInternoErrores ${if (diametroInternoErrores == 1) "medida no se encuentra" else "medidas no se encuentran"} dentro del parámetro", fontSize = 12.sp, color = Color(0xFFDC2626), modifier = Modifier.padding(start = 4.dp))
+                    }
+                }
+                // ── Fin campos específicos por tipo ───────────────────────────────────
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -2008,6 +1834,7 @@ fun InspeccionDimensionalForm(
     ) {
         val formState by muestraViewModel.checkListFormState.collectAsState()
         val checkLists by muestraViewModel.checkListsTemporales.collectAsState()
+        val cabeceraFormState by muestraViewModel.cabeceraFormState.collectAsState()
 
         // Estado para el modal de detalle
         var selectedCheckList by remember { mutableStateOf<CheckListInspeccion?>(null) }
@@ -2099,67 +1926,61 @@ fun InspeccionDimensionalForm(
                     Column(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        MuestraCriterioSelector(
-                            label = "Testeado",
-                            selectedValue = formState.testeado,
-                            onValueChange = { muestraViewModel.updateCheckList("testeado", it) }
-                        )
-
-                        MuestraCriterioSelector(
-                            label = "Estabilidad",
-                            selectedValue = formState.estabilidad,
-                            onValueChange = { muestraViewModel.updateCheckList("estabilidad", it) }
-                        )
-
-                        MuestraCriterioSelector(
-                            label = "Tonalidad",
-                            selectedValue = formState.tonalidad,
-                            onValueChange = { muestraViewModel.updateCheckList("tonalidad", it) }
-                        )
-
-                        MuestraCriterioSelector(
-                            label = "Visor Uniforme",
-                            selectedValue = formState.visorUniforme,
-                            onValueChange = {
-                                muestraViewModel.updateCheckList(
-                                    "visorUniforme",
-                                    it
-                                )
-                            }
-                        )
-
-                        MuestraCriterioSelector(
-                            label = "Correcta Costura",
-                            selectedValue = formState.correctaCostura,
-                            onValueChange = {
-                                muestraViewModel.updateCheckList(
-                                    "correctaCostura",
-                                    it
-                                )
-                            }
-                        )
-
-                        MuestraCriterioSelector(
-                            label = "Libre de Ovalamiento",
-                            selectedValue = formState.libreOvulamiento,
-                            onValueChange = {
-                                muestraViewModel.updateCheckList(
-                                    "libreOvulamiento",
-                                    it
-                                )
-                            }
-                        )
-
-                        MuestraCriterioSelector(
-                            label = "Libre de Contaminación",
-                            selectedValue = formState.libreContaminacion,
-                            onValueChange = {
-                                muestraViewModel.updateCheckList(
-                                    "libreContaminacion",
-                                    it
-                                )
-                            }
-                        )
+                        if (cabeceraFormState.tipo == "Tapa") {
+                            // ===== CHECKLIST — TAPAS (3 criterios) =====
+                            MuestraCriterioSelector(
+                                label = "Funcionalidad y Acabado de las Tapas",
+                                selectedValue = formState.funcionalidadAcabadoTapas,
+                                onValueChange = { muestraViewModel.updateCheckList("funcionalidadAcabadoTapas", it) }
+                            )
+                            MuestraCriterioSelector(
+                                label = "Conformidad del Troquelado",
+                                selectedValue = formState.conformidadTroquelado,
+                                onValueChange = { muestraViewModel.updateCheckList("conformidadTroquelado", it) }
+                            )
+                            MuestraCriterioSelector(
+                                label = "Correcto Enlainado",
+                                selectedValue = formState.correctoEnlainado,
+                                onValueChange = { muestraViewModel.updateCheckList("correctoEnlainado", it) }
+                            )
+                        } else {
+                            // ===== CHECKLIST — ENVASES (7 criterios) =====
+                            MuestraCriterioSelector(
+                                label = "Testeado",
+                                selectedValue = formState.testeado,
+                                onValueChange = { muestraViewModel.updateCheckList("testeado", it) }
+                            )
+                            MuestraCriterioSelector(
+                                label = "Estabilidad",
+                                selectedValue = formState.estabilidad,
+                                onValueChange = { muestraViewModel.updateCheckList("estabilidad", it) }
+                            )
+                            MuestraCriterioSelector(
+                                label = "Tonalidad",
+                                selectedValue = formState.tonalidad,
+                                onValueChange = { muestraViewModel.updateCheckList("tonalidad", it) }
+                            )
+                            MuestraCriterioSelector(
+                                label = "Visor Uniforme",
+                                selectedValue = formState.visorUniforme,
+                                onValueChange = { muestraViewModel.updateCheckList("visorUniforme", it) }
+                            )
+                            MuestraCriterioSelector(
+                                label = "Correcta Costura",
+                                selectedValue = formState.correctaCostura,
+                                onValueChange = { muestraViewModel.updateCheckList("correctaCostura", it) }
+                            )
+                            MuestraCriterioSelector(
+                                label = "Libre de Ovalamiento",
+                                selectedValue = formState.libreOvulamiento,
+                                onValueChange = { muestraViewModel.updateCheckList("libreOvulamiento", it) }
+                            )
+                            MuestraCriterioSelector(
+                                label = "Libre de Contaminación",
+                                selectedValue = formState.libreContaminacion,
+                                onValueChange = { muestraViewModel.updateCheckList("libreContaminacion", it) }
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
