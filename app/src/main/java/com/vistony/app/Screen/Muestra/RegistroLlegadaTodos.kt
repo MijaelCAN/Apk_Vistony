@@ -39,6 +39,7 @@ import com.vistony.app.ViewModel.MuestraViewModel
 import com.vistony.app.ui.theme.theme.Dimensions
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class, ExperimentalMaterialApi::class,
@@ -60,6 +61,7 @@ fun RegistroLlegadaTodosScreen(
 
     val registros by muestraViewModel.registrosLlegada.collectAsState()
     val isLoading by muestraViewModel.isLoading.collectAsState()
+    val isConfirming by muestraViewModel.isConfirming.collectAsState()
 
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -264,6 +266,12 @@ fun RegistroLlegadaTodosScreen(
     
     // BottomSheet para detalle
     selectedRegistro?.let { registro ->
+        // Sincronizar con el estado actualizado de la lista (por si se confirmó)
+        val registroActualizado = registros.find {
+            it.numeroOrdenFabricacion == registro.numeroOrdenFabricacion &&
+            it.numeroMuestra == registro.numeroMuestra
+        } ?: registro
+
         ModalBottomSheet(
             onDismissRequest = {
                 scope.launch {
@@ -276,14 +284,19 @@ fun RegistroLlegadaTodosScreen(
             containerColor = Color(0xFFF7F7F7)
         ) {
             RegistroLlegadaDetailSheet(
-                registro = registro,
+                registro = registroActualizado,
                 onClose = {
                     scope.launch {
                         detailSheetState.hide()
                     }.invokeOnCompletion {
                         selectedRegistro = null
                     }
-                }
+                },
+                onConfirmar = { reg ->
+                    val fechaIso = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                    muestraViewModel.confirmarRecepcion(reg, fechaIso)
+                },
+                isConfirming = isConfirming
             )
         }
     }

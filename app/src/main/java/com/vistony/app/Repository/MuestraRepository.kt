@@ -261,11 +261,11 @@ class MuestraRepository @Inject constructor() {
         return try {
             android.util.Log.d("MuestraRepository", "Creando registro de llegada")
             android.util.Log.d("MuestraRepository", "Request: $request")
-            
+
             val response = muestraService.crearRegistroLlegada(request)
-            
+
             android.util.Log.d("MuestraRepository", "Respuesta - Código: ${response.code()}, Éxito: ${response.isSuccessful}")
-            
+
             if (response.isSuccessful) {
                 val body = response.body()
                 android.util.Log.d("MuestraRepository", "Body - StatusCode: ${body?.statusCode}, Success: ${body?.success}, Message: ${body?.message}")
@@ -277,6 +277,34 @@ class MuestraRepository @Inject constructor() {
             }
         } catch (e: Exception) {
             android.util.Log.e("MuestraRepository", "Excepción al crear registro de llegada", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun confirmarRecepcion(request: ConfirmarRecepcionRequest): Result<ConfirmarRecepcionResponse> {
+        return try {
+            android.util.Log.d("MuestraRepository", "Confirmando recepción - Orden: ${request.ordenFabricacion}, Muestra: ${request.nMuestra}")
+
+            val response = muestraService.confirmarRecepcion(request)
+
+            android.util.Log.d("MuestraRepository", "Respuesta - Código: ${response.code()}, Éxito: ${response.isSuccessful}")
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                android.util.Log.d("MuestraRepository", "Body - Success: ${body?.success}, Message: ${body?.message}")
+                Result.success(body ?: ConfirmarRecepcionResponse(400, false, "Error desconocido", null))
+            } else {
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = when (response.code()) {
+                    400 -> "La muestra ya fue confirmada anteriormente"
+                    404 -> "Registro no encontrado"
+                    else -> "Error del servidor: ${response.message()}"
+                }
+                android.util.Log.e("MuestraRepository", "Error confirmando recepción (${ response.code()}): $errorBody")
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MuestraRepository", "Excepción al confirmar recepción", e)
             Result.failure(e)
         }
     }

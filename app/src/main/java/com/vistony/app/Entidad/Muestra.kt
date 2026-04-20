@@ -454,7 +454,11 @@ data class RegistroLlegada(
     @SerializedName("U_CodProducto") val codigoProducto: String = "",
     @SerializedName("U_DesProducto") val descripcionProducto: String = "",
     @SerializedName("U_FechaRegistro") val fechaRegistro: String = "",
-    @SerializedName("U_UserRegister") val userRegister: String = ""
+    @SerializedName("U_UserRegister") val userRegister: String = "",
+    @SerializedName("U_Name") val nombre: String = "",
+    @SerializedName("U_Estado") val estado: String = "PENDIENTE",
+    @SerializedName("FechaApro") val fechaAprobacion: String? = null,
+    @SerializedName("U_FechaConfirmacion") val fechaConfirmacion: String? = null
 )
 
 // Request para crear Registro de Llegada
@@ -481,4 +485,28 @@ data class RegistroLlegadaResponse(
     @SerializedName("success") val success: Boolean,
     @SerializedName("message") val message: String,
     @SerializedName("data") val data: List<RegistroLlegada>
+)
+
+// Request para confirmar recepción de muestra
+data class ConfirmarRecepcionRequest(
+    @SerializedName("u_OrdenFabricacion") val ordenFabricacion: String,
+    @SerializedName("u_NMuestra") val nMuestra: String,
+    @SerializedName("u_FechaConfirmacion") val fechaConfirmacion: String
+)
+
+// Data del response de confirmación
+data class ConfirmarRecepcionData(
+    @SerializedName("U_OrdenFabricacion") val ordenFabricacion: String,
+    @SerializedName("U_NMuestra") val nMuestra: String,
+    @SerializedName("U_Estado") val estado: String,
+    @SerializedName("U_FechaConfirmacion") val fechaConfirmacion: String,
+    @SerializedName("U_UserConfirma") val userConfirma: String
+)
+
+// Response para confirmar recepción
+data class ConfirmarRecepcionResponse(
+    @SerializedName("statusCode") val statusCode: Int,
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String,
+    @SerializedName("data") val data: ConfirmarRecepcionData?
 )
