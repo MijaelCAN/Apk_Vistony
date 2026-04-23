@@ -856,7 +856,7 @@ fun RegistroLlegadaDetailSheet(
 
         // Botón de confirmación — solo visible si no está confirmado y se pasó el callback
         if (!esConfirmado && onConfirmar != null) {
-            val esAprobado = registro.estado == "Aprobado"
+            val esAprobado = registro.estado == "Aprobado" || esRechazado
             Button(
                 onClick = { onConfirmar(registro) },
                 enabled = esAprobado && !isConfirming,
