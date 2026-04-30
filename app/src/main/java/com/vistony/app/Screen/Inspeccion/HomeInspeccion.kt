@@ -521,8 +521,12 @@ fun BotonH(
     bodyFontSize: Float,
     onNext: () -> Unit,
 ) {
+    var isLoading by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
     val stateButton =
         ot.isNotEmpty() && description.isNotEmpty() && um.isNotEmpty() && cantidad.isNotEmpty() && operador.isNotEmpty()
+
     LaunchedEffect(ot, description, um, cantidad, turno, fecha, linea, operador, operarioId,id) {
         sharedViewModel.turno = turno
         sharedViewModel.ot = ot
@@ -533,28 +537,45 @@ fun BotonH(
         sharedViewModel.operador = operador
         sharedViewModel.fecha = fecha
         sharedViewModel.usuario = id
-        //stateButton = ot.isNotEmpty() && description.isNotEmpty() && um.isNotEmpty() && cantidad.isNotEmpty()
     }
 
     Button(
-        enabled = stateButton,
+        enabled = stateButton && !isLoading,
         onClick = {
+            isLoading = true
             Log.e("vista", sharedViewModel.fecha + " " + sharedViewModel.turno)
-            //navController.navigate("detalle/${id}")
-            onNext()
+            scope.launch {
+                try {
+                    onNext()
+                } finally {
+                    isLoading = false
+                }
+            }
         },
         modifier = Modifier
             .fillMaxWidth()
             .height(buttonHeight)
             .padding(horizontal = padding_res)
-            .clip(RoundedCornerShape(0.dp)),
+            .clip(RoundedCornerShape(12.dp)),
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFFFC6A68),
-            contentColor = Color.White
+            contentColor = Color.White,
+            disabledContainerColor = Color(0xFFD1D5DB),
+            disabledContentColor = Color.White
         )
     ) {
-        Text(text = "Inspección", fontSize = bodyFontSize.sp )
+        if (isLoading) {
+            CircularProgressIndicator(
+                color = Color.White,
+                modifier = Modifier.size(20.dp),
+                strokeWidth = 2.dp
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(text = "Procesando...", fontSize = bodyFontSize.sp)
+        } else {
+            Text(text = "Inspección", fontSize = bodyFontSize.sp)
+        }
     }
 
 }
