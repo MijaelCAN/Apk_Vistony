@@ -21,7 +21,8 @@ object RetrofitInstance {
     //private const val BASE_URL = "http://190.12.79.135:9004/api/" // free
     //private const val BASE_URL = "http://192.168.254.26:9004/api/"
     private const val BASE_URL = "http://192.168.254.27:8060/api/" // LOCAL
-    private const val BASE_URL_NEW = "http://192.168.254.27:8036/api/" // NUEVA IMPLEMENTACION
+    //private const val BASE_URL_NEW = "http://192.168.254.27:8036/api/" // NUEVA IMPLEMENTACION
+    private  const val BASE_URL_NEW = "http://192.168.254.27:8036/OperityCode_Feature/api/"
     private val client = OkHttpClient.Builder()
         .connectTimeout(60,TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)

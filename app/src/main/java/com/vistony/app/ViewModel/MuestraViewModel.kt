@@ -208,7 +208,7 @@ class MuestraViewModel @Inject constructor(
                 val tipo = _cabeceraFormState.value.tipo
 
                 try {
-                    val result = muestraRepository.obtenerEspecificacionSoplado(codProducto, tipo)
+                    val result = muestraRepository.obtenerEspecificacionSoplado(codProducto)
                     result.fold(
                         onSuccess = { response ->
                             if (response.success) {

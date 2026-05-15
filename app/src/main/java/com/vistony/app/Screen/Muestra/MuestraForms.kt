@@ -428,6 +428,7 @@ fun InspeccionDimensionalForm(
     // Obtener especificaciones cuando se ingresa al formulario o cambia el código de producto
     LaunchedEffect(cabeceraFormState.codigo) {
         if (cabeceraFormState.codigo.isNotEmpty()) {
+            Log.d("DEYVI", "Obteniendo especificaciones: ${cabeceraFormState.codigo}")
             muestraViewModel.obtenerEspecificacionSoplado(cabeceraFormState.codigo)
         }
     }
@@ -677,17 +678,12 @@ fun InspeccionDimensionalForm(
                         validarValor(formState.diametroInternoRoscaTapa, it.diametroInternoRoscaTapaMin, it.diametroInternoRoscaTapaMax)
                     } ?: true
 
-                    Text(
-                        text = "D. Interno Rosca $dIntRoscaRango",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF111827)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    val dIntRoscaLabel =
+                        "D. Interno Rosca (mm)" + if (dIntRoscaRango.isNotEmpty()) " $dIntRoscaRango" else ""
                     MuestraTextField(
                         value = formState.diametroInternoRoscaTapa,
                         onValueChange = { muestraViewModel.updateInspeccion("diametroInternoRoscaTapa", it) },
-                        label = "D. Interno Rosca (mm)",
+                        label = dIntRoscaLabel,
                         keyboardType = KeyboardType.Decimal,
                         enabled = !isCompletado,
                         isError = !dIntRoscaValido
@@ -712,17 +708,12 @@ fun InspeccionDimensionalForm(
                         validarValor(formState.diametroExternoRoscaTapa, it.diametroExternoRoscaTapaMin, it.diametroExternoRoscaTapaMax)
                     } ?: true
 
-                    Text(
-                        text = "D. Externo Rosca $dExtRoscaRango",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF111827)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    val dExtRoscaLabel =
+                        "D. Externo Rosca (mm)" + if (dExtRoscaRango.isNotEmpty()) " $dExtRoscaRango" else ""
                     MuestraTextField(
                         value = formState.diametroExternoRoscaTapa,
                         onValueChange = { muestraViewModel.updateInspeccion("diametroExternoRoscaTapa", it) },
-                        label = "D. Externo Rosca (mm)",
+                        label = dExtRoscaLabel,
                         keyboardType = KeyboardType.Decimal,
                         enabled = !isCompletado,
                         isError = !dExtRoscaValido
@@ -747,17 +738,12 @@ fun InspeccionDimensionalForm(
                         validarValor(formState.diametroInternoTrinquete, it.diametroInternoTrinqueteMin, it.diametroInternoTrinqueteMax)
                     } ?: true
 
-                    Text(
-                        text = "D. Interno Trinquete $dTrinqueteRango",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF111827)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    val dTrinqueteLabel =
+                        "D. Interno Trinquete (mm)" + if (dTrinqueteRango.isNotEmpty()) " $dTrinqueteRango" else ""
                     MuestraTextField(
                         value = formState.diametroInternoTrinquete,
                         onValueChange = { muestraViewModel.updateInspeccion("diametroInternoTrinquete", it) },
-                        label = "D. Interno Trinquete (mm)",
+                        label = dTrinqueteLabel,
                         keyboardType = KeyboardType.Decimal,
                         enabled = !isCompletado,
                         isError = !dTrinqueteValido
@@ -782,17 +768,12 @@ fun InspeccionDimensionalForm(
                         validarValor(formState.alturaTotalMedida1, it.alturaTotalMin, it.alturaTotalMax)
                     } ?: true
 
-                    Text(
-                        text = "Altura Total $alturaTotalRangoTapa",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF111827)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    val alturaTotalTapaLabel =
+                        "Altura Total (mm)" + if (alturaTotalRangoTapa.isNotEmpty()) " $alturaTotalRangoTapa" else ""
                     MuestraTextField(
                         value = formState.alturaTotalMedida1,
                         onValueChange = { muestraViewModel.updateInspeccion("alturaTotalMedida1", it) },
-                        label = "Altura Total (mm)",
+                        label = alturaTotalTapaLabel,
                         keyboardType = KeyboardType.Decimal,
                         enabled = !isCompletado,
                         isError = !alturaTotal1ValidoTapa
@@ -1330,188 +1311,187 @@ fun InspeccionDimensionalForm(
                 }
             }
 
-            // Diámetro de Rosca
-            val diametroRoscaRango = especificacion?.let {
-                formatearRango(
-                    it.diametroRoscaMin,
-                    it.diametroRoscaMax,
-                    "mm"
-                )
-            } ?: ""
-            val diametroRosca1Valido = especificacion?.let {
-                validarValor(
-                    inspeccion.diametroRoscaMedida1,
-                    it.diametroRoscaMin,
-                    it.diametroRoscaMax
-                )
-            } ?: true
-            val diametroRosca2Valido = especificacion?.let {
-                validarValor(
-                    inspeccion.diametroRoscaMedida2,
-                    it.diametroRoscaMin,
-                    it.diametroRoscaMax
-                )
-            } ?: true
+            if (cabeceraFormState.tipo == "Tapa") {
+                // ===== DETALLE MODAL — TAPAS =====
 
-            Text(
-                text = "Diámetro de Rosca $diametroRoscaRango",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = PrimaryMuestraColor,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
+                // D. Interno Rosca
+                val dIntRoscaTapaRango = especificacion?.let {
+                    formatearRango(it.diametroInternoRoscaTapaMin, it.diametroInternoRoscaTapaMax, "mm")
+                } ?: ""
+                val dIntRoscaTapaValido = especificacion?.let {
+                    validarValor(inspeccion.diametroInternoRoscaTapa ?: "", it.diametroInternoRoscaTapaMin, it.diametroInternoRoscaTapaMax)
+                } ?: true
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Medida 1
-                Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "D. Interno Rosca $dIntRoscaTapaRango",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryMuestraColor,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (!dIntRoscaTapaValido) Color(0xFFFFEBEE) else Color(0xFFF9FAFB),
+                    border = BorderStroke(1.dp, if (!dIntRoscaTapaValido) Color(0xFFDC2626) else Color(0xFFD1D5DB))
+                ) {
+                    Box(
+                        modifier = Modifier.defaultMinSize(minHeight = 56.dp).padding(horizontal = 16.dp, vertical = 12.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Text(
+                            text = inspeccion.diametroInternoRoscaTapa.orEmpty().ifEmpty { "N/A" },
+                            fontSize = 16.sp,
+                            color = if (!dIntRoscaTapaValido) Color(0xFFDC2626) else Color(0xFF9CA3AF)
+                        )
+                    }
+                }
+
+                // D. Externo Rosca
+                val dExtRoscaTapaRango = especificacion?.let {
+                    formatearRango(it.diametroExternoRoscaTapaMin, it.diametroExternoRoscaTapaMax, "mm")
+                } ?: ""
+                val dExtRoscaTapaValido = especificacion?.let {
+                    validarValor(inspeccion.diametroExternoRoscaTapa ?: "", it.diametroExternoRoscaTapaMin, it.diametroExternoRoscaTapaMax)
+                } ?: true
+
+                Text(
+                    text = "D. Externo Rosca $dExtRoscaTapaRango",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryMuestraColor,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (!dExtRoscaTapaValido) Color(0xFFFFEBEE) else Color(0xFFF9FAFB),
+                    border = BorderStroke(1.dp, if (!dExtRoscaTapaValido) Color(0xFFDC2626) else Color(0xFFD1D5DB))
+                ) {
+                    Box(
+                        modifier = Modifier.defaultMinSize(minHeight = 56.dp).padding(horizontal = 16.dp, vertical = 12.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Text(
+                            text = inspeccion.diametroExternoRoscaTapa.orEmpty().ifEmpty { "N/A" },
+                            fontSize = 16.sp,
+                            color = if (!dExtRoscaTapaValido) Color(0xFFDC2626) else Color(0xFF9CA3AF)
+                        )
+                    }
+                }
+
+                // D. Interno Trinquete
+                val dTrinqueteTapaRango = especificacion?.let {
+                    formatearRango(it.diametroInternoTrinqueteMin, it.diametroInternoTrinqueteMax, "mm")
+                } ?: ""
+                val dTrinqueteTapaValido = especificacion?.let {
+                    validarValor(inspeccion.diametroInternoTrinquete ?: "", it.diametroInternoTrinqueteMin, it.diametroInternoTrinqueteMax)
+                } ?: true
+
+                Text(
+                    text = "D. Interno Trinquete $dTrinqueteTapaRango",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryMuestraColor,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (!dTrinqueteTapaValido) Color(0xFFFFEBEE) else Color(0xFFF9FAFB),
+                    border = BorderStroke(1.dp, if (!dTrinqueteTapaValido) Color(0xFFDC2626) else Color(0xFFD1D5DB))
+                ) {
+                    Box(
+                        modifier = Modifier.defaultMinSize(minHeight = 56.dp).padding(horizontal = 16.dp, vertical = 12.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Text(
+                            text = inspeccion.diametroInternoTrinquete.orEmpty().ifEmpty { "N/A" },
+                            fontSize = 16.sp,
+                            color = if (!dTrinqueteTapaValido) Color(0xFFDC2626) else Color(0xFF9CA3AF)
+                        )
+                    }
+                }
+
+                // Altura Total (1 medida para Tapas)
+                if (inspeccion.alturaTotalMedida1.isNotEmpty()) {
+                    val alturaTotalTapaRango = especificacion?.let {
+                        formatearRango(it.alturaTotalMin, it.alturaTotalMax, "mm")
+                    } ?: ""
+                    val alturaTotalTapaValido = especificacion?.let {
+                        validarValor(inspeccion.alturaTotalMedida1, it.alturaTotalMin, it.alturaTotalMax)
+                    } ?: true
+
                     Text(
-                        text = "Medida 1",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (!diametroRosca1Valido) Color(0xFFDC2626) else Color(0xFF374151),
-                        modifier = Modifier.padding(bottom = 6.dp)
+                        text = "Altura Total $alturaTotalTapaRango",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryMuestraColor,
+                        modifier = Modifier.padding(bottom = 12.dp)
                     )
                     Surface(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                         shape = RoundedCornerShape(12.dp),
-                        color = if (!diametroRosca1Valido) Color(0xFFFFEBEE) else Color(0xFFF9FAFB),
-                        border = BorderStroke(
-                            width = 1.dp,
-                            color = if (!diametroRosca1Valido) Color(0xFFDC2626) else Color(
-                                0xFFD1D5DB
-                            )
-                        )
+                        color = if (!alturaTotalTapaValido) Color(0xFFFFEBEE) else Color(0xFFF9FAFB),
+                        border = BorderStroke(1.dp, if (!alturaTotalTapaValido) Color(0xFFDC2626) else Color(0xFFD1D5DB))
                     ) {
                         Box(
-                            modifier = Modifier
-                                .defaultMinSize(minHeight = 56.dp)
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            modifier = Modifier.defaultMinSize(minHeight = 56.dp).padding(horizontal = 16.dp, vertical = 12.dp),
                             contentAlignment = Alignment.CenterStart
                         ) {
                             Text(
-                                text = inspeccion.diametroRoscaMedida1.ifEmpty { "N/A" },
+                                text = inspeccion.alturaTotalMedida1,
                                 fontSize = 16.sp,
-                                fontWeight = FontWeight.Normal,
-                                color = if (!diametroRosca1Valido) Color(0xFFDC2626) else Color(
-                                    0xFF9CA3AF
-                                )
+                                color = if (!alturaTotalTapaValido) Color(0xFFDC2626) else Color(0xFF9CA3AF)
                             )
                         }
                     }
                 }
 
-                // Medida 2
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Medida 2",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (!diametroRosca2Valido) Color(0xFFDC2626) else Color(0xFF374151),
-                        modifier = Modifier.padding(bottom = 6.dp)
-                    )
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (!diametroRosca2Valido) Color(0xFFFFEBEE) else Color(0xFFF9FAFB),
-                        border = BorderStroke(
-                            width = 1.dp,
-                            color = if (!diametroRosca2Valido) Color(0xFFDC2626) else Color(
-                                0xFFD1D5DB
-                            )
-                        )
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .defaultMinSize(minHeight = 56.dp)
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            Text(
-                                text = inspeccion.diametroRoscaMedida2.ifEmpty { "N/A" },
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Normal,
-                                color = if (!diametroRosca2Valido) Color(0xFFDC2626) else Color(
-                                    0xFF9CA3AF
-                                )
-                            )
-                        }
-                    }
-                }
-            }
+            } else {
+                // ===== DETALLE MODAL — ENVASES =====
 
-            // Altura de Boca
-            val alturaBocaRango =
-                especificacion?.let { formatearRango(it.alturaBocaMin, it.alturaBocaMax, "mm") }
-                    ?: ""
-            val alturaBoca1Valido = especificacion?.let {
-                validarValor(
-                    inspeccion.alturaBocaMedida1,
-                    it.alturaBocaMin,
-                    it.alturaBocaMax
-                )
-            } ?: true
-            val alturaBoca2Valido = especificacion?.let {
-                validarValor(
-                    inspeccion.alturaBocaMedida2,
-                    it.alturaBocaMin,
-                    it.alturaBocaMax
-                )
-            } ?: true
-            val alturaBoca3Valido = especificacion?.let {
-                validarValor(
-                    inspeccion.alturaBocaMedida3,
-                    it.alturaBocaMin,
-                    it.alturaBocaMax
-                )
-            } ?: true
-            val alturaBoca4Valido = especificacion?.let {
-                validarValor(
-                    inspeccion.alturaBocaMedida4,
-                    it.alturaBocaMin,
-                    it.alturaBocaMax
-                )
-            } ?: true
+                // Diámetro de Rosca
+                val diametroRoscaRango = especificacion?.let {
+                    formatearRango(it.diametroRoscaMin, it.diametroRoscaMax, "mm")
+                } ?: ""
+                val diametroRosca1Valido = especificacion?.let {
+                    validarValor(inspeccion.diametroRoscaMedida1, it.diametroRoscaMin, it.diametroRoscaMax)
+                } ?: true
+                val diametroRosca2Valido = especificacion?.let {
+                    validarValor(inspeccion.diametroRoscaMedida2, it.diametroRoscaMin, it.diametroRoscaMax)
+                } ?: true
 
-            Text(
-                text = "Altura de Boca $alturaBocaRango",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = PrimaryMuestraColor,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
+                Text(
+                    text = "Diámetro de Rosca $diametroRoscaRango",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryMuestraColor,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                listOf(
-                    inspeccion.alturaBocaMedida1 to alturaBoca1Valido,
-                    inspeccion.alturaBocaMedida2 to alturaBoca2Valido,
-                    inspeccion.alturaBocaMedida3 to alturaBoca3Valido,
-                    inspeccion.alturaBocaMedida4 to alturaBoca4Valido
-                ).forEachIndexed { index, (medida, esValido) ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Medida 1
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "M${index + 1}",
+                            text = "Medida 1",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (!esValido) Color(0xFFDC2626) else Color(0xFF374151),
+                            color = if (!diametroRosca1Valido) Color(0xFFDC2626) else Color(0xFF374151),
                             modifier = Modifier.padding(bottom = 6.dp)
                         )
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
-                            color = if (!esValido) Color(0xFFFFEBEE) else Color(0xFFF9FAFB),
+                            color = if (!diametroRosca1Valido) Color(0xFFFFEBEE) else Color(0xFFF9FAFB),
                             border = BorderStroke(
                                 width = 1.dp,
-                                color = if (!esValido) Color(0xFFDC2626) else Color(0xFFD1D5DB)
+                                color = if (!diametroRosca1Valido) Color(0xFFDC2626) else Color(0xFFD1D5DB)
                             )
                         ) {
                             Box(
@@ -1521,53 +1501,69 @@ fun InspeccionDimensionalForm(
                                 contentAlignment = Alignment.CenterStart
                             ) {
                                 Text(
-                                    text = medida.ifEmpty { "N/A" },
+                                    text = inspeccion.diametroRoscaMedida1.ifEmpty { "N/A" },
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Normal,
-                                    color = if (!esValido) Color(0xFFDC2626) else Color(0xFF9CA3AF)
+                                    color = if (!diametroRosca1Valido) Color(0xFFDC2626) else Color(0xFF9CA3AF)
+                                )
+                            }
+                        }
+                    }
+
+                    // Medida 2
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Medida 2",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (!diametroRosca2Valido) Color(0xFFDC2626) else Color(0xFF374151),
+                            modifier = Modifier.padding(bottom = 6.dp)
+                        )
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (!diametroRosca2Valido) Color(0xFFFFEBEE) else Color(0xFFF9FAFB),
+                            border = BorderStroke(
+                                width = 1.dp,
+                                color = if (!diametroRosca2Valido) Color(0xFFDC2626) else Color(0xFFD1D5DB)
+                            )
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .defaultMinSize(minHeight = 56.dp)
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                Text(
+                                    text = inspeccion.diametroRoscaMedida2.ifEmpty { "N/A" },
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    color = if (!diametroRosca2Valido) Color(0xFFDC2626) else Color(0xFF9CA3AF)
                                 )
                             }
                         }
                     }
                 }
-            }
 
-            // Diámetro de Precinto
-            if (inspeccion.diametroPrecintoMedida1.isNotEmpty() ||
-                inspeccion.diametroPrecintoMedida2.isNotEmpty() ||
-                inspeccion.diametroPrecintoMedida3.isNotEmpty()
-            ) {
-                val diametroPrecintoRango = especificacion?.let {
-                    formatearRango(
-                        it.diametroPrecintoMin,
-                        it.diametroPrecintoMax,
-                        "mm"
-                    )
-                } ?: ""
-                val diametroPrecinto1Valido = especificacion?.let {
-                    validarValor(
-                        inspeccion.diametroPrecintoMedida1,
-                        it.diametroPrecintoMin,
-                        it.diametroPrecintoMax
-                    )
+                // Altura de Boca
+                val alturaBocaRango =
+                    especificacion?.let { formatearRango(it.alturaBocaMin, it.alturaBocaMax, "mm") }
+                        ?: ""
+                val alturaBoca1Valido = especificacion?.let {
+                    validarValor(inspeccion.alturaBocaMedida1, it.alturaBocaMin, it.alturaBocaMax)
                 } ?: true
-                val diametroPrecinto2Valido = especificacion?.let {
-                    validarValor(
-                        inspeccion.diametroPrecintoMedida2,
-                        it.diametroPrecintoMin,
-                        it.diametroPrecintoMax
-                    )
+                val alturaBoca2Valido = especificacion?.let {
+                    validarValor(inspeccion.alturaBocaMedida2, it.alturaBocaMin, it.alturaBocaMax)
                 } ?: true
-                val diametroPrecinto3Valido = especificacion?.let {
-                    validarValor(
-                        inspeccion.diametroPrecintoMedida3,
-                        it.diametroPrecintoMin,
-                        it.diametroPrecintoMax
-                    )
+                val alturaBoca3Valido = especificacion?.let {
+                    validarValor(inspeccion.alturaBocaMedida3, it.alturaBocaMin, it.alturaBocaMax)
+                } ?: true
+                val alturaBoca4Valido = especificacion?.let {
+                    validarValor(inspeccion.alturaBocaMedida4, it.alturaBocaMin, it.alturaBocaMax)
                 } ?: true
 
                 Text(
-                    text = "Diámetro de Precinto $diametroPrecintoRango",
+                    text = "Altura de Boca $alturaBocaRango",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = PrimaryMuestraColor,
@@ -1581,212 +1577,250 @@ fun InspeccionDimensionalForm(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     listOf(
-                        inspeccion.diametroPrecintoMedida1 to diametroPrecinto1Valido,
-                        inspeccion.diametroPrecintoMedida2 to diametroPrecinto2Valido,
-                        inspeccion.diametroPrecintoMedida3 to diametroPrecinto3Valido
+                        inspeccion.alturaBocaMedida1 to alturaBoca1Valido,
+                        inspeccion.alturaBocaMedida2 to alturaBoca2Valido,
+                        inspeccion.alturaBocaMedida3 to alturaBoca3Valido,
+                        inspeccion.alturaBocaMedida4 to alturaBoca4Valido
                     ).forEachIndexed { index, (medida, esValido) ->
-                        if (medida.isNotEmpty()) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "M${index + 1}",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = if (!esValido) Color(0xFFDC2626) else Color(0xFF374151),
-                                    modifier = Modifier.padding(bottom = 6.dp)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "M${index + 1}",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (!esValido) Color(0xFFDC2626) else Color(0xFF374151),
+                                modifier = Modifier.padding(bottom = 6.dp)
+                            )
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (!esValido) Color(0xFFFFEBEE) else Color(0xFFF9FAFB),
+                                border = BorderStroke(
+                                    width = 1.dp,
+                                    color = if (!esValido) Color(0xFFDC2626) else Color(0xFFD1D5DB)
                                 )
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = if (!esValido) Color(0xFFFFEBEE) else Color(0xFFF9FAFB),
-                                    border = BorderStroke(
-                                        width = 1.dp,
-                                        color = if (!esValido) Color(0xFFDC2626) else Color(
-                                            0xFFD1D5DB
-                                        )
-                                    )
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .defaultMinSize(minHeight = 56.dp)
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    contentAlignment = Alignment.CenterStart
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .defaultMinSize(minHeight = 56.dp)
-                                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                                        contentAlignment = Alignment.CenterStart
-                                    ) {
-                                        Text(
-                                            text = medida,
-                                            fontSize = 16.sp,
-                                            fontWeight = FontWeight.Normal,
-                                            color = if (!esValido) Color(0xFFDC2626) else Color(
-                                                0xFF9CA3AF
-                                            )
+                                    Text(
+                                        text = medida.ifEmpty { "N/A" },
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Normal,
+                                        color = if (!esValido) Color(0xFFDC2626) else Color(0xFF9CA3AF)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Diámetro de Precinto
+                if (inspeccion.diametroPrecintoMedida1.isNotEmpty() ||
+                    inspeccion.diametroPrecintoMedida2.isNotEmpty() ||
+                    inspeccion.diametroPrecintoMedida3.isNotEmpty()
+                ) {
+                    val diametroPrecintoRango = especificacion?.let {
+                        formatearRango(it.diametroPrecintoMin, it.diametroPrecintoMax, "mm")
+                    } ?: ""
+                    val diametroPrecinto1Valido = especificacion?.let {
+                        validarValor(inspeccion.diametroPrecintoMedida1, it.diametroPrecintoMin, it.diametroPrecintoMax)
+                    } ?: true
+                    val diametroPrecinto2Valido = especificacion?.let {
+                        validarValor(inspeccion.diametroPrecintoMedida2, it.diametroPrecintoMin, it.diametroPrecintoMax)
+                    } ?: true
+                    val diametroPrecinto3Valido = especificacion?.let {
+                        validarValor(inspeccion.diametroPrecintoMedida3, it.diametroPrecintoMin, it.diametroPrecintoMax)
+                    } ?: true
+
+                    Text(
+                        text = "Diámetro de Precinto $diametroPrecintoRango",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryMuestraColor,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf(
+                            inspeccion.diametroPrecintoMedida1 to diametroPrecinto1Valido,
+                            inspeccion.diametroPrecintoMedida2 to diametroPrecinto2Valido,
+                            inspeccion.diametroPrecintoMedida3 to diametroPrecinto3Valido
+                        ).forEachIndexed { index, (medida, esValido) ->
+                            if (medida.isNotEmpty()) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "M${index + 1}",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (!esValido) Color(0xFFDC2626) else Color(0xFF374151),
+                                        modifier = Modifier.padding(bottom = 6.dp)
+                                    )
+                                    Surface(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = if (!esValido) Color(0xFFFFEBEE) else Color(0xFFF9FAFB),
+                                        border = BorderStroke(
+                                            width = 1.dp,
+                                            color = if (!esValido) Color(0xFFDC2626) else Color(0xFFD1D5DB)
                                         )
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .defaultMinSize(minHeight = 56.dp)
+                                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                                            contentAlignment = Alignment.CenterStart
+                                        ) {
+                                            Text(
+                                                text = medida,
+                                                fontSize = 16.sp,
+                                                fontWeight = FontWeight.Normal,
+                                                color = if (!esValido) Color(0xFFDC2626) else Color(0xFF9CA3AF)
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            // Altura Total
-            if (inspeccion.alturaTotalMedida1.isNotEmpty() || inspeccion.alturaTotalMedida2.isNotEmpty()) {
-                val alturaTotalRango = especificacion?.let {
-                    formatearRango(
-                        it.alturaTotalMin,
-                        it.alturaTotalMax,
-                        "mm"
-                    )
-                } ?: ""
-                val alturaTotal1Valido = especificacion?.let {
-                    validarValor(
-                        inspeccion.alturaTotalMedida1,
-                        it.alturaTotalMin,
-                        it.alturaTotalMax
-                    )
-                } ?: true
-                val alturaTotal2Valido = especificacion?.let {
-                    validarValor(
-                        inspeccion.alturaTotalMedida2,
-                        it.alturaTotalMin,
-                        it.alturaTotalMax
-                    )
-                } ?: true
+                // Altura Total (2 medidas para Envases)
+                if (inspeccion.alturaTotalMedida1.isNotEmpty() || inspeccion.alturaTotalMedida2.isNotEmpty()) {
+                    val alturaTotalRango = especificacion?.let {
+                        formatearRango(it.alturaTotalMin, it.alturaTotalMax, "mm")
+                    } ?: ""
+                    val alturaTotal1Valido = especificacion?.let {
+                        validarValor(inspeccion.alturaTotalMedida1, it.alturaTotalMin, it.alturaTotalMax)
+                    } ?: true
+                    val alturaTotal2Valido = especificacion?.let {
+                        validarValor(inspeccion.alturaTotalMedida2, it.alturaTotalMin, it.alturaTotalMax)
+                    } ?: true
 
-                Text(
-                    text = "Altura Total $alturaTotalRango",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = PrimaryMuestraColor,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
+                    Text(
+                        text = "Altura Total $alturaTotalRango",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryMuestraColor,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    listOf(
-                        inspeccion.alturaTotalMedida1 to alturaTotal1Valido,
-                        inspeccion.alturaTotalMedida2 to alturaTotal2Valido
-                    ).forEachIndexed { index, (medida, esValido) ->
-                        if (medida.isNotEmpty()) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "M${index + 1}",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = if (!esValido) Color(0xFFDC2626) else Color(0xFF374151),
-                                    modifier = Modifier.padding(bottom = 6.dp)
-                                )
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = if (!esValido) Color(0xFFFFEBEE) else Color(0xFFF9FAFB),
-                                    border = BorderStroke(
-                                        width = 1.dp,
-                                        color = if (!esValido) Color(0xFFDC2626) else Color(
-                                            0xFFD1D5DB
-                                        )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf(
+                            inspeccion.alturaTotalMedida1 to alturaTotal1Valido,
+                            inspeccion.alturaTotalMedida2 to alturaTotal2Valido
+                        ).forEachIndexed { index, (medida, esValido) ->
+                            if (medida.isNotEmpty()) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "M${index + 1}",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (!esValido) Color(0xFFDC2626) else Color(0xFF374151),
+                                        modifier = Modifier.padding(bottom = 6.dp)
                                     )
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .defaultMinSize(minHeight = 56.dp)
-                                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                                        contentAlignment = Alignment.CenterStart
-                                    ) {
-                                        Text(
-                                            text = medida,
-                                            fontSize = 16.sp,
-                                            fontWeight = FontWeight.Normal,
-                                            color = if (!esValido) Color(0xFFDC2626) else Color(
-                                                0xFF9CA3AF
-                                            )
+                                    Surface(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = if (!esValido) Color(0xFFFFEBEE) else Color(0xFFF9FAFB),
+                                        border = BorderStroke(
+                                            width = 1.dp,
+                                            color = if (!esValido) Color(0xFFDC2626) else Color(0xFFD1D5DB)
                                         )
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .defaultMinSize(minHeight = 56.dp)
+                                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                                            contentAlignment = Alignment.CenterStart
+                                        ) {
+                                            Text(
+                                                text = medida,
+                                                fontSize = 16.sp,
+                                                fontWeight = FontWeight.Normal,
+                                                color = if (!esValido) Color(0xFFDC2626) else Color(0xFF9CA3AF)
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            // Diámetro Interno
-            if (inspeccion.diametroInternoMedida1.isNotEmpty() || inspeccion.diametroInternoMedida2.isNotEmpty()) {
-                val diametroInternoRango = especificacion?.let {
-                    formatearRango(
-                        it.diametroInternoMin,
-                        it.diametroInternoMax,
-                        "mm"
-                    )
-                } ?: ""
-                val diametroInterno1Valido = especificacion?.let {
-                    validarValor(
-                        inspeccion.diametroInternoMedida1,
-                        it.diametroInternoMin,
-                        it.diametroInternoMax
-                    )
-                } ?: true
-                val diametroInterno2Valido = especificacion?.let {
-                    validarValor(
-                        inspeccion.diametroInternoMedida2,
-                        it.diametroInternoMin,
-                        it.diametroInternoMax
-                    )
-                } ?: true
+                // Diámetro Interno
+                if (inspeccion.diametroInternoMedida1.isNotEmpty() || inspeccion.diametroInternoMedida2.isNotEmpty()) {
+                    val diametroInternoRango = especificacion?.let {
+                        formatearRango(it.diametroInternoMin, it.diametroInternoMax, "mm")
+                    } ?: ""
+                    val diametroInterno1Valido = especificacion?.let {
+                        validarValor(inspeccion.diametroInternoMedida1, it.diametroInternoMin, it.diametroInternoMax)
+                    } ?: true
+                    val diametroInterno2Valido = especificacion?.let {
+                        validarValor(inspeccion.diametroInternoMedida2, it.diametroInternoMin, it.diametroInternoMax)
+                    } ?: true
 
-                Text(
-                    text = "Diámetro Interno $diametroInternoRango",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = PrimaryMuestraColor,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
+                    Text(
+                        text = "Diámetro Interno $diametroInternoRango",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryMuestraColor,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    listOf(
-                        inspeccion.diametroInternoMedida1 to diametroInterno1Valido,
-                        inspeccion.diametroInternoMedida2 to diametroInterno2Valido
-                    ).forEachIndexed { index, (medida, esValido) ->
-                        if (medida.isNotEmpty()) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "M${index + 1}",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = if (!esValido) Color(0xFFDC2626) else Color(0xFF374151),
-                                    modifier = Modifier.padding(bottom = 6.dp)
-                                )
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = if (!esValido) Color(0xFFFFEBEE) else Color(0xFFF9FAFB),
-                                    border = BorderStroke(
-                                        width = 1.dp,
-                                        color = if (!esValido) Color(0xFFDC2626) else Color(
-                                            0xFFD1D5DB
-                                        )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf(
+                            inspeccion.diametroInternoMedida1 to diametroInterno1Valido,
+                            inspeccion.diametroInternoMedida2 to diametroInterno2Valido
+                        ).forEachIndexed { index, (medida, esValido) ->
+                            if (medida.isNotEmpty()) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "M${index + 1}",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (!esValido) Color(0xFFDC2626) else Color(0xFF374151),
+                                        modifier = Modifier.padding(bottom = 6.dp)
                                     )
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .defaultMinSize(minHeight = 56.dp)
-                                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                                        contentAlignment = Alignment.CenterStart
-                                    ) {
-                                        Text(
-                                            text = medida,
-                                            fontSize = 16.sp,
-                                            fontWeight = FontWeight.Normal,
-                                            color = if (!esValido) Color(0xFFDC2626) else Color(
-                                                0xFF9CA3AF
-                                            )
+                                    Surface(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = if (!esValido) Color(0xFFFFEBEE) else Color(0xFFF9FAFB),
+                                        border = BorderStroke(
+                                            width = 1.dp,
+                                            color = if (!esValido) Color(0xFFDC2626) else Color(0xFFD1D5DB)
                                         )
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .defaultMinSize(minHeight = 56.dp)
+                                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                                            contentAlignment = Alignment.CenterStart
+                                        ) {
+                                            Text(
+                                                text = medida,
+                                                fontSize = 16.sp,
+                                                fontWeight = FontWeight.Normal,
+                                                color = if (!esValido) Color(0xFFDC2626) else Color(0xFF9CA3AF)
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -2036,6 +2070,7 @@ fun InspeccionDimensionalForm(
                 checkLists.sortedByDescending { it.horaCheckList }.forEach { checkList ->
                         CheckListItemCard(
                         checkList = checkList,
+                        tipoMuestra = cabeceraFormState.tipo,
                         onClick = {
                             selectedCheckList = checkList
                             scope.launch {
@@ -2063,6 +2098,7 @@ fun InspeccionDimensionalForm(
             ) {
                 CheckListDetailModal(
                     checkList = checkList,
+                    tipoMuestra = cabeceraFormState.tipo,
                     onClose = {
                         scope.launch {
                             sheetState.hide()
@@ -2078,6 +2114,7 @@ fun InspeccionDimensionalForm(
     @Composable
     fun CheckListItemCard(
         checkList: CheckListInspeccion,
+        tipoMuestra: String,
         onClick: () -> Unit,
         onDelete: () -> Unit
     ) {
@@ -2112,7 +2149,11 @@ fun InspeccionDimensionalForm(
                         color = Color(0xFF111827)
                     )
                     Text(
-                        text = "Testeado: ${checkList.testeado} | Estabilidad: ${checkList.estabilidad}",
+                        text = if (tipoMuestra == "Tapa") {
+                            "Func. tapas: ${checkList.funcionalidadAcabadoTapas ?: "—"} | Troquelado: ${checkList.conformidadTroquelado ?: "—"}"
+                        } else {
+                            "Testeado: ${checkList.testeado ?: "—"} | Estabilidad: ${checkList.estabilidad ?: "—"}"
+                        },
                         fontSize = 12.sp,
                         color = Color(0xFF6B7280)
                     )
@@ -2131,6 +2172,7 @@ fun InspeccionDimensionalForm(
     @Composable
     fun CheckListDetailModal(
         checkList: CheckListInspeccion,
+        tipoMuestra: String,
         onClose: () -> Unit
     ) {
         Column(
@@ -2180,44 +2222,53 @@ fun InspeccionDimensionalForm(
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Lista de criterios
+            // Lista de criterios (solo Tapas o solo Envase, según cabecera)
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                CheckListDetailItem(
-                    label = "Testeado",
-                    value = checkList.testeado
-                )
-
-                CheckListDetailItem(
-                    label = "Estabilidad",
-                    value = checkList.estabilidad
-                )
-
-                CheckListDetailItem(
-                    label = "Tonalidad",
-                    value = checkList.tonalidad
-                )
-
-                CheckListDetailItem(
-                    label = "Visor Uniforme",
-                    value = checkList.visorUniforme
-                )
-
-                CheckListDetailItem(
-                    label = "Correcta Costura",
-                    value = checkList.correctaCostura
-                )
-
-                CheckListDetailItem(
-                    label = "Libre de Ovalamiento",
-                    value = checkList.libreOvulamiento
-                )
-
-                CheckListDetailItem(
-                    label = "Libre de Contaminación",
-                    value = checkList.libreContaminacion
-                )
+                if (tipoMuestra == "Tapa") {
+                    CheckListDetailItem(
+                        label = "Funcionalidad y Acabado de las Tapas",
+                        value = checkList.funcionalidadAcabadoTapas ?: ""
+                    )
+                    CheckListDetailItem(
+                        label = "Conformidad del Troquelado",
+                        value = checkList.conformidadTroquelado ?: ""
+                    )
+                    CheckListDetailItem(
+                        label = "Correcto Enlainado",
+                        value = checkList.correctoEnlainado ?: ""
+                    )
+                } else {
+                    CheckListDetailItem(
+                        label = "Testeado",
+                        value = checkList.testeado ?: ""
+                    )
+                    CheckListDetailItem(
+                        label = "Estabilidad",
+                        value = checkList.estabilidad ?: ""
+                    )
+                    CheckListDetailItem(
+                        label = "Tonalidad",
+                        value = checkList.tonalidad ?: ""
+                    )
+                    CheckListDetailItem(
+                        label = "Visor Uniforme",
+                        value = checkList.visorUniforme ?: ""
+                    )
+                    CheckListDetailItem(
+                        label = "Correcta Costura",
+                        value = checkList.correctaCostura ?: ""
+                    )
+                    CheckListDetailItem(
+                        label = "Libre de Ovalamiento",
+                        value = checkList.libreOvulamiento ?: ""
+                    )
+                    CheckListDetailItem(
+                        label = "Libre de Contaminación",
+                        value = checkList.libreContaminacion ?: ""
+                    )
+                }
             }
 
             // Observaciones
