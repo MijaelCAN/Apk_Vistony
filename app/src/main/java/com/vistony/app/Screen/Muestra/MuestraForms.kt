@@ -44,6 +44,7 @@ fun MaterialForm(
 ) {
     val formState by muestraViewModel.materialFormState.collectAsState()
     val materiales by muestraViewModel.materialesTemporales.collectAsState()
+    val isCreating by muestraViewModel.isCreating.collectAsState()
     
     // Estado para el modal de detalle
     var selectedMaterial by remember { mutableStateOf<MaterialEmpleado?>(null) }
@@ -158,6 +159,7 @@ fun MaterialForm(
                 onClick = { muestraViewModel.agregarMaterial() },
                 icon = Icons.Default.Add,
                 enabled = formState.isFormValid,
+                isLoading = isCreating,
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -401,6 +403,7 @@ fun InspeccionDimensionalForm(
     val especificacion by muestraViewModel.especificacionSoplado.collectAsState()
     val currentMuestraId by muestraViewModel.currentMuestraId.collectAsState()
     val muestrasCompletas by muestraViewModel.muestrasCompletas.collectAsState()
+    val isCreating by muestraViewModel.isCreating.collectAsState()
 
     // Cuando la muestra ya está completada, a veces las listas "temporales" vienen vacías.
     // En ese caso, mostramos las inspecciones desde el cache de `muestrasCompletas`.
@@ -1180,6 +1183,7 @@ fun InspeccionDimensionalForm(
                         onClick = { muestraViewModel.agregarInspeccion() },
                         icon = Icons.Default.Add,
                         enabled = formState.isFormValid && !isCompletado,
+                        isLoading = isCreating,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -2008,6 +2012,7 @@ fun InspeccionDimensionalForm(
     ) {
         val formState by muestraViewModel.checkListFormState.collectAsState()
         val checkLists by muestraViewModel.checkListsTemporales.collectAsState()
+        val isCreating by muestraViewModel.isCreating.collectAsState()
 
         // Estado para el modal de detalle
         var selectedCheckList by remember { mutableStateOf<CheckListInspeccion?>(null) }
@@ -2188,6 +2193,7 @@ fun InspeccionDimensionalForm(
                         onClick = { muestraViewModel.agregarCheckList() },
                         icon = Icons.Default.Add,
                         enabled = formState.isFormValid,
+                        isLoading = isCreating,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
