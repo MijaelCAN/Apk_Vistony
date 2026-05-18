@@ -1,16 +1,20 @@
 package com.vistony.app.Repository
 
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
+import com.vistony.app.Entidad.OTItem
 import com.vistony.app.Entidad.UserResponse
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
+import android.util.Log
 
 @Singleton
 class FirestoreRepository @Inject constructor() {
     private val db = FirebaseFirestore.getInstance()
     private val COLLECTION_USERS = "users"
     private val COLLECTION_TOKENS = "fcm_tokens"
+    private val COLLECTION_ORDENES_ENVASE = "ordenes_envase"
 
     /**
      * Guarda o actualiza el token FCM de un usuario en Firestore
@@ -62,6 +66,101 @@ class FirestoreRepository @Inject constructor() {
 
             Result.success(tokens)
         } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Login offline: busca al usuario en la colección "usuarios" (solo mantenimiento)
+     * y verifica el hash SHA-256 de la contraseña.
+     * Usa el cache local de Firestore si no hay internet.
+     * @return UserResponse si las credenciales son correctas, null si no coinciden o no existe
+     */
+    suspend fun loginFirestore(dni: String, passwordHash: String): Result<UserResponse?> {
+        return try {
+            val snapshot = db.collection(COLLECTION_USERS)
+                .whereEqualTo("dni", dni)
+                .limit(1)
+                .get()
+                .await()
+
+            if (snapshot.isEmpty) {
+                Log.w("FirestoreRepository", "Usuario $dni no encontrado en Firestore")
+                return Result.success(null)
+            }
+
+            val doc = snapshot.documents.first()
+            val storedHash = doc.getString("passwordHash")
+            if (storedHash == null || storedHash != passwordHash) {
+                Log.w("FirestoreRepository", "Contraseña incorrecta para usuario $dni")
+                return Result.success(null)
+            }
+
+            val user = UserResponse(
+                id = doc.getLong("id")?.toInt() ?: 0,
+                dni = doc.getString("dni") ?: "",
+                name = doc.getString("name") ?: "",
+                email = doc.getString("email") ?: "",
+                role = doc.getString("role") ?: "",
+                position = doc.getString("position") ?: "",
+                avatar = doc.getString("avatar") ?: "",
+                lastLogin = doc.getTimestamp("lastLogin")?.toDate()?.toString() ?: ""
+            )
+
+            Log.d("FirestoreRepository", "Login Firestore exitoso para $dni")
+            Result.success(user)
+        } catch (e: Exception) {
+            Log.e("FirestoreRepository", "Error al consultar Firestore para login", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Inicia un SnapshotListener para el usuario logueado.
+     * - Con internet: descarga el documento y lo mantiene actualizado en cache local.
+     * - Sin internet: sirve desde el cache local (del último login online).
+     * Retorna el ListenerRegistration para cancelarlo al cerrar sesión.
+     */
+    fun escucharUsuario(dni: String): ListenerRegistration {
+        return db.collection(COLLECTION_USERS)
+            .whereEqualTo("dni", dni)
+            .limit(1)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.w("FirestoreRepository", "Error en SnapshotListener de usuario $dni", error)
+                    return@addSnapshotListener
+                }
+                if (snapshot != null && !snapshot.isEmpty) {
+                    Log.d("FirestoreRepository", "Cache actualizado para usuario $dni (fuente: ${snapshot.metadata.isFromCache})")
+                } else {
+                    Log.d("FirestoreRepository", "Usuario $dni no encontrado en colección usuarios (puede no ser mantenimiento)")
+                }
+            }
+    }
+
+    /**
+     * Consulta la colección "ordenes_envase" filtrando por OT_Envase.
+     * Retorna la lista de OTItem con ItemName, Qty (→ PlannedQty) y OT_Mezcla.
+     */
+    suspend fun getOTMezcla(otEnvase: Long): Result<List<OTItem>> {
+        return try {
+            val snapshot = db.collection(COLLECTION_ORDENES_ENVASE)
+                .whereEqualTo("OT_Mezcla", otEnvase)
+                .get()
+                .await()
+
+            val items = snapshot.documents.map { doc ->
+                OTItem(
+                    ItemName  = doc.getString("ItemName") ?: "",
+                    PlannedQty = doc.getLong("Qty")?.toString() ?: "0",
+                    OT_Mezcla  = doc.getLong("OT_Mezcla") ?: 0
+                )
+            }
+
+            Log.d("FirestoreRepository", "OT Mezcla encontrados: ${items.size} para OT_Envase=$otEnvase")
+            Result.success(items)
+        } catch (e: Exception) {
+            Log.e("FirestoreRepository", "Error al consultar ordenes_envase", e)
             Result.failure(e)
         }
     }

@@ -68,37 +68,44 @@ class ParadaViewModel @Inject constructor(
     fun setFechaFin(fecha: LocalDateTime?) { _fechaFin.value = fecha?.toLocalDate()?.atStartOfDay() }
 
     init {
-        viewModelScope.launch {
+        // Las APIs se cargan explícitamente desde la pantalla via cargarDatosIniciales()
+        // para evitar llamadas en background antes de que el usuario esté logueado
+    }
 
-            // Obtener las áreas desde el repositorio
-            val responseArea = paradaRepository.getAreas()
-            if (responseArea.isSuccessful) {
-                val body = responseArea.body()
-                if(body?.statusCode==200){
-                    _areas.value = areaResponseState(true, body, "OK")
-                }else{
+    fun cargarDatosIniciales() {
+        viewModelScope.launch {
+            try {
+                val responseArea = paradaRepository.getAreas()
+                if (responseArea.isSuccessful) {
+                    val body = responseArea.body()
+                    if (body?.statusCode == 200) {
+                        _areas.value = areaResponseState(true, body, "OK")
+                    } else {
+                        _areas.value = areaResponseState(false, AreaResponse(500, data = emptyList()), "Error al obtener las áreas")
+                    }
+                } else {
                     _areas.value = areaResponseState(false, AreaResponse(500, data = emptyList()), "Error al obtener las áreas")
                 }
-            } else {
-                _areas.value = areaResponseState(false, AreaResponse(500, data =  emptyList()), "Error al obtener las áreas")
+            } catch (e: Exception) {
+                Log.e("ParadaViewModel", "Error al obtener áreas: $e")
+                _areas.value = areaResponseState(false, AreaResponse(500, data = emptyList()), "Sin conexión")
             }
 
-            // Obtener las maquinas desde el repositorio
             try {
                 val responseMaqui = paradaRepository.getMaquinas()
                 if (responseMaqui.isSuccessful) {
                     val body = responseMaqui.body()
-                    if(body?.statusCode == 200){
+                    if (body?.statusCode == 200) {
                         _maquinas.value = maquinaResponseState(true, body, "OK")
                     }
-                }else{
+                } else {
                     _maquinas.value = maquinaResponseState(false, MaquinaResponse(500, emptyList()), "Error al obtener las maquinas")
                 }
             } catch (e: Exception) {
-                Log.e("Error", e.toString())
+                Log.e("ParadaViewModel", "Error al obtener maquinas: $e")
+                _maquinas.value = maquinaResponseState(false, MaquinaResponse(500, emptyList()), "Sin conexión")
             }
         }
-        // No cargar paradas en el init, se cargarán cuando se llame con DNI específico
     }
     fun obtenerParadas(request: ListaRequest) {
         Log.e("MDCR", request.toString())

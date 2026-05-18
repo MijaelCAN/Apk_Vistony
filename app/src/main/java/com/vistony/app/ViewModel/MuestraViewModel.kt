@@ -41,6 +41,9 @@ class MuestraViewModel @Inject constructor(
     private val _isCreating = MutableStateFlow(false)
     val isCreating: StateFlow<Boolean> = _isCreating.asStateFlow()
 
+    private val _isConfirming = MutableStateFlow(false)
+    val isConfirming: StateFlow<Boolean> = _isConfirming.asStateFlow()
+
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
@@ -1125,6 +1128,63 @@ class MuestraViewModel @Inject constructor(
             
             _isLoading.value = false
             android.util.Log.d("MuestraViewModel", "=== FIN OBTENIENDO REGISTROS DE LLEGADA ===")
+        }
+    }
+
+    fun confirmarRecepcion(registro: RegistroLlegada, fechaConfirmacion: String) {
+        viewModelScope.launch {
+            android.util.Log.d("MuestraViewModel", "=== CONFIRMANDO RECEPCIÓN ===")
+            android.util.Log.d("MuestraViewModel", "Orden: ${registro.numeroOrdenFabricacion}, Muestra: ${registro.numeroMuestra}")
+
+            _isConfirming.value = true
+            _errorMessage.value = null
+
+            try {
+                val request = ConfirmarRecepcionRequest(
+                    ordenFabricacion = registro.numeroOrdenFabricacion,
+                    nMuestra = registro.numeroMuestra.filter { it.isDigit() },
+                    fechaConfirmacion = fechaConfirmacion
+                )
+
+                val result = muestraRepository.confirmarRecepcion(request)
+
+                result.fold(
+                    onSuccess = { response ->
+                        android.util.Log.d("MuestraViewModel", "SUCCESS - Message: ${response.message}")
+
+                        if (response.success) {
+                            _successMessage.value = response.message
+
+                            // Actualizar el registro localmente para reflejar el cambio inmediatamente
+                            val fechaConfirmacion = response.data?.fechaConfirmacion ?: ""
+                            val listaActual = _registrosLlegada.value.toMutableList()
+                            val indice = listaActual.indexOfFirst {
+                                it.numeroOrdenFabricacion == registro.numeroOrdenFabricacion &&
+                                it.numeroMuestra == registro.numeroMuestra
+                            }
+                            if (indice != -1) {
+                                listaActual[indice] = listaActual[indice].copy(
+                                    estado = "CONFIRMADO",
+                                    fechaConfirmacion = fechaConfirmacion
+                                )
+                                _registrosLlegada.value = listaActual
+                            }
+                        } else {
+                            _errorMessage.value = response.message
+                        }
+                    },
+                    onFailure = { exception ->
+                        android.util.Log.e("MuestraViewModel", "FAILURE - ${exception.message}", exception)
+                        _errorMessage.value = exception.message ?: "Error al confirmar recepción"
+                    }
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("MuestraViewModel", "EXCEPCIÓN INESPERADA", e)
+                _errorMessage.value = "Error inesperado: ${e.message}"
+            }
+
+            _isConfirming.value = false
+            android.util.Log.d("MuestraViewModel", "=== FIN CONFIRMANDO RECEPCIÓN ===")
         }
     }
 

@@ -4,6 +4,7 @@ import com.vistony.app.Entidad.*
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Query
 
@@ -68,6 +69,9 @@ interface MuestraService {
     
     @POST("Inspeccion/PostProduccion")
     suspend fun crearRegistroLlegada(@Body request: RegistroLlegadaCreateRequest): Response<RegistroLlegadaCreateResponse>
+
+    @PATCH("Inspeccion/ConfirmarRecepcion")
+    suspend fun confirmarRecepcion(@Body request: ConfirmarRecepcionRequest): Response<ConfirmarRecepcionResponse>
 }
 
 

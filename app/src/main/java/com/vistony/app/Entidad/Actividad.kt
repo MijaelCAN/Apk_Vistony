@@ -207,7 +207,8 @@ data class semiActivity(
     val U_InitialHour: String? = null,
     val U_FinalHour: String? = null,
     val U_imageUrls: List<String> = emptyList(),
-    val U_status: String = ""
+    val U_status: String = "",
+    val U_createdAt: String? = null  // activityData.createdAt (Firestore Timestamp) serializado para UI/filtros
 )
 
 data class ResponseCreated(
@@ -273,7 +274,8 @@ data class OTResponse(
 data class OTItem(
     val ItemName: String = "",
     val UomName: String = "",
-    val PlannedQty: String = ""
+    val PlannedQty: String = "",
+    val OT_Mezcla: Long = 0
 )
 
 

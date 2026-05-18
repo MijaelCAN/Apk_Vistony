@@ -40,13 +40,20 @@ fun BottomBar(
     inspViewModel: InspectionViewModel = hiltViewModel()
 ) {
 
-    var selectedDateIni = paradaViewModel.fechaIni.value
-    var selectedDateFin = paradaViewModel.fechaFin.value
+    var selectedDateIni by remember { mutableStateOf(paradaViewModel.fechaIni.value) }
+    var selectedDateFin by remember { mutableStateOf(paradaViewModel.fechaFin.value) }
 
     var showDialogDateIni by remember { mutableStateOf(false) }
     var showDialogDateFin by remember { mutableStateOf(false) }
 
+    // Evitar que el LaunchedEffect dispare en la composición inicial y sobreescriba el rango ya cargado
+    var isFirstComposition by remember { mutableStateOf(true) }
+
     LaunchedEffect(selectedDateIni, selectedDateFin) {
+        if (isFirstComposition) {
+            isFirstComposition = false
+            return@LaunchedEffect
+        }
         val newfechaIni = selectedDateIni?.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
         val newfechaFin = selectedDateFin?.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
         when(type){

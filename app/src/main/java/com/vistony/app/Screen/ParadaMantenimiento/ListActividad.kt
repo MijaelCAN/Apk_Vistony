@@ -116,7 +116,8 @@ fun ListActividad(
     viewModel: ActividadViewModel = hiltViewModel(),
     otViewModel: OTViewModel = hiltViewModel(),
     id: String = "prueba",
-    userState: UserState
+    userState: UserState,
+    onLogout: () -> Unit = {}
 ) {
     val loginViewModel = hiltViewModel<LoginViewModel>(LocalContext.current as ComponentActivity)
 
@@ -178,7 +179,7 @@ fun ListActividad(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        drawerContent = { CustomDrawer(navController = navController, id, userState = userState) }
+        drawerContent = { CustomDrawer(navController = navController, id, userState = userState, onLogout = onLogout) }
     ) {
         ModalBottomSheetLayout(
             modifier = Modifier.fillMaxWidth(),

@@ -70,6 +70,7 @@ fun RegistroLlegadaScreen(
     val successMessage by muestraViewModel.successMessage.collectAsState()
     val errorMessage by muestraViewModel.errorMessage.collectAsState()
     val isCreating by muestraViewModel.isCreating.collectAsState()
+    val isConfirming by muestraViewModel.isConfirming.collectAsState()
     val productoEncontrado by muestraViewModel.productoEncontrado.collectAsState()
 
     val scope = rememberCoroutineScope()
@@ -275,6 +276,12 @@ fun RegistroLlegadaScreen(
     
     // BottomSheet para detalle
     selectedRegistro?.let { registro ->
+        // Sincronizar con el estado actualizado de la lista (por si se confirmó)
+        val registroActualizado = registros.find {
+            it.numeroOrdenFabricacion == registro.numeroOrdenFabricacion &&
+            it.numeroMuestra == registro.numeroMuestra
+        } ?: registro
+
         ModalBottomSheet(
             onDismissRequest = {
                 scope.launch {
@@ -287,14 +294,19 @@ fun RegistroLlegadaScreen(
             containerColor = Color(0xFFF7F7F7)
         ) {
             RegistroLlegadaDetailSheet(
-                registro = registro,
+                registro = registroActualizado,
                 onClose = {
                     scope.launch {
                         detailSheetState.hide()
                     }.invokeOnCompletion {
                         selectedRegistro = null
                     }
-                }
+                },
+                onConfirmar = { reg ->
+                    val fechaIso = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                    muestraViewModel.confirmarRecepcion(reg, fechaIso)
+                },
+                isConfirming = isConfirming
             )
         }
     }
@@ -651,6 +663,25 @@ fun RegistroLlegadaItemCard(
                     fontSize = 14.sp,
                     color = Color(0xFF6B7280)
                 )
+                Spacer(modifier = Modifier.height(6.dp))
+                // Chip de estado
+                val esConfirmado = !registro.fechaConfirmacion.isNullOrEmpty()
+                val estadoColor = colorEstado(registro.estado)
+                Box(
+                    modifier = Modifier
+                        .background(
+                            color = estadoColor.copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(20.dp)
+                        )
+                        .padding(horizontal = 10.dp, vertical = 3.dp)
+                ) {
+                    Text(
+                        text = registro.estado,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = estadoColor
+                    )
+                }
             }
 
             // Flecha
@@ -669,8 +700,13 @@ fun RegistroLlegadaItemCard(
 @Composable
 fun RegistroLlegadaDetailSheet(
     registro: RegistroLlegada,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onConfirmar: ((RegistroLlegada) -> Unit)? = null,
+    isConfirming: Boolean = false
 ) {
+    val esConfirmado = !registro.fechaConfirmacion.isNullOrEmpty()
+    val estadoColor = colorEstado(registro.estado)
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -689,7 +725,7 @@ fun RegistroLlegadaDetailSheet(
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF111827)
             )
-            
+
             IconButton(onClick = onClose) {
                 Icon(
                     imageVector = Icons.Default.Close,
@@ -698,9 +734,28 @@ fun RegistroLlegadaDetailSheet(
                 )
             }
         }
-        
-        Spacer(modifier = Modifier.height(24.dp))
-        
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Chip de estado
+        Box(
+            modifier = Modifier
+                .background(
+                    color = estadoColor.copy(alpha = 0.12f),
+                    shape = RoundedCornerShape(20.dp)
+                )
+                .padding(horizontal = 12.dp, vertical = 5.dp)
+        ) {
+            Text(
+                text = registro.estado,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = estadoColor
+            )
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
         // Información del registro
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -710,44 +765,141 @@ fun RegistroLlegadaDetailSheet(
                 value = registro.numeroOrdenFabricacion,
                 icon = Icons.Default.Description
             )
-            
+
             DetailRow(
                 label = "N° de Muestra",
                 value = registro.numeroMuestra,
                 icon = Icons.Default.Numbers
             )
-            
+
             DetailRow(
                 label = "Descripción del Producto",
                 value = registro.descripcionProducto,
                 icon = Icons.Default.Inventory
             )
-            
-            DetailRow(
-                label = "Máquina",
-                value = registro.descripcionProducto, // maquina
-                icon = Icons.Default.Build
-            )
-            
-            DetailRow(
-                label = "Fecha y Hora de Registro",
-                value = formatearFechaHora(registro.fechaRegistro),
-                icon = Icons.Default.CalendarToday
-            )
-            
-            DetailRow(
-                label = "Usuario",
-                value = registro.userRegister,
-                icon = Icons.Default.Person
-            )
-            
+
             DetailRow(
                 label = "Código de Producto",
                 value = registro.codigoProducto,
                 icon = Icons.Default.Tag
             )
+
+            DetailRow(
+                label = "Fecha y Hora de Registro",
+                value = formatearFechaHora(registro.fechaRegistro),
+                icon = Icons.Default.CalendarToday
+            )
+
+            DetailRow(
+                label = "Registrado por",
+                value = registro.nombre.ifEmpty { registro.userRegister },
+                icon = Icons.Default.Person
+            )
+
+            val esRechazado = registro.estado == "Rechazado"
+
+            if (!registro.fechaAprobacion.isNullOrEmpty()) {
+                DetailRow(
+                    label = if (esRechazado) "Fecha de Rechazo" else "Fecha de Aprobación",
+                    value = formatearFechaHora(registro.fechaAprobacion),
+                    icon = if (esRechazado) Icons.Default.ThumbDown else Icons.Default.ThumbUp
+                )
+            }
+
+            if (!registro.fechaConfirmacion.isNullOrEmpty()) {
+                DetailRow(
+                    label = "Fecha de Confirmación",
+                    value = formatearFechaHora(registro.fechaConfirmacion),
+                    icon = Icons.Default.CheckCircle
+                )
+            }
         }
-        
+
+        // Tiempos calculados
+        val esRechazado = registro.estado == "Rechazado"
+        val tiempoAprobacion = calcularTiempo(registro.fechaRegistro, registro.fechaAprobacion)
+        val tiempoConfirmacion = calcularTiempo(registro.fechaAprobacion, registro.fechaConfirmacion)
+
+        if (tiempoAprobacion != null || tiempoConfirmacion != null) {
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                text = "Tiempos",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF6B7280)
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                if (tiempoAprobacion != null) {
+                    TiempoCard(
+                        label = if (esRechazado) "Tiempo de Rechazo" else "Tiempo de Aprobación",
+                        valor = tiempoAprobacion,
+                        color = if (esRechazado) Color(0xFFDC2626) else Color(0xFF7C3AED),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (tiempoConfirmacion != null) {
+                    TiempoCard(
+                        label = "Tiempo de Confirmación",
+                        valor = tiempoConfirmacion,
+                        color = Color(0xFF0369A1),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(28.dp))
+
+        // Botón de confirmación — solo visible si no está confirmado y se pasó el callback
+        if (!esConfirmado && onConfirmar != null) {
+            val esAprobado = registro.estado == "Aprobado" || esRechazado
+            Button(
+                onClick = { onConfirmar(registro) },
+                enabled = esAprobado && !isConfirming,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF16A34A),
+                    disabledContainerColor = Color(0xFF16A34A).copy(alpha = 0.5f)
+                )
+            ) {
+                if (isConfirming) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Confirmando...",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Marcar como Recibido",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
     }
 }
@@ -823,15 +975,107 @@ fun formatearTiempoRelativo(fechaRegistro: String): String {
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-fun formatearFechaHora(fechaRegistro: String): String {
+fun parsearFecha(fecha: String): java.time.LocalDateTime? {
+    val parserConEspacioYFraccion = java.time.format.DateTimeFormatterBuilder()
+        .appendPattern("yyyy-MM-dd HH:mm:ss")
+        .optionalStart()
+        .appendFraction(java.time.temporal.ChronoField.NANO_OF_SECOND, 0, 9, true)
+        .optionalEnd()
+        .toFormatter()
     return try {
-        // Parsear el formato ISO 8601 con timezone: "2026-02-06T02:22:58-05:00"
-        val formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
-        val fechaHora = java.time.ZonedDateTime.parse(fechaRegistro, formatter)
-        // Formatear a formato legible: "06/02/2026 02:22"
-        val formatoSalida = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
-        fechaHora.format(formatoSalida)
-    } catch (e: Exception) {
-        fechaRegistro
+        java.time.ZonedDateTime.parse(fecha, DateTimeFormatter.ISO_OFFSET_DATE_TIME).toLocalDateTime()
+    } catch (e1: Exception) {
+        try {
+            java.time.LocalDateTime.parse(fecha, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        } catch (e2: Exception) {
+            try {
+                java.time.LocalDateTime.parse(fecha, parserConEspacioYFraccion)
+            } catch (e3: Exception) {
+                try {
+                    java.time.LocalDateTime.parse(fecha, DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
+                } catch (e4: Exception) { null }
+            }
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun calcularTiempo(desde: String?, hasta: String?): String? {
+    if (desde.isNullOrEmpty() || hasta.isNullOrEmpty()) return null
+    val dtDesde = parsearFecha(desde) ?: return null
+    val dtHasta = parsearFecha(hasta) ?: return null
+    val minutos = java.time.Duration.between(dtDesde, dtHasta).toMinutes()
+    if (minutos < 0) return null
+    val horas = minutos / 60
+    val mins = minutos % 60
+    return when {
+        horas > 0 -> "${horas}h ${mins}min"
+        else -> "${mins}min"
+    }
+}
+
+@Composable
+fun TiempoCard(label: String, valor: String, color: Color, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .background(color = color.copy(alpha = 0.1f), shape = RoundedCornerShape(12.dp))
+            .border(width = 1.dp, color = color.copy(alpha = 0.3f), shape = RoundedCornerShape(12.dp))
+            .padding(12.dp)
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = valor,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = color
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = label,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                color = color.copy(alpha = 0.8f),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        }
+    }
+}
+
+fun colorEstado(estado: String): androidx.compose.ui.graphics.Color = when (estado) {
+    "Aprobado"   -> Color(0xFF16A34A)
+    "Rechazado"  -> Color(0xFFDC2626)
+    "Confirmado" -> Color(0xFF9F25EB)
+    else         -> Color(0xFFD97706) // Pendiente y cualquier otro
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun formatearFechaHora(fechaRegistro: String): String {
+    val formatoSalida = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+    val parserConEspacioYFraccion = java.time.format.DateTimeFormatterBuilder()
+        .appendPattern("yyyy-MM-dd HH:mm:ss")
+        .optionalStart()
+        .appendFraction(java.time.temporal.ChronoField.NANO_OF_SECOND, 0, 9, true)
+        .optionalEnd()
+        .toFormatter()
+    return try {
+        java.time.ZonedDateTime.parse(fechaRegistro, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+            .format(formatoSalida)
+    } catch (e1: Exception) {
+        try {
+            java.time.LocalDateTime.parse(fechaRegistro, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                .format(formatoSalida)
+        } catch (e2: Exception) {
+            try {
+                java.time.LocalDateTime.parse(fechaRegistro, parserConEspacioYFraccion)
+                    .format(formatoSalida)
+            } catch (e3: Exception) {
+                try {
+                    java.time.LocalDateTime.parse(fechaRegistro, DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
+                        .format(formatoSalida)
+                } catch (e4: Exception) {
+                    fechaRegistro
+                }
+            }
+        }
     }
 }

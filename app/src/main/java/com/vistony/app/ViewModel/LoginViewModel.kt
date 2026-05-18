@@ -3,6 +3,7 @@ package com.vistony.app.ViewModel
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import java.security.MessageDigest
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -13,6 +14,7 @@ import com.vistony.app.Entidad.Data
 import com.vistony.app.Entidad.LoginRequest
 import com.vistony.app.Entidad.LoginResponse
 import com.vistony.app.Entidad.UserResponse
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.messaging.FirebaseMessaging
 import com.vistony.app.Repository.FirestoreRepository
 import com.vistony.app.Service.RetrofitInstance
@@ -46,6 +48,7 @@ class LoginViewModel @Inject constructor(
     val userData: StateFlow<UserResponse?> = _userData.asStateFlow()
 
     private val sharedPreferences = application.getSharedPreferences("login_prefs", Context.MODE_PRIVATE)
+    private var usuarioListener: ListenerRegistration? = null
 
     // Función para guardar credenciales
     fun saveCredentials(username: String, password: String, remember: Boolean) {
@@ -88,58 +91,90 @@ class LoginViewModel @Inject constructor(
                 val response = authService.login(LoginRequest(user, pass))
                 if (response.isSuccessful) {
                     val body = response.body()
-                    if (body != null) {
-                        if (body.success) {
-                            _loginstate = ResponseState(
-                                state = true,
-                                loginResponse = body,
-                                message = "Autorizado"
-                            )
-                            _userData.value = body.data
-                            _isLoading.value = EstadoLogin.Exitoso
-                            
-                            // Guardar información del usuario en SharedPreferences para FCM
-                            sharedPreferences.edit()
-                                .putString("current_user_id", body.data.dni)
-                                .putString("current_user_role", body.data.role)
-                                .putString("current_user_name", body.data.name)
-                                .apply()
-                            
-                            // Obtener y guardar el token FCM en Firestore
-                            launch {
-                                try {
-                                    val fcmPrefs = application.getSharedPreferences("fcm_prefs", Context.MODE_PRIVATE)
-                                    var token = fcmPrefs.getString("fcm_token", null)
-                                    
-                                    // Si no hay token guardado, obtenerlo de Firebase
-                                    if (token == null) {
-                                        token = FirebaseMessaging.getInstance().token.await()
-                                        fcmPrefs.edit().putString("fcm_token", token).apply()
-                                    }
-                                    
-                                    // Guardar token en Firestore
-                                    if (token != null) {
-                                        firestoreRepository.saveUserToken(
-                                            userId = body.data.dni,
-                                            token = token,
-                                            userRole = body.data.role,
-                                            userName = body.data.name
-                                        ).onSuccess {
-                                            Log.d("LoginViewModel", "Token FCM guardado exitosamente")
-                                        }.onFailure { error ->
-                                            Log.e("LoginViewModel", "Error al guardar token FCM", error)
-                                        }
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e("LoginViewModel", "Error al obtener/guardar token FCM", e)
-                                }
-                            }
-
-                        } else { handleError("Usuario no registrado") }
-                    }else { handleError("Error en la respuesta del servidor") }
-                } else { handleError("Error en la respuesta: ${response.message()}")}
-            } catch (e: Exception) {handleError("Error de comunicación: $e")}
+                    if (body != null && body.success) {
+                        loginExitoso(body.data)
+                    } else {
+                        handleError("Usuario no registrado")
+                    }
+                } else {
+                    // API respondió con error HTTP → intentar Firestore como fallback
+                    intentarLoginFirestore(user, pass, "Error en la respuesta: ${response.message()}")
+                }
+            } catch (e: Exception) {
+                // Sin internet u otro error de red → intentar Firestore como fallback
+                intentarLoginFirestore(user, pass, "Sin conexión al servidor")
+            }
         }
+    }
+
+    /**
+     * Fallback de login via Firestore (solo usuarios de mantenimiento).
+     * Se usa cuando la API SAP no está disponible o responde con error.
+     */
+    private suspend fun intentarLoginFirestore(user: String, pass: String, motivoFallo: String) {
+        Log.w("LoginViewModel", "API SAP falló ($motivoFallo), intentando Firestore...")
+        val hash = hashPassword(pass)
+        firestoreRepository.loginFirestore(user, hash)
+            .onSuccess { cachedUser ->
+                if (cachedUser != null) {
+                    Log.d("LoginViewModel", "Login offline exitoso para ${cachedUser.name}")
+                    loginExitoso(cachedUser)
+                } else {
+                    handleError(motivoFallo)
+                }
+            }
+            .onFailure {
+                handleError(motivoFallo)
+            }
+    }
+
+    private fun loginExitoso(userData: com.vistony.app.Entidad.UserResponse) {
+        _loginstate = ResponseState(state = true, message = "Autorizado")
+        _userData.value = userData
+        _isLoading.value = EstadoLogin.Exitoso
+
+        sharedPreferences.edit()
+            .putString("current_user_id", userData.dni)
+            .putString("current_user_role", userData.role)
+            .putString("current_user_name", userData.name)
+            .apply()
+
+        // Iniciar SnapshotListener para mantener el cache de este usuario actualizado.
+        // Aplica solo a mantenimiento (únicos en la colección "usuarios"),
+        // pero es inofensivo para otros roles (simplemente no encontrará documento).
+        usuarioListener?.remove()
+        usuarioListener = firestoreRepository.escucharUsuario(userData.dni)
+
+        // Guardar token FCM (se omite silenciosamente si no hay internet)
+        viewModelScope.launch {
+            try {
+                val fcmPrefs = application.getSharedPreferences("fcm_prefs", Context.MODE_PRIVATE)
+                var token = fcmPrefs.getString("fcm_token", null)
+                if (token == null) {
+                    token = FirebaseMessaging.getInstance().token.await()
+                    fcmPrefs.edit().putString("fcm_token", token).apply()
+                }
+                if (token != null) {
+                    firestoreRepository.saveUserToken(
+                        userId = userData.dni,
+                        token = token,
+                        userRole = userData.role,
+                        userName = userData.name
+                    ).onSuccess {
+                        Log.d("LoginViewModel", "Token FCM guardado exitosamente")
+                    }.onFailure { error ->
+                        Log.e("LoginViewModel", "Error al guardar token FCM", error)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("LoginViewModel", "Error al obtener/guardar token FCM", e)
+            }
+        }
+    }
+
+    private fun hashPassword(password: String): String {
+        val bytes = MessageDigest.getInstance("SHA-256").digest(password.toByteArray())
+        return bytes.joinToString("") { "%02x".format(it) }
     }
 
     private fun handleError(message: String) {
@@ -149,19 +184,20 @@ class LoginViewModel @Inject constructor(
     }
 
     fun clearUserData() {
-        // Obtener userId antes de limpiar SharedPreferences
         val userId = sharedPreferences.getString("current_user_id", null)
-        
+
+        // Cancelar el SnapshotListener al cerrar sesión
+        usuarioListener?.remove()
+        usuarioListener = null
+
         _userData.value = null
-        
-        // Limpiar información del usuario de SharedPreferences
+
         sharedPreferences.edit()
             .remove("current_user_id")
             .remove("current_user_role")
             .remove("current_user_name")
             .apply()
-        
-        // Opcional: Eliminar token de Firestore al cerrar sesión
+
         if (userId != null) {
             viewModelScope.launch {
                 firestoreRepository.deleteUserToken(userId)
