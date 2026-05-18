@@ -55,7 +55,10 @@ interface MuestraService {
     suspend fun consultarProducto(@Query("Code") code: String): Response<ConsultaProductoResponse>
     
     @GET("Inspeccion/EspecificacionSoplado")
-    suspend fun obtenerEspecificacionSoplado(@Query("CodProducto") codProducto: String): Response<EspecificacionSopladoResponse>
+    suspend fun obtenerEspecificacionSoplado(
+        @Query("CodProducto") codProducto: String,
+        //@Query("Tipo") tipo: String = "Envase"
+    ): Response<EspecificacionSopladoResponse>
     
     @GET("Inspeccion/GetProduccion")
     suspend fun obtenerRegistrosLlegada(

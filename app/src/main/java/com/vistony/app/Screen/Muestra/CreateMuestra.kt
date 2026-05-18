@@ -3,6 +3,7 @@ package com.vistony.app.Screen.Muestra
 import android.app.Activity
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -593,7 +594,50 @@ fun CabeceraForm(
     }
     
     Spacer(modifier = Modifier.height(16.dp))
-    
+
+    // Tipo de muestra: Envase | Tapa (auto desde OT, editable como fallback)
+    Text(
+        text = "Tipo de Muestra",
+        fontSize = 14.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = Color(0xFF374151)
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        listOf("Envase", "Tapa").forEach { opcion ->
+            val seleccionado = formState.tipo == opcion
+            OutlinedButton(
+                onClick = {
+                    if (!isEditMode) muestraViewModel.updateCabecera("tipo", opcion)
+                },
+                modifier = Modifier.weight(1f),
+                enabled = !isEditMode,
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = if (seleccionado) Color(0xFF4F46E5) else Color.Transparent,
+                    contentColor = if (seleccionado) Color.White else Color(0xFF4F46E5)
+                ),
+                border = BorderStroke(
+                    width = 1.5.dp,
+                    color = if (seleccionado) Color(0xFF4F46E5) else Color(0xFFD1D5DB)
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Icon(
+                    imageVector = if (opcion == "Tapa") Icons.Default.RadioButtonChecked else Icons.Default.Inventory2,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(text = opcion, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            }
+        }
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
     // Auxiliar y Encargado de Producción
     /*Row(
         modifier = Modifier.fillMaxWidth(),

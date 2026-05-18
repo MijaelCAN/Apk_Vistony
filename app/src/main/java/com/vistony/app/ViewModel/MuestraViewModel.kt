@@ -70,6 +70,7 @@ class MuestraViewModel @Inject constructor(
         var producto: String = "",
         var auxiliar: String = "",
         var encargadoProduccion: String = "",
+        var tipo: String = "Envase", // "Envase" | "Tapa"
         var isFormValid: Boolean = false
     )
 
@@ -89,6 +90,7 @@ class MuestraViewModel @Inject constructor(
         var temperaturaCiclo: String = "",
         var numeroCavidad: String = "1",
         var peso: String = "",
+        // Campos Envase
         var diametroRoscaMedida1: String = "",
         var diametroRoscaMedida2: String = "",
         var alturaBocaMedida1: String = "",
@@ -102,6 +104,10 @@ class MuestraViewModel @Inject constructor(
         var alturaTotalMedida2: String = "",
         var diametroInternoMedida1: String = "",
         var diametroInternoMedida2: String = "",
+        // Campos Tapa
+        var diametroInternoRoscaTapa: String = "",
+        var diametroExternoRoscaTapa: String = "",
+        var diametroInternoTrinquete: String = "",
         var observacion: String = "",
         var isFormValid: Boolean = false
     )
@@ -109,6 +115,7 @@ class MuestraViewModel @Inject constructor(
     // Estado del formulario de check list
     data class CheckListFormState(
         var horaCheckList: String = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm")),
+        // Criterios Envase
         var testeado: String = "",
         var estabilidad: String = "",
         var tonalidad: String = "",
@@ -116,6 +123,10 @@ class MuestraViewModel @Inject constructor(
         var correctaCostura: String = "",
         var libreOvulamiento: String = "",
         var libreContaminacion: String = "",
+        // Criterios Tapa
+        var funcionalidadAcabadoTapas: String = "",
+        var conformidadTroquelado: String = "",
+        var correctoEnlainado: String = "",
         var observacion: String = "",
         var isFormValid: Boolean = false
     )
@@ -197,7 +208,8 @@ class MuestraViewModel @Inject constructor(
             // Solo obtener si el código de producto cambió
             if (_codigoProductoActual.value != codProducto) {
                 _codigoProductoActual.value = codProducto
-                
+                val tipo = _cabeceraFormState.value.tipo
+
                 try {
                     val result = muestraRepository.obtenerEspecificacionSoplado(codProducto)
                     result.fold(
@@ -315,11 +327,12 @@ class MuestraViewModel @Inject constructor(
             "producto" -> current.copy(producto = value)
             "auxiliar" -> current.copy(auxiliar = value)
             "encargadoProduccion" -> current.copy(encargadoProduccion = value)
+            "tipo" -> current.copy(tipo = value)
             else -> current
         }
         _cabeceraFormState.value = newState
         validateCabeceraForm()
-        
+
         // Guardar automáticamente si está en modo edición
         guardarCambiosAutomaticamente()
     }
@@ -356,6 +369,7 @@ class MuestraViewModel @Inject constructor(
             "temperaturaCiclo" -> current.copy(temperaturaCiclo = value)
             "numeroCavidad" -> current.copy(numeroCavidad = value)
             "peso" -> current.copy(peso = value)
+            // Campos Envase
             "diametroRoscaMedida1" -> current.copy(diametroRoscaMedida1 = value)
             "diametroRoscaMedida2" -> current.copy(diametroRoscaMedida2 = value)
             "alturaBocaMedida1" -> current.copy(alturaBocaMedida1 = value)
@@ -369,6 +383,10 @@ class MuestraViewModel @Inject constructor(
             "alturaTotalMedida2" -> current.copy(alturaTotalMedida2 = value)
             "diametroInternoMedida1" -> current.copy(diametroInternoMedida1 = value)
             "diametroInternoMedida2" -> current.copy(diametroInternoMedida2 = value)
+            // Campos Tapa
+            "diametroInternoRoscaTapa" -> current.copy(diametroInternoRoscaTapa = value)
+            "diametroExternoRoscaTapa" -> current.copy(diametroExternoRoscaTapa = value)
+            "diametroInternoTrinquete" -> current.copy(diametroInternoTrinquete = value)
             "observacion" -> current.copy(observacion = value)
             else -> current
         }
@@ -380,6 +398,7 @@ class MuestraViewModel @Inject constructor(
         val current = _checkListFormState.value
         val newState = when (field) {
             "horaCheckList" -> current.copy(horaCheckList = value)
+            // Criterios Envase
             "testeado" -> current.copy(testeado = value)
             "estabilidad" -> current.copy(estabilidad = value)
             "tonalidad" -> current.copy(tonalidad = value)
@@ -387,6 +406,10 @@ class MuestraViewModel @Inject constructor(
             "correctaCostura" -> current.copy(correctaCostura = value)
             "libreOvulamiento" -> current.copy(libreOvulamiento = value)
             "libreContaminacion" -> current.copy(libreContaminacion = value)
+            // Criterios Tapa
+            "funcionalidadAcabadoTapas" -> current.copy(funcionalidadAcabadoTapas = value)
+            "conformidadTroquelado" -> current.copy(conformidadTroquelado = value)
+            "correctoEnlainado" -> current.copy(correctoEnlainado = value)
             "observacion" -> current.copy(observacion = value)
             else -> current
         }
@@ -497,11 +520,15 @@ class MuestraViewModel @Inject constructor(
 
     private fun validateCheckListForm() {
         val current = _checkListFormState.value
-        
-        // En modo edición, no validar campos vacíos para formularios de agregar
-        // En modo creación, validar que todos los campos estén llenos
+        val tipo = _cabeceraFormState.value.tipo
+
         val isValid = if (_isEditMode.value) {
-            true // En modo edición, siempre es válido para agregar items
+            true
+        } else if (tipo == "Tapa") {
+            current.horaCheckList.isNotEmpty() &&
+            current.funcionalidadAcabadoTapas.isNotEmpty() &&
+            current.conformidadTroquelado.isNotEmpty() &&
+            current.correctoEnlainado.isNotEmpty()
         } else {
             current.horaCheckList.isNotEmpty() &&
             current.testeado.isNotEmpty() &&
@@ -512,7 +539,7 @@ class MuestraViewModel @Inject constructor(
             current.libreOvulamiento.isNotEmpty() &&
             current.libreContaminacion.isNotEmpty()
         }
-        
+
         _checkListFormState.value = current.copy(isFormValid = isValid)
     }
 
@@ -565,19 +592,25 @@ class MuestraViewModel @Inject constructor(
                 
                 val checkList = _checkListFormState.value
                 val fechaHora = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
-                
-                android.util.Log.d("MuestraViewModel", "DocEntry a usar: $docEntry")
-                
+                val tipoMuestra = _cabeceraFormState.value.tipo
+
+                android.util.Log.d("MuestraViewModel", "DocEntry a usar: $docEntry, Tipo: $tipoMuestra")
+
                 val request = CheckListCreateRequest(
                     muestraId = muestraId,
                     horaCheckList = fechaHora,
-                    testeado = checkList.testeado,
-                    estabilidad = checkList.estabilidad,
-                    tonalidad = checkList.tonalidad,
-                    visorUniforme = checkList.visorUniforme,
-                    correctaCostura = checkList.correctaCostura,
-                    libreOvulamiento = checkList.libreOvulamiento,
-                    libreContaminacion = checkList.libreContaminacion,
+                    // Criterios Envase — null si es Tapa
+                    testeado = if (tipoMuestra == "Tapa") null else checkList.testeado,
+                    estabilidad = if (tipoMuestra == "Tapa") null else checkList.estabilidad,
+                    tonalidad = if (tipoMuestra == "Tapa") null else checkList.tonalidad,
+                    visorUniforme = if (tipoMuestra == "Tapa") null else checkList.visorUniforme,
+                    correctaCostura = if (tipoMuestra == "Tapa") null else checkList.correctaCostura,
+                    libreOvulamiento = if (tipoMuestra == "Tapa") null else checkList.libreOvulamiento,
+                    libreContaminacion = if (tipoMuestra == "Tapa") null else checkList.libreContaminacion,
+                    // Criterios Tapa — null si es Envase
+                    funcionalidadAcabadoTapas = if (tipoMuestra == "Tapa") checkList.funcionalidadAcabadoTapas else null,
+                    conformidadTroquelado = if (tipoMuestra == "Tapa") checkList.conformidadTroquelado else null,
+                    correctoEnlainado = if (tipoMuestra == "Tapa") checkList.correctoEnlainado else null,
                     observacion = checkList.observacion
                 )
                 
@@ -596,7 +629,6 @@ class MuestraViewModel @Inject constructor(
                             resetCheckListForm()
                             // Agregar a la lista temporal
                             val nuevoCheckList = CheckListInspeccion(
-                                //id = UUID.randomUUID().toString(),
                                 muestraId = muestraId,
                                 horaCheckList = request.horaCheckList,
                                 testeado = request.testeado,
@@ -606,6 +638,9 @@ class MuestraViewModel @Inject constructor(
                                 correctaCostura = request.correctaCostura,
                                 libreOvulamiento = request.libreOvulamiento,
                                 libreContaminacion = request.libreContaminacion,
+                                funcionalidadAcabadoTapas = request.funcionalidadAcabadoTapas,
+                                conformidadTroquelado = request.conformidadTroquelado,
+                                correctoEnlainado = request.correctoEnlainado,
                                 observacion = request.observacion
                             )
                             val listaActual = _checkListsTemporales.value.toMutableList()
@@ -660,9 +695,10 @@ class MuestraViewModel @Inject constructor(
                 
                 val inspeccion = _inspeccionFormState.value
                 val fechaHora = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
-                
-                android.util.Log.d("MuestraViewModel", "DocEntry a usar: $docEntry")
-                
+                val tipoMuestra = _cabeceraFormState.value.tipo
+
+                android.util.Log.d("MuestraViewModel", "DocEntry a usar: $docEntry, Tipo: $tipoMuestra")
+
                 val request = InspeccionDimensionalCreateRequest(
                     muestraId = muestraId,
                     horaInspeccion = fechaHora,
@@ -670,19 +706,24 @@ class MuestraViewModel @Inject constructor(
                     temperaturaCiclo = inspeccion.temperaturaCiclo,
                     numeroCavidad = inspeccion.numeroCavidad,
                     peso = inspeccion.peso,
-                    diametroRoscaMedida1 = inspeccion.diametroRoscaMedida1,
-                    diametroRoscaMedida2 = inspeccion.diametroRoscaMedida2,
-                    alturaBocaMedida1 = inspeccion.alturaBocaMedida1,
-                    alturaBocaMedida2 = inspeccion.alturaBocaMedida2,
-                    alturaBocaMedida3 = inspeccion.alturaBocaMedida3,
-                    alturaBocaMedida4 = inspeccion.alturaBocaMedida4,
-                    diametroPrecintoMedida1 = inspeccion.diametroPrecintoMedida1,
-                    diametroPrecintoMedida2 = inspeccion.diametroPrecintoMedida2,
-                    diametroPrecintoMedida3 = inspeccion.diametroPrecintoMedida3,
-                    alturaTotalMedida1 = inspeccion.alturaTotalMedida1,
-                    alturaTotalMedida2 = inspeccion.alturaTotalMedida2,
-                    diametroInternoMedida1 = inspeccion.diametroInternoMedida1,
-                    diametroInternoMedida2 = inspeccion.diametroInternoMedida2,
+                    // Campos Envase — null si es Tapa
+                    diametroRoscaMedida1 = if (tipoMuestra == "Tapa") null else inspeccion.diametroRoscaMedida1,
+                    diametroRoscaMedida2 = if (tipoMuestra == "Tapa") null else inspeccion.diametroRoscaMedida2,
+                    alturaBocaMedida1 = if (tipoMuestra == "Tapa") null else inspeccion.alturaBocaMedida1,
+                    alturaBocaMedida2 = if (tipoMuestra == "Tapa") null else inspeccion.alturaBocaMedida2,
+                    alturaBocaMedida3 = if (tipoMuestra == "Tapa") null else inspeccion.alturaBocaMedida3,
+                    alturaBocaMedida4 = if (tipoMuestra == "Tapa") null else inspeccion.alturaBocaMedida4,
+                    diametroPrecintoMedida1 = if (tipoMuestra == "Tapa") null else inspeccion.diametroPrecintoMedida1,
+                    diametroPrecintoMedida2 = if (tipoMuestra == "Tapa") null else inspeccion.diametroPrecintoMedida2,
+                    diametroPrecintoMedida3 = if (tipoMuestra == "Tapa") null else inspeccion.diametroPrecintoMedida3,
+                    alturaTotalMedida1 = if (tipoMuestra == "Tapa") inspeccion.alturaTotalMedida1 else inspeccion.alturaTotalMedida1,
+                    alturaTotalMedida2 = if (tipoMuestra == "Tapa") null else inspeccion.alturaTotalMedida2,
+                    diametroInternoMedida1 = if (tipoMuestra == "Tapa") null else inspeccion.diametroInternoMedida1,
+                    diametroInternoMedida2 = if (tipoMuestra == "Tapa") null else inspeccion.diametroInternoMedida2,
+                    // Campos Tapa — null si es Envase
+                    diametroInternoRoscaTapa = if (tipoMuestra == "Tapa") inspeccion.diametroInternoRoscaTapa else null,
+                    diametroExternoRoscaTapa = if (tipoMuestra == "Tapa") inspeccion.diametroExternoRoscaTapa else null,
+                    diametroInternoTrinquete = if (tipoMuestra == "Tapa") inspeccion.diametroInternoTrinquete else null,
                     observacion = inspeccion.observacion
                 )
                 
@@ -707,19 +748,22 @@ class MuestraViewModel @Inject constructor(
                                 temperaturaCiclo = request.temperaturaCiclo,
                                 numeroCavidad = request.numeroCavidad,
                                 peso = request.peso,
-                                diametroRoscaMedida1 = request.diametroRoscaMedida1,
-                                diametroRoscaMedida2 = request.diametroRoscaMedida2,
-                                alturaBocaMedida1 = request.alturaBocaMedida1,
-                                alturaBocaMedida2 = request.alturaBocaMedida2,
-                                alturaBocaMedida3 = request.alturaBocaMedida3,
-                                alturaBocaMedida4 = request.alturaBocaMedida4,
-                                diametroPrecintoMedida1 = request.diametroPrecintoMedida1,
-                                diametroPrecintoMedida2 = request.diametroPrecintoMedida2,
-                                diametroPrecintoMedida3 = request.diametroPrecintoMedida3,
-                                alturaTotalMedida1 = request.alturaTotalMedida1,
-                                alturaTotalMedida2 = request.alturaTotalMedida2,
-                                diametroInternoMedida1 = request.diametroInternoMedida1,
-                                diametroInternoMedida2 = request.diametroInternoMedida2,
+                                diametroRoscaMedida1 = request.diametroRoscaMedida1 ?: "",
+                                diametroRoscaMedida2 = request.diametroRoscaMedida2 ?: "",
+                                alturaBocaMedida1 = request.alturaBocaMedida1 ?: "",
+                                alturaBocaMedida2 = request.alturaBocaMedida2 ?: "",
+                                alturaBocaMedida3 = request.alturaBocaMedida3 ?: "",
+                                alturaBocaMedida4 = request.alturaBocaMedida4 ?: "",
+                                diametroPrecintoMedida1 = request.diametroPrecintoMedida1 ?: "",
+                                diametroPrecintoMedida2 = request.diametroPrecintoMedida2 ?: "",
+                                diametroPrecintoMedida3 = request.diametroPrecintoMedida3 ?: "",
+                                alturaTotalMedida1 = request.alturaTotalMedida1 ?: "",
+                                alturaTotalMedida2 = request.alturaTotalMedida2 ?: "",
+                                diametroInternoMedida1 = request.diametroInternoMedida1 ?: "",
+                                diametroInternoMedida2 = request.diametroInternoMedida2 ?: "",
+                                diametroInternoRoscaTapa = request.diametroInternoRoscaTapa,
+                                diametroExternoRoscaTapa = request.diametroExternoRoscaTapa,
+                                diametroInternoTrinquete = request.diametroInternoTrinquete,
                                 observacion = request.observacion
                             )
                             val listaActual = _inspeccionesTemporales.value.toMutableList()
@@ -1238,14 +1282,15 @@ class MuestraViewModel @Inject constructor(
                     codeProd = cabeceraForm.lote,
                     producto = cabeceraForm.producto,
                     lote = cabeceraForm.codigo,
-                    embalaje = cabeceraForm.embalaje, // NO SE ENVIA
+                    embalaje = cabeceraForm.embalaje,
                     userRegister = currentUser.dni,
                     fecRegister = fechaActual,
                     turno = cabeceraForm.turno,
                     maquina = cabeceraForm.maquina,
                     codigoMaquina = cabeceraForm.codigoMaquina,
-                    encargadoProd = cabeceraForm.encargadoProduccion, // NO SE ENVIA
-                    estado = "NUEVO"
+                    encargadoProd = cabeceraForm.encargadoProduccion,
+                    estado = "NUEVO",
+                    tipo = cabeceraForm.tipo
                 )
                 
                 val result = muestraRepository.crearMuestra(request)
@@ -1536,22 +1581,26 @@ class MuestraViewModel @Inject constructor(
                                 producto = muestraDetalle.descripcion,
                                 auxiliar = muestraDetalle.userRegister,
                                 encargadoProduccion = muestraDetalle.encargadorProd,
-                                estado = muestraDetalle.estado
+                                estado = muestraDetalle.estado,
+                                tipo = muestraDetalle.tipo
                             )
                             
                             // Mapear checkLists
                             val checkLists = muestraDetalle.checkList.map { checkListAPI ->
                                 CheckListInspeccion(
-                                    id = "", // No viene del API
+                                    id = "",
                                     muestraId = id,
                                     horaCheckList = checkListAPI.horaCheckList ?: "",
-                                    testeado = checkListAPI.testeado ?: "",
-                                    estabilidad = checkListAPI.estabilidad ?: "",
-                                    tonalidad = checkListAPI.tonalidad ?: "",
-                                    visorUniforme = checkListAPI.visorUniforme ?: "",
-                                    correctaCostura = checkListAPI.correctaCostura ?: "",
-                                    libreOvulamiento = checkListAPI.libreOvulamiento ?: "",
-                                    libreContaminacion = checkListAPI.libreContaminacion ?: "",
+                                    testeado = checkListAPI.testeado,
+                                    estabilidad = checkListAPI.estabilidad,
+                                    tonalidad = checkListAPI.tonalidad,
+                                    visorUniforme = checkListAPI.visorUniforme,
+                                    correctaCostura = checkListAPI.correctaCostura,
+                                    libreOvulamiento = checkListAPI.libreOvulamiento,
+                                    libreContaminacion = checkListAPI.libreContaminacion,
+                                    funcionalidadAcabadoTapas = checkListAPI.funcionalidadAcabadoTapas,
+                                    conformidadTroquelado = checkListAPI.conformidadTroquelado,
+                                    correctoEnlainado = checkListAPI.correctoEnlainado,
                                     observacion = checkListAPI.observacion ?: ""
                                 )
                             }
@@ -1591,6 +1640,9 @@ class MuestraViewModel @Inject constructor(
                                     alturaTotalMedida2 = inspeccionAPI.alturaTotalMedida2 ?: "",
                                     diametroInternoMedida1 = inspeccionAPI.diametroInternoMedida1 ?: "",
                                     diametroInternoMedida2 = inspeccionAPI.diametroInternoMedida2 ?: "",
+                                    diametroInternoRoscaTapa = inspeccionAPI.diametroInternoRoscaTapa,
+                                    diametroExternoRoscaTapa = inspeccionAPI.diametroExternoRoscaTapa,
+                                    diametroInternoTrinquete = inspeccionAPI.diametroInternoTrinquete,
                                     observacion = inspeccionAPI.observacion ?: ""
                                 )
                             }
@@ -1642,11 +1694,12 @@ class MuestraViewModel @Inject constructor(
                                     embalaje = cabecera.embalaje,
                                     maquina = cabecera.maquina,
                                     turno = cabecera.turno,
-                                    ot = "", // No viene del API
+                                    ot = "",
                                     producto = cabecera.producto,
                                     auxiliar = cabecera.auxiliar,
                                     encargadoProduccion = cabecera.encargadoProduccion,
-                                    isFormValid = true // En modo edición siempre es válido
+                                    tipo = cabecera.tipo,
+                                    isFormValid = true
                                 )
 
                                 // Cargar materiales
@@ -1788,9 +1841,9 @@ class MuestraViewModel @Inject constructor(
                         
                         if (response.success && response.data.isNotEmpty()) {
                             val ordenFabricacion = response.data.first()
-                            android.util.Log.d("MuestraViewModel", "Producto encontrado: $ordenFabricacion")
-                            
-                            // Actualizar el campo producto en el formulario
+                            android.util.Log.d("MuestraViewModel", "Producto encontrado: $ordenFabricacion, Tipo: ${ordenFabricacion.tipo}")
+
+                            // Actualizar el campo producto en el formulario — tipo viene del backend
                             val current = _cabeceraFormState.value
                             _cabeceraFormState.value = current.copy(
                                 codigo = ordenFabricacion.lote,
@@ -1798,6 +1851,7 @@ class MuestraViewModel @Inject constructor(
                                 lote = ordenFabricacion.codigo,
                                 codigoMaquina = ordenFabricacion.codMaquina,
                                 maquina = ordenFabricacion.maquina,
+                                tipo = ordenFabricacion.tipo
                             )
                             validateCabeceraForm()
                         } else {

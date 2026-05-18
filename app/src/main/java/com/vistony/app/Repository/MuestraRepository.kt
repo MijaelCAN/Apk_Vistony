@@ -213,7 +213,7 @@ class MuestraRepository @Inject constructor() {
     suspend fun obtenerEspecificacionSoplado(codProducto: String): Result<EspecificacionSopladoResponse> {
         return try {
             android.util.Log.d("MuestraRepository", "Obteniendo especificación soplado - CodProducto: $codProducto")
-            
+
             val response = muestraService.obtenerEspecificacionSoplado(codProducto)
             
             android.util.Log.d("MuestraRepository", "Respuesta - Código: ${response.code()}, Éxito: ${response.isSuccessful}")

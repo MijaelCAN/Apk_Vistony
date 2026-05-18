@@ -140,7 +140,10 @@ fun DetailMuestra(
                     icon = Icons.Default.Checklist,
                     content = {
                         muestra.checkLists.forEach { checkList ->
-                            CheckListDetailItem(checkList = checkList)
+                            CheckListDetailItem(
+                                checkList = checkList,
+                                tipoMuestra = muestra.cabecera.tipo
+                            )
                             if (checkList != muestra.checkLists.last()) {
                                 Spacer(modifier = Modifier.height(8.dp))
                             }
@@ -483,7 +486,8 @@ fun InspeccionDetailItem(
 
 @Composable
 fun CheckListDetailItem(
-    checkList: com.vistony.app.Entidad.CheckListInspeccion
+    checkList: com.vistony.app.Entidad.CheckListInspeccion,
+    tipoMuestra: String
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -518,15 +522,24 @@ fun CheckListDetailItem(
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            val criterios = listOf(
-                "Testeado" to checkList.testeado,
-                "Estabilidad" to checkList.estabilidad,
-                "Tonalidad" to checkList.tonalidad,
-                "Visor Uniforme" to checkList.visorUniforme,
-                "Correcta Costura" to checkList.correctaCostura,
-                "Libre Ovulamiento" to checkList.libreOvulamiento,
-                "Libre Contaminación" to checkList.libreContaminacion
-            )
+            val criterios: List<Pair<String, String?>> =
+                if (tipoMuestra == "Tapa") {
+                    listOf(
+                        "Funcionalidad y Acabado de las Tapas" to checkList.funcionalidadAcabadoTapas,
+                        "Conformidad del Troquelado" to checkList.conformidadTroquelado,
+                        "Correcto Enlainado" to checkList.correctoEnlainado
+                    )
+                } else {
+                    listOf(
+                        "Testeado" to checkList.testeado,
+                        "Estabilidad" to checkList.estabilidad,
+                        "Tonalidad" to checkList.tonalidad,
+                        "Visor Uniforme" to checkList.visorUniforme,
+                        "Correcta Costura" to checkList.correctaCostura,
+                        "Libre Ovulamiento" to checkList.libreOvulamiento,
+                        "Libre Contaminación" to checkList.libreContaminacion
+                    )
+                }
             
             criterios.chunked(2).forEach { rowCriterios ->
                 Row(
@@ -541,7 +554,7 @@ fun CheckListDetailItem(
                                 color = Color(0xFF6B7280)
                             )
                             MuestraChip(
-                                text = valor,
+                                text = valor ?: "",
                                 isSelected = true,
                                 color = when (valor) {
                                     "Aprobado" -> Color(0xFF10B981)
