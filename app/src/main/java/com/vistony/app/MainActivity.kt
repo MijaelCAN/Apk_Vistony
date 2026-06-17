@@ -404,6 +404,7 @@ class MainActivity : ComponentActivity() {
                             val docEntry = backStackEntry.arguments?.getInt("docEntry") ?: 0
                             DetalleMezclaScreen(
                                 docEntry = docEntry,
+                                currentUser = userState.currentUser,
                                 muestraViewModel = muestraViewModel,
                                 onBackClick = { navController.popBackStack() },
                                 onRegistrarMuestraClick = {

@@ -32,10 +32,15 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,22 +48,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.vistony.app.Entidad.FinalizarAnalisisRequest
 import com.vistony.app.Entidad.MuestraProduccionDetalle
 import com.vistony.app.Entidad.MuestraProduccionTimelineItem
+import com.vistony.app.Entidad.ParametroValorRequest
+import com.vistony.app.Entidad.UserResponse
 import com.vistony.app.ViewModel.MuestraViewModel
 import com.vistony.app.ui.theme.theme.AppTheme
 import java.time.LocalDateTime
@@ -69,14 +77,16 @@ import java.time.format.DateTimeFormatter
 fun DetalleMezclaScreen(
     docEntry: Int,
     modifier: Modifier = Modifier,
+    currentUser: UserResponse = UserResponse(),
     muestraViewModel: MuestraViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
-    onRegistrarMuestraClick: () -> Unit = {},
-    onDeclararNoConformeClick: () -> Unit = {}
+    onRegistrarMuestraClick: () -> Unit = {}
 ) {
     val detalle by muestraViewModel.muestraProduccionDetalle.collectAsState()
     val isLoading by muestraViewModel.isLoading.collectAsState()
+    val isProcesando by muestraViewModel.isCreating.collectAsState()
+    val errorMessage by muestraViewModel.errorMessage.collectAsState()
 
     LaunchedEffect(docEntry) {
         muestraViewModel.obtenerMuestraProduccionDetalle(docEntry)
@@ -85,11 +95,28 @@ fun DetalleMezclaScreen(
     DetalleMezclaScreenContent(
         detalle = detalle,
         isLoading = isLoading,
+        esCalidad = currentUser.role.equals("ASEG. CALIDAD", ignoreCase = true),
+        isProcesando = isProcesando,
+        errorMessage = errorMessage,
         modifier = modifier,
         onBackClick = onBackClick,
         onNotificationClick = onNotificationClick,
         onRegistrarMuestraClick = onRegistrarMuestraClick,
-        onDeclararNoConformeClick = onDeclararNoConformeClick
+        onIniciarAnalisisClick = {
+            muestraViewModel.iniciarAnalisis(docEntry, currentUser.dni)
+        },
+        onConfirmarResolucion = { decision, motivo, causa, observacion ->
+            val request = FinalizarAnalisisRequest(
+                status = decision,
+                userEndAnalysis = currentUser.dni,
+                typeReject = if (decision == "RECHAZADO") motivo else null,
+                reason = if (decision == "RECHAZADO") causa else null,
+                observation = observacion.ifBlank { null },
+                // TODO: reemplazar por los parámetros reales medidos cuando se defina el catálogo
+                parametros = listOf(ParametroValorRequest(idParametro = 1, valor = "1000"))
+            )
+            muestraViewModel.finalizarAnalisis(docEntry, request)
+        }
     )
 }
 
@@ -99,11 +126,15 @@ fun DetalleMezclaScreen(
 fun DetalleMezclaScreenContent(
     detalle: MuestraProduccionDetalle?,
     isLoading: Boolean,
+    esCalidad: Boolean = false,
+    isProcesando: Boolean = false,
+    errorMessage: String? = null,
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
     onRegistrarMuestraClick: () -> Unit = {},
-    onDeclararNoConformeClick: () -> Unit = {}
+    onIniciarAnalisisClick: () -> Unit = {},
+    onConfirmarResolucion: (decision: String, motivo: String?, causa: String, observacion: String) -> Unit = { _, _, _, _ -> }
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -222,56 +253,265 @@ fun DetalleMezclaScreenContent(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .clickable { onRegistrarMuestraClick() },
-                    color = Color(0xFF212121),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "+ Registrar muestra de mezcla",
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
-                        )
+                if (esCalidad) {
+                    AccionesCalidad(
+                        detalle = detalle,
+                        isProcesando = isProcesando,
+                        errorMessage = errorMessage,
+                        onIniciarAnalisisClick = onIniciarAnalisisClick,
+                        onConfirmarResolucion = onConfirmarResolucion
+                    )
+                } else {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .clickable { onRegistrarMuestraClick() },
+                        color = Color(0xFF212121),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = "Registrar Muestra",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .clickable { onDeclararNoConformeClick() }
-                        .drawBehind {
-                            val stroke = Stroke(
-                                width = 1.dp.toPx(),
-                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-                            )
-                            drawRoundRect(
-                                color = Color(0xFF9E4B4B),
-                                style = stroke,
-                                cornerRadius = CornerRadius(8.dp.toPx())
-                            )
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Declarar mezcla NO CONFORME",
-                        color = Color(0xFF9E4B4B),
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 16.sp
-                    )
-                }
-                
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }
+}
+
+private val MOTIVOS_RECHAZO = listOf(
+    "Viscosidad fuera de rango",
+    "Partículas visibles",
+    "Tonalidad incorrecta",
+    "Olor no conforme",
+    "Contaminación",
+    "Otro"
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AccionesCalidad(
+    detalle: MuestraProduccionDetalle,
+    isProcesando: Boolean,
+    errorMessage: String?,
+    onIniciarAnalisisClick: () -> Unit,
+    onConfirmarResolucion: (decision: String, motivo: String?, causa: String, observacion: String) -> Unit
+) {
+    val analisisIniciado = !detalle.dateStartAnalysis.isNullOrBlank()
+    val analisisFinalizado = !detalle.dateEndAnalysis.isNullOrBlank()
+
+    when {
+        detalle.status == "PENDIENTE" && !analisisIniciado -> {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .clickable(enabled = !isProcesando) { onIniciarAnalisisClick() },
+                color = if (isProcesando) Color.Gray else Color(0xFF212121),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = if (isProcesando) "Iniciando..." else "Iniciar Análisis",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
+            }
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(text = errorMessage, color = Color(0xFF9E4B4B), fontSize = 14.sp)
+            }
+        }
+        analisisIniciado && !analisisFinalizado -> {
+            var decisionSeleccionada by remember(detalle.docEntry) { mutableStateOf<String?>(null) }
+            var motivoSeleccionado by remember(detalle.docEntry) { mutableStateOf<String?>(null) }
+            var motivoExpanded by remember(detalle.docEntry) { mutableStateOf(false) }
+            var causa by remember(detalle.docEntry) { mutableStateOf("") }
+            var observacion by remember(detalle.docEntry) { mutableStateOf("") }
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .clickable(enabled = decisionSeleccionada != null && !isProcesando) {
+                        onConfirmarResolucion(decisionSeleccionada ?: "", motivoSeleccionado, causa, observacion)
+                    },
+                color = if (decisionSeleccionada != null && !isProcesando) Color(0xFF212121) else Color.Gray,
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = if (isProcesando) "Enviando..." else "Confirmar Resolución",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
+            }
+
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(text = errorMessage, color = Color(0xFF9E4B4B), fontSize = 14.sp)
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Decisión",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Normal,
+                color = Color.DarkGray
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                DecisionChip(
+                    label = "APROBAR",
+                    isSelected = decisionSeleccionada == "APROBADO",
+                    color = Color(0xFF568057),
+                    modifier = Modifier.weight(1f),
+                    onClick = { decisionSeleccionada = "APROBADO" }
+                )
+                DecisionChip(
+                    label = "RECHAZAR",
+                    isSelected = decisionSeleccionada == "RECHAZADO",
+                    color = Color(0xFF9E4B4B),
+                    modifier = Modifier.weight(1f),
+                    onClick = { decisionSeleccionada = "RECHAZADO" }
+                )
+                DecisionChip(
+                    label = "NO CONFORME",
+                    isSelected = decisionSeleccionada == "NO_CONFORME",
+                    color = Color(0xFF6B5B95),
+                    modifier = Modifier.weight(1f),
+                    onClick = { decisionSeleccionada = "NO_CONFORME" }
+                )
+            }
+
+            if (decisionSeleccionada == "RECHAZADO") {
+                Spacer(modifier = Modifier.height(16.dp))
+                Label(text = "MOTIVO")
+                ExposedDropdownMenuBox(
+                    expanded = motivoExpanded,
+                    onExpandedChange = { motivoExpanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = motivoSeleccionado ?: "",
+                        onValueChange = {},
+                        readOnly = true,
+                        placeholder = { Text("Selecciona un motivo", color = Color.LightGray) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = motivoExpanded) },
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Black,
+                            unfocusedBorderColor = Color.Gray.copy(alpha = 0.8f),
+                            cursorColor = Color.Black
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = motivoExpanded,
+                        onDismissRequest = { motivoExpanded = false }
+                    ) {
+                        MOTIVOS_RECHAZO.forEach { motivo ->
+                            DropdownMenuItem(
+                                text = { Text(motivo) },
+                                onClick = {
+                                    motivoSeleccionado = motivo
+                                    motivoExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Label(text = "CAUSA")
+                OutlinedTextField(
+                    value = causa,
+                    onValueChange = { causa = it },
+                    shape = RoundedCornerShape(10.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.Black,
+                        unfocusedBorderColor = Color.Gray.copy(alpha = 0.8f),
+                        cursorColor = Color.Black
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Label(text = "OBSERVACIÓN")
+            OutlinedTextField(
+                value = observacion,
+                onValueChange = { observacion = it },
+                singleLine = false,
+                shape = RoundedCornerShape(10.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Black,
+                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.8f),
+                    cursorColor = Color.Black
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp)
+            )
+        }
+        else -> {
+            // Ya resuelto (aprobado/rechazado): no hay acciones disponibles
+        }
+    }
+}
+
+@Composable
+private fun DecisionChip(
+    label: String,
+    isSelected: Boolean,
+    color: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = modifier.clickable { onClick() },
+        shape = RoundedCornerShape(8.dp),
+        color = if (isSelected) color else Color.White,
+        border = BorderStroke(1.dp, color)
+    ) {
+        Box(
+            modifier = Modifier.padding(vertical = 10.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = label,
+                color = if (isSelected) Color.White else color,
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun Label(text: String) {
+    Text(
+        text = text,
+        fontSize = 13.sp,
+        fontWeight = FontWeight.Bold,
+        color = Color.Gray,
+        modifier = Modifier.padding(bottom = 6.dp)
+    )
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

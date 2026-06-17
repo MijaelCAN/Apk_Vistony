@@ -658,3 +658,43 @@ data class ApiErrorDetail(
     @SerializedName("details") val details: Any?,
     @SerializedName("message") val message: String?
 )
+
+// Request para iniciar el análisis de una muestra (PATCH)
+data class IniciarAnalisisRequest(
+    @SerializedName("userStartAnalysis") val userStartAnalysis: String
+)
+
+// Respuesta al iniciar el análisis (PATCH)
+data class IniciarAnalisisResponse(
+    @SerializedName("dateStartAnalysis") val dateStartAnalysis: String,
+    @SerializedName("docEntry") val docEntry: Int,
+    @SerializedName("status") val status: String,
+    @SerializedName("userStartAnalysis") val userStartAnalysis: String
+)
+
+// Valor medido de un parámetro de evaluación (forma parte de FinalizarAnalisisRequest)
+data class ParametroValorRequest(
+    @SerializedName("idParametro") val idParametro: Int,
+    @SerializedName("valor") val valor: Any
+)
+
+// Request para finalizar el análisis / confirmar la resolución (PATCH)
+data class FinalizarAnalisisRequest(
+    @SerializedName("status") val status: String,
+    @SerializedName("userEndAnalysis") val userEndAnalysis: String,
+    @SerializedName("typeReject") val typeReject: String? = null,
+    @SerializedName("reason") val reason: String? = null,
+    @SerializedName("observation") val observation: String? = null,
+    @SerializedName("parametros") val parametros: List<ParametroValorRequest> = emptyList()
+)
+
+// Respuesta al finalizar el análisis (PATCH)
+data class FinalizarAnalisisResponse(
+    @SerializedName("dateEndAnalysis") val dateEndAnalysis: String,
+    @SerializedName("docEntry") val docEntry: Int,
+    @SerializedName("isFinish") val isFinish: Boolean,
+    @SerializedName("parametrosRegistrados") val parametrosRegistrados: Int,
+    @SerializedName("status") val status: String,
+    @SerializedName("todosCumplen") val todosCumplen: Boolean,
+    @SerializedName("userEndAnalysis") val userEndAnalysis: String
+)

@@ -450,6 +450,58 @@ class MuestraViewModel @Inject constructor(
         }
     }
 
+    // Función para iniciar el análisis de una muestra (botón "Iniciar Análisis", ASEG. CALIDAD)
+    fun iniciarAnalisis(docEntry: Int, userStartAnalysis: String) {
+        viewModelScope.launch {
+            _isCreating.value = true
+            _errorMessage.value = null
+
+            try {
+                val result = muestraRepository.iniciarAnalisis(docEntry, userStartAnalysis)
+
+                result.fold(
+                    onSuccess = {
+                        _successMessage.value = "Análisis iniciado"
+                        obtenerMuestraProduccionDetalle(docEntry)
+                    },
+                    onFailure = { exception ->
+                        _errorMessage.value = exception.message
+                    }
+                )
+            } catch (e: Exception) {
+                _errorMessage.value = "Error inesperado: ${e.message}"
+            }
+
+            _isCreating.value = false
+        }
+    }
+
+    // Función para finalizar el análisis / confirmar la resolución (botón "Confirmar Resolución", ASEG. CALIDAD)
+    fun finalizarAnalisis(docEntry: Int, request: FinalizarAnalisisRequest) {
+        viewModelScope.launch {
+            _isCreating.value = true
+            _errorMessage.value = null
+
+            try {
+                val result = muestraRepository.finalizarAnalisis(docEntry, request)
+
+                result.fold(
+                    onSuccess = {
+                        _successMessage.value = "Resolución registrada"
+                        obtenerMuestraProduccionDetalle(docEntry)
+                    },
+                    onFailure = { exception ->
+                        _errorMessage.value = exception.message
+                    }
+                )
+            } catch (e: Exception) {
+                _errorMessage.value = "Error inesperado: ${e.message}"
+            }
+
+            _isCreating.value = false
+        }
+    }
+
     // Funciones para actualizar formularios
     fun updateCabecera(field: String, value: String) {
         val current = _cabeceraFormState.value

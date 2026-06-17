@@ -388,4 +388,40 @@ class MuestraRepository @Inject constructor() {
             Result.failure(e)
         }
     }
+
+    suspend fun iniciarAnalisis(docEntry: Int, userStartAnalysis: String): Result<IniciarAnalisisResponse> {
+        return try {
+            val response = muestraProduccionService.iniciarAnalisis(docEntry, IniciarAnalisisRequest(userStartAnalysis))
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("Respuesta vacía del servidor"))
+                }
+            } else {
+                Result.failure(Exception(mensajeErrorApi(response)))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun finalizarAnalisis(docEntry: Int, request: FinalizarAnalisisRequest): Result<FinalizarAnalisisResponse> {
+        return try {
+            val response = muestraProduccionService.finalizarAnalisis(docEntry, request)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("Respuesta vacía del servidor"))
+                }
+            } else {
+                Result.failure(Exception(mensajeErrorApi(response)))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
