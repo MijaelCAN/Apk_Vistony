@@ -22,6 +22,7 @@ object RetrofitInstance {
     //private const val BASE_URL = "http://192.168.254.26:9004/api/"
     private const val BASE_URL = "http://192.168.254.27:8060/api/" // LOCAL
     private const val BASE_URL_NEW = "http://192.168.254.27:8036/api/" // NUEVA IMPLEMENTACION
+    private const val BASE_URL_V1 = "https://umbilical-stumbling-slinging.ngrok-free.dev/api/" // NUEVA INTERFAZ (v1) - temporal vía ngrok
     private val client = OkHttpClient.Builder()
         .connectTimeout(60,TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
@@ -56,6 +57,14 @@ object RetrofitInstance {
         Retrofit.Builder()
             .baseUrl(BASE_URL_NEW)
             .client(loginClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    private val retrofitV1: Retrofit by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL_V1)
+            .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
@@ -95,6 +104,10 @@ object RetrofitInstance {
 
     val muestraService: MuestraService by lazy {
         retrofitNew.create(MuestraService::class.java)
+    }
+
+    val muestraProduccionService: MuestraProduccionService by lazy {
+        retrofitV1.create(MuestraProduccionService::class.java)
     }
 
 }

@@ -554,3 +554,105 @@ data class ConfirmarRecepcionResponse(
     @SerializedName("message") val message: String,
     @SerializedName("data") val data: ConfirmarRecepcionData?
 )
+
+// --- NUEVOS MODELOS PARA MUESTRAS DE PRODUCCIÓN ---
+
+data class MuestraProduccion(
+    @SerializedName("code") val code: String,
+    @SerializedName("counter") val counter: Int,
+    @SerializedName("dateRegister") val dateRegister: String,
+    @SerializedName("descripcion") val descripcion: String,
+    @SerializedName("docEntry") val docEntry: Int,
+    @SerializedName("isFinish") val isFinish: Boolean,
+    @SerializedName("lote") val lote: String,
+    @SerializedName("ordenEnvase") val ordenEnvase: String,
+    @SerializedName("ordenFabricacion") val ordenFabricacion: String,
+    @SerializedName("status") val status: String,
+    @SerializedName("userRegister") val userRegister: String,
+    @SerializedName("version") val version: String
+)
+
+data class MuestraProduccionResponse(
+    @SerializedName("data") val data: List<MuestraProduccion>
+)
+
+// Detalle de una muestra de producción (pantalla de detalle de "Mis OF")
+data class MuestraProduccionDetalle(
+    @SerializedName("code") val code: String,
+    @SerializedName("counter") val counter: Int,
+    @SerializedName("dateEndAnalysis") val dateEndAnalysis: String?,
+    @SerializedName("dateRegister") val dateRegister: String,
+    @SerializedName("dateStartAnalysis") val dateStartAnalysis: String?,
+    @SerializedName("descripcion") val descripcion: String,
+    @SerializedName("docEntry") val docEntry: Int,
+    @SerializedName("isFinish") val isFinish: Boolean,
+    @SerializedName("lote") val lote: String,
+    @SerializedName("observation") val observation: String?,
+    @SerializedName("ordenEnvase") val ordenEnvase: String,
+    @SerializedName("ordenFabricacion") val ordenFabricacion: String,
+    @SerializedName("reason") val reason: String?,
+    @SerializedName("status") val status: String,
+    @SerializedName("timeline") val timeline: List<MuestraProduccionTimelineItem> = emptyList(),
+    @SerializedName("type") val type: String,
+    @SerializedName("typeReject") val typeReject: String?,
+    @SerializedName("userEndAnalysis") val userEndAnalysis: String?,
+    @SerializedName("userRegister") val userRegister: String,
+    @SerializedName("userStartAnalysis") val userStartAnalysis: String?,
+    @SerializedName("version") val version: String
+)
+
+data class MuestraProduccionTimelineItem(
+    @SerializedName("counter") val counter: Int,
+    @SerializedName("dateEndAnalysis") val dateEndAnalysis: String?,
+    @SerializedName("dateRegister") val dateRegister: String,
+    @SerializedName("esCurrent") val esCurrent: Boolean,
+    @SerializedName("reason") val reason: String?,
+    @SerializedName("status") val status: String,
+    @SerializedName("typeReject") val typeReject: String?,
+    @SerializedName("userRegister") val userRegister: String,
+    @SerializedName("version") val version: String
+)
+
+// Respuesta de la consulta previa al registrar una nueva muestra (GET al abrir "Nueva muestra")
+data class ConsultaNuevaMuestra(
+    @SerializedName("codePreview") val codePreview: String,
+    @SerializedName("counterSiguiente") val counterSiguiente: Int,
+    @SerializedName("descripcion") val descripcion: String,
+    @SerializedName("lote") val lote: String,
+    @SerializedName("numEn") val numEn: String?,
+    @SerializedName("numOf") val numOf: String,
+    @SerializedName("type") val type: String,
+    @SerializedName("ultimoIntento") val ultimoIntento: Any?,
+    @SerializedName("versionSiguiente") val versionSiguiente: String
+)
+
+// Request para registrar una nueva muestra (POST)
+data class CrearMuestraProduccionRequest(
+    @SerializedName("numOf") val numOf: String,
+    @SerializedName("numEn") val numEn: String?,
+    @SerializedName("type") val type: String,
+    @SerializedName("dateRegister") val dateRegister: String,
+    @SerializedName("userRegister") val userRegister: String
+)
+
+// Respuesta al registrar una nueva muestra (POST)
+data class CrearMuestraProduccionResponse(
+    @SerializedName("code") val code: String,
+    @SerializedName("counter") val counter: Int,
+    @SerializedName("dateRegister") val dateRegister: String,
+    @SerializedName("docEntry") val docEntry: Int,
+    @SerializedName("status") val status: String,
+    @SerializedName("userRegister") val userRegister: String,
+    @SerializedName("version") val version: String
+)
+
+// Envoltorio de error que devuelve la API (v1) en respuestas no exitosas
+data class ApiErrorResponse(
+    @SerializedName("error") val error: ApiErrorDetail?
+)
+
+data class ApiErrorDetail(
+    @SerializedName("code") val code: String?,
+    @SerializedName("details") val details: Any?,
+    @SerializedName("message") val message: String?
+)

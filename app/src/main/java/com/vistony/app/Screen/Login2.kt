@@ -234,7 +234,7 @@ fun Login2(
                 Text(text = "Iniciar Sesion", fontSize = bodyFontSize.sp )
             }
             Spacer(modifier = Modifier.height(padding_res))
-            Text(text = "v${BuildConfig.VERSION_NAME}", color = Color.Gray, fontSize = bodyFontSize.sp)
+            Text(text = "v${BuildConfig.VERSION_NAME} - Test", color = Color.Gray, fontSize = bodyFontSize.sp)
             /*Image(
                 modifier = Modifier
                     .size(50.dp)

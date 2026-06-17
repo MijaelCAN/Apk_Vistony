@@ -1,0 +1,386 @@
+package com.vistony.app.Screen.muestraProduccion
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.vistony.app.ViewModel.MuestraViewModel
+import com.vistony.app.ui.theme.theme.AppTheme
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MisOFScreen(
+    modifier: Modifier = Modifier,
+    muestraViewModel: MuestraViewModel = hiltViewModel(),
+    onNavigateToAdd: () -> Unit = {},
+    onMenuClick: () -> Unit = {},
+    onNotificationClick: () -> Unit = {},
+    onOrderClick: (Int) -> Unit = {}
+) {
+    val filters = listOf("Todas", "En análisis", "Aprob.", "Rech.")
+    var selectedFilter by remember { mutableStateOf("Todas") }
+
+    val muestrasProduccion by muestraViewModel.muestrasProduccion.collectAsState()
+    val isLoading by muestraViewModel.isLoading.collectAsState()
+
+    LaunchedEffect(Unit) {
+        val fecha = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+        muestraViewModel.obtenerMuestrasProduccion(fecha, fecha)
+    }
+
+    val orders = muestrasProduccion
+        .filter { muestra ->
+            when (selectedFilter) {
+                "En análisis" -> muestra.status == "EN_ANALISIS"
+                "Aprob." -> muestra.status == "APROBADO"
+                "Rech." -> muestra.status == "RECHAZADO"
+                else -> true
+            }
+        }
+        .map { muestra ->
+            OrdenFabricacionUI(
+                docEntry = muestra.docEntry,
+                id = muestra.ordenEnvase,
+                product = muestra.descripcion,
+                lote = "Lote ${muestra.lote}",
+                status = muestra.status,
+                version = muestra.version,
+                intentos = muestra.counter
+            )
+        }
+
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = {
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .border(1.dp, Color.Gray, CircleShape)
+                            .clickable { onMenuClick() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Text(
+                        text = "Mis OF",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 12.dp)
+                    )
+                    BadgedBox(
+                        badge = {
+                            Badge(
+                                containerColor = Color(0xFFD32F2F),
+                                contentColor = Color.White,
+                                modifier = Modifier.offset(x = (-4).dp, y = 4.dp)
+                            ) {
+                                Text("3")
+                            }
+                        }
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .border(1.dp, Color.Gray, CircleShape)
+                                .clickable { onNotificationClick() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = null,
+                                tint = Color(0xFFFBC02D),
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                }
+                HorizontalDivider(color = Color.Black, thickness = 1.dp)
+            }
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onNavigateToAdd,
+                containerColor = Color(0xFF1A1A1A),
+                contentColor = Color.White,
+                shape = CircleShape,
+                modifier = Modifier.size(64.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .background(Color.White)
+        ) {
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(filters) { filter ->
+                    FilterChipItem(
+                        label = filter,
+                        isSelected = filter == selectedFilter,
+                        onClick = { selectedFilter = filter }
+                    )
+                }
+            }
+
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Text(
+                    text = "Órdenes de Fabricación",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = Color.DarkGray
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                DashedLine()
+            }
+
+            if (isLoading && orders.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else if (orders.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No hay órdenes de fabricación",
+                        color = Color.Gray,
+                        fontSize = 14.sp
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(orders) { order ->
+                        OFCard(order = order, onClick = { onOrderClick(order.docEntry) })
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FilterChipItem(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.clickable { onClick() },
+        shape = RoundedCornerShape(20.dp),
+        color = if (isSelected) Color(0xFF262626) else Color.White,
+        border = if (!isSelected) BorderStroke(1.dp, Color.Black) else null
+    ) {
+        Text(
+            text = label,
+            color = if (isSelected) Color.White else Color.Black,
+            fontSize = 14.sp,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+    }
+}
+
+@Composable
+private fun DashedLine() {
+    Canvas(
+        Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+    ) {
+        drawLine(
+            color = Color.Gray.copy(alpha = 0.5f),
+            start = Offset(0f, 0f),
+            end = Offset(size.width, 0f),
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+        )
+    }
+}
+
+@Composable
+private fun OFCard(order: OrdenFabricacionUI, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color.Black)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "OF  ${order.id}",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                StatusBadge(status = order.status)
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = order.product,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Normal,
+                color = Color(0xFF424242)
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Text(
+                    text = order.lote,
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
+                val detail = buildString {
+                    order.version?.let { append(it) }
+                    order.intentos?.let { append(" · $it intentos") }
+                    order.extraInfo?.let { append(it) }
+                }
+                Text(
+                    text = detail,
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    textAlign = TextAlign.End
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatusBadge(status: String) {
+    val (bgColor, textColor) = when (status) {
+        "EN_ANALISIS" -> Color(0xFFD7E3F4) to Color(0xFF3C5A81)
+        "APROBADO" -> Color(0xFFDFF0E0) to Color(0xFF568057)
+        "PENDIENTE" -> Color(0xFFFAF3E0) to Color(0xFF8B7A4D)
+        "RECHAZADO" -> Color(0xFFF9E0E0) to Color(0xFF9E4B4B)
+        else -> Color.LightGray to Color.DarkGray
+    }
+
+    Surface(
+        color = bgColor,
+        shape = RoundedCornerShape(6.dp),
+        border = BorderStroke(1.dp, textColor.copy(alpha = 0.3f))
+    ) {
+        Text(
+            text = status,
+            color = textColor,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+        )
+    }
+}
+
+private data class OrdenFabricacionUI(
+    val docEntry: Int,
+    val id: String,
+    val product: String,
+    val lote: String,
+    val status: String,
+    val version: String? = null,
+    val intentos: Int? = null,
+    val extraInfo: String? = null
+)
+
+@Preview(showBackground = true)
+@Composable
+private fun MisOFScreenPreview() {
+    AppTheme {
+        MisOFScreen()
+    }
+}

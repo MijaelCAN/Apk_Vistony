@@ -76,6 +76,3 @@ interface MuestraService {
     @PATCH("Inspeccion/ConfirmarRecepcion")
     suspend fun confirmarRecepcion(@Body request: ConfirmarRecepcionRequest): Response<ConfirmarRecepcionResponse>
 }
-
-
-

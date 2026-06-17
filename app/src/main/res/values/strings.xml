@@ -3,4 +3,16 @@
     <string name="app_name_dev">Operity Core</string>
     <string name="switch_check">Check</string>
     <string name="button_disabled">El botón está deshabilitado</string>
+    <string name="title_mis_of">Mis OF</string>
+    <string name="filter_todas">Todas</string>
+    <string name="filter_en_analisis">En análisis</string>
+    <string name="filter_aprob">Aprob.</string>
+    <string name="filter_rech">Rech.</string>
+    <string name="label_ordenes_fabricacion">Órdenes de Fabricación</string>
+    <string name="status_en_analisis">EN_ANALISIS</string>
+    <string name="status_aprobado">APROBADO</string>
+    <string name="status_pendiente">PENDIENTE</string>
+    <string name="status_rechazado">RECHAZADO</string>
+    <string name="label_intentos">%1$d intentos</string>
+    <string name="label_sin_muestra">sin muestra</string>
 </resources>

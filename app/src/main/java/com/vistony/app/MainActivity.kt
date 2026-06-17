@@ -17,6 +17,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -52,20 +53,20 @@ import com.vistony.app.Screen.Muestra.ListMuestra
 import com.vistony.app.Screen.Muestra.CreateMuestra
 import com.vistony.app.Screen.Muestra.DetailMuestra
 import com.vistony.app.Screen.Muestra.EditMuestra
+import com.vistony.app.Screen.muestraProduccion.MisOFScreen
+import com.vistony.app.Screen.muestraProduccion.DetalleMezclaScreen
 import com.vistony.app.Screen.Muestra.RegistroLlegadaScreen
 import com.vistony.app.Screen.Muestra.RegistroLlegadaTodosScreen
+import com.vistony.app.Screen.muestraProduccion.NuevaMuestraScreen
 import com.vistony.app.ViewModel.LoginViewModel
 import com.vistony.app.ViewModel.TemperaturaViewModel
 import com.vistony.app.ViewModel.MuestraViewModel
-import com.vistony.app.clean.core.utils.ObservableObject
 import com.vistony.app.clean.core.utils.ZebraDW
 import com.vistony.app.clean.core.utils.ZebraDWComunication
 import com.vistony.app.clean.core.utils.ZebraDWReceiver
 import com.vistony.app.clean.presentation.view.pages.ManuFacturingOrderPage
 import com.vistony.app.clean.presentation.viewmodels.ScanViewModel
-import com.vistony.app.ui.theme.theme.AppTypography
 import dagger.hilt.android.AndroidEntryPoint
-import kotlin.text.compareTo
 
 
 @AndroidEntryPoint
@@ -387,6 +388,52 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
+                        composable("entregaMuestra") {
+                            MisOFScreen(
+                                muestraViewModel = muestraViewModel,
+                                onNavigateToAdd = { navController.navigate("nuevaMuestra") },
+                                onOrderClick = { docEntry -> navController.navigate("entregaMuestraDetalle/$docEntry") }
+                            )
+                        }
+                        composable(
+                            "entregaMuestraDetalle/{docEntry}",
+                            arguments = listOf(navArgument("docEntry") { type = NavType.IntType })
+                        ) { backStackEntry ->
+                            val docEntry = backStackEntry.arguments?.getInt("docEntry") ?: 0
+                            DetalleMezclaScreen(
+                                docEntry = docEntry,
+                                muestraViewModel = muestraViewModel,
+                                onBackClick = { navController.popBackStack() },
+                                onRegistrarMuestraClick = {
+                                    val detalle = muestraViewModel.muestraProduccionDetalle.value
+                                    if (detalle != null) {
+                                        navController.navigate(
+                                            "nuevaMuestra?numOf=${detalle.ordenFabricacion}&numEn=${detalle.ordenEnvase}&type=${detalle.type}"
+                                        )
+                                    }
+                                }
+                            )
+                        }
+                        composable(
+                            "nuevaMuestra?numOf={numOf}&numEn={numEn}&type={type}",
+                            arguments = listOf(
+                                navArgument("numOf") { type = NavType.StringType; nullable = true; defaultValue = null },
+                                navArgument("numEn") { type = NavType.StringType; nullable = true; defaultValue = null },
+                                navArgument("type") { type = NavType.StringType; nullable = true; defaultValue = null }
+                            )
+                        ) { backStackEntry ->
+                            NuevaMuestraScreen(
+                                numOf = backStackEntry.arguments?.getString("numOf"),
+                                numEn = backStackEntry.arguments?.getString("numEn"),
+                                type = backStackEntry.arguments?.getString("type"),
+                                currentUser = userState.currentUser,
+                                muestraViewModel = muestraViewModel,
+                                onBackClick = { navController.popBackStack() },
+                                onNotificationClick = { /*TODO*/ },
+                                onEnviarClick = { navController.popBackStack() },
+                                onCancelarClick = { navController.popBackStack() }
+                            )
+                        }
                     }
 
                 }

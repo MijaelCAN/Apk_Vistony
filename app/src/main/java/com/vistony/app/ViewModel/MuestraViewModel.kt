@@ -181,6 +181,21 @@ class MuestraViewModel @Inject constructor(
     // Lista de muestras disponibles desde el API
     private val _muestrasDisponibles = MutableStateFlow<List<String>>(emptyList())
     val muestrasDisponibles: StateFlow<List<String>> = _muestrasDisponibles.asStateFlow()
+
+    // Lista de muestras de producción (pantalla "Mis OF")
+    private val _muestrasProduccion = MutableStateFlow<List<MuestraProduccion>>(emptyList())
+    val muestrasProduccion: StateFlow<List<MuestraProduccion>> = _muestrasProduccion.asStateFlow()
+
+    // Detalle de una muestra de producción (pantalla de detalle de "Mis OF")
+    private val _muestraProduccionDetalle = MutableStateFlow<MuestraProduccionDetalle?>(null)
+    val muestraProduccionDetalle: StateFlow<MuestraProduccionDetalle?> = _muestraProduccionDetalle.asStateFlow()
+
+    // Consulta previa al registrar una nueva muestra (pantalla "Nueva muestra")
+    private val _consultaNuevaMuestra = MutableStateFlow<ConsultaNuevaMuestra?>(null)
+    val consultaNuevaMuestra: StateFlow<ConsultaNuevaMuestra?> = _consultaNuevaMuestra.asStateFlow()
+
+    private val _muestraRegistrada = MutableStateFlow<CrearMuestraProduccionResponse?>(null)
+    val muestraRegistrada: StateFlow<CrearMuestraProduccionResponse?> = _muestraRegistrada.asStateFlow()
     
     // Estado para mostrar alert cuando se encuentra la orden
     private val _productoEncontrado = MutableStateFlow<String?>(null)
@@ -309,6 +324,122 @@ class MuestraViewModel @Inject constructor(
             }
             
             _isLoading.value = false
+        }
+    }
+
+    // Función para obtener las muestras de producción (pantalla "Mis OF")
+    fun obtenerMuestrasProduccion(fechaInicio: String, fechaFin: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+
+            try {
+                val result = muestraRepository.obtenerMuestrasProduccion(fechaInicio, fechaFin)
+
+                result.fold(
+                    onSuccess = { response ->
+                        _muestrasProduccion.value = response.data
+                    },
+                    onFailure = { exception ->
+                        _errorMessage.value = "Error al obtener muestras de producción: ${exception.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                _errorMessage.value = "Error inesperado: ${e.message}"
+            }
+
+            _isLoading.value = false
+        }
+    }
+
+    // Función para obtener el detalle de una muestra de producción (pantalla de detalle de "Mis OF")
+    fun obtenerMuestraProduccionDetalle(docEntry: Int) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            _muestraProduccionDetalle.value = null
+
+            try {
+                val result = muestraRepository.obtenerMuestraProduccionDetalle(docEntry)
+
+                result.fold(
+                    onSuccess = { detalle ->
+                        _muestraProduccionDetalle.value = detalle
+                    },
+                    onFailure = { exception ->
+                        _errorMessage.value = "Error al obtener el detalle de la muestra: ${exception.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                _errorMessage.value = "Error inesperado: ${e.message}"
+            }
+
+            _isLoading.value = false
+        }
+    }
+
+    // Función para consultar los datos previos al registrar una nueva muestra (GET al abrir "Nueva muestra")
+    fun consultarNuevaMuestra(numOf: String, numEn: String?, type: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            _consultaNuevaMuestra.value = null
+
+            try {
+                val result = muestraRepository.consultarNuevaMuestra(numOf, numEn, type)
+
+                result.fold(
+                    onSuccess = { consulta ->
+                        _consultaNuevaMuestra.value = consulta
+                    },
+                    onFailure = { exception ->
+                        _errorMessage.value = exception.message
+                    }
+                )
+            } catch (e: Exception) {
+                _errorMessage.value = "Error inesperado: ${e.message}"
+            }
+
+            _isLoading.value = false
+        }
+    }
+
+    // Función para registrar una nueva muestra (POST al enviar el formulario)
+    fun crearMuestraProduccion(numOf: String, numEn: String?, type: String, userRegister: String) {
+        viewModelScope.launch {
+            _isCreating.value = true
+            _errorMessage.value = null
+            _muestraRegistrada.value = null
+
+            try {
+                val fechaRegistro = java.time.Instant.now()
+                    .truncatedTo(java.time.temporal.ChronoUnit.SECONDS)
+                    .toString()
+
+                val request = CrearMuestraProduccionRequest(
+                    numOf = numOf,
+                    numEn = numEn,
+                    type = type,
+                    dateRegister = fechaRegistro,
+                    userRegister = userRegister
+                )
+
+                val result = muestraRepository.crearMuestraProduccion(request)
+
+                result.fold(
+                    onSuccess = { response ->
+                        _muestraRegistrada.value = response
+                        _successMessage.value = "Muestra registrada correctamente"
+                    },
+                    onFailure = { exception ->
+                        _errorMessage.value = exception.message
+                    }
+                )
+            } catch (e: Exception) {
+                _errorMessage.value = "Error inesperado: ${e.message}"
+            }
+
+            _isCreating.value = false
         }
     }
 
