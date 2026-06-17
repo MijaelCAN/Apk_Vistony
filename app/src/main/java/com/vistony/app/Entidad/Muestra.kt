@@ -560,7 +560,9 @@ data class ConfirmarRecepcionResponse(
 data class MuestraProduccion(
     @SerializedName("code") val code: String,
     @SerializedName("counter") val counter: Int,
+    @SerializedName("dateEndAnalysis") val dateEndAnalysis: String?,
     @SerializedName("dateRegister") val dateRegister: String,
+    @SerializedName("dateStartAnalysis") val dateStartAnalysis: String?,
     @SerializedName("descripcion") val descripcion: String,
     @SerializedName("docEntry") val docEntry: Int,
     @SerializedName("isFinish") val isFinish: Boolean,

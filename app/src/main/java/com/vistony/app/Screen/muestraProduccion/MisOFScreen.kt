@@ -56,8 +56,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.vistony.app.Entidad.UserResponse
 import com.vistony.app.ViewModel.MuestraViewModel
 import com.vistony.app.ui.theme.theme.AppTheme
+import java.time.Duration
+import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -65,12 +68,16 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun MisOFScreen(
     modifier: Modifier = Modifier,
+    currentUser: UserResponse = UserResponse(),
     muestraViewModel: MuestraViewModel = hiltViewModel(),
     onNavigateToAdd: () -> Unit = {},
     onMenuClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
-    onOrderClick: (Int) -> Unit = {}
+    onOrderClick: (Int) -> Unit = {},
+    onTomarACargo: (Int) -> Unit = {}
 ) {
+    val esCalidad = currentUser.role.equals("ASEG. CALIDAD", ignoreCase = true)
+
     val filters = listOf("Todas", "En análisis", "Aprob.", "Rech.")
     var selectedFilter by remember { mutableStateOf("Todas") }
 
@@ -99,7 +106,13 @@ fun MisOFScreen(
                 lote = "Lote ${muestra.lote}",
                 status = muestra.status,
                 version = muestra.version,
-                intentos = muestra.counter
+                intentos = muestra.counter,
+                tiempoCorriendo = calcularTiempoCorriendo(
+                    status = muestra.status,
+                    dateRegister = muestra.dateRegister,
+                    dateStartAnalysis = muestra.dateStartAnalysis,
+                    dateEndAnalysis = muestra.dateEndAnalysis
+                )
             )
         }
 
@@ -165,18 +178,20 @@ fun MisOFScreen(
             }
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToAdd,
-                containerColor = Color(0xFF1A1A1A),
-                contentColor = Color.White,
-                shape = CircleShape,
-                modifier = Modifier.size(64.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(32.dp)
-                )
+            if (!esCalidad) {
+                FloatingActionButton(
+                    onClick = onNavigateToAdd,
+                    containerColor = Color(0xFF1A1A1A),
+                    contentColor = Color.White,
+                    shape = CircleShape,
+                    modifier = Modifier.size(64.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
             }
         }
     ) { padding ->
@@ -238,7 +253,12 @@ fun MisOFScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(orders) { order ->
-                        OFCard(order = order, onClick = { onOrderClick(order.docEntry) })
+                        OFCard(
+                            order = order,
+                            esCalidad = esCalidad,
+                            onClick = { onOrderClick(order.docEntry) },
+                            onTomarACargo = { onTomarACargo(order.docEntry) }
+                        )
                     }
                 }
             }
@@ -284,7 +304,12 @@ private fun DashedLine() {
 }
 
 @Composable
-private fun OFCard(order: OrdenFabricacionUI, onClick: () -> Unit) {
+private fun OFCard(
+    order: OrdenFabricacionUI,
+    esCalidad: Boolean,
+    onClick: () -> Unit,
+    onTomarACargo: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -305,7 +330,19 @@ private fun OFCard(order: OrdenFabricacionUI, onClick: () -> Unit) {
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
-                StatusBadge(status = order.status)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (esCalidad && order.tiempoCorriendo != null) {
+                        Text(
+                            text = order.tiempoCorriendo,
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                    }
+                    StatusBadge(status = order.status)
+                }
             }
             Spacer(modifier = Modifier.height(10.dp))
             Text(
@@ -336,6 +373,29 @@ private fun OFCard(order: OrdenFabricacionUI, onClick: () -> Unit) {
                     color = Color.Gray,
                     textAlign = TextAlign.End
                 )
+            }
+
+            if (esCalidad && order.status == "PENDIENTE") {
+                Spacer(modifier = Modifier.height(12.dp))
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onTomarACargo() },
+                    color = Color(0xFF212121),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Tomar a cargo",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
             }
         }
     }
@@ -374,8 +434,45 @@ private data class OrdenFabricacionUI(
     val status: String,
     val version: String? = null,
     val intentos: Int? = null,
-    val extraInfo: String? = null
+    val extraInfo: String? = null,
+    val tiempoCorriendo: String? = null
 )
+
+// Tiempo corriendo (visible solo para ASEG. CALIDAD): pendiente desde que se registró,
+// en análisis desde que se inició, aprobado/rechazado desde que finalizó el análisis
+private fun calcularTiempoCorriendo(
+    status: String,
+    dateRegister: String,
+    dateStartAnalysis: String?,
+    dateEndAnalysis: String?
+): String? {
+    val fechaBase = when (status) {
+        "PENDIENTE" -> dateRegister
+        "EN_ANALISIS" -> dateStartAnalysis ?: dateRegister
+        "APROBADO", "RECHAZADO" -> dateEndAnalysis ?: return null
+        else -> return null
+    }
+
+    return try {
+        val duracion = Duration.between(Instant.parse(fechaBase), Instant.now())
+        formatearDuracion(duracion)
+    } catch (e: Exception) {
+        null
+    }
+}
+
+private fun formatearDuracion(duracion: Duration): String {
+    val totalMinutos = duracion.toMinutes().coerceAtLeast(0)
+    val dias = totalMinutos / (24 * 60)
+    val horas = (totalMinutos / 60) % 24
+    val minutos = totalMinutos % 60
+
+    return when {
+        dias > 0 -> "${dias}d ${horas}h"
+        horas > 0 -> "${horas}h ${minutos}m"
+        else -> "${minutos}m"
+    }
+}
 
 @Preview(showBackground = true)
 @Composable

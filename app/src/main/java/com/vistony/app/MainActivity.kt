@@ -390,9 +390,11 @@ class MainActivity : ComponentActivity() {
                             }
                         composable("entregaMuestra") {
                             MisOFScreen(
+                                currentUser = userState.currentUser,
                                 muestraViewModel = muestraViewModel,
                                 onNavigateToAdd = { navController.navigate("nuevaMuestra") },
-                                onOrderClick = { docEntry -> navController.navigate("entregaMuestraDetalle/$docEntry") }
+                                onOrderClick = { docEntry -> navController.navigate("entregaMuestraDetalle/$docEntry") },
+                                onTomarACargo = { /*TODO*/ }
                             )
                         }
                         composable(

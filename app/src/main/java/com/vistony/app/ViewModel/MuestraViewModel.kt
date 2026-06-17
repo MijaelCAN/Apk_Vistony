@@ -378,6 +378,13 @@ class MuestraViewModel @Inject constructor(
         }
     }
 
+    // Función para limpiar el estado de "Nueva muestra" (ej. al volver a abrirla desde el FAB)
+    fun limpiarConsultaNuevaMuestra() {
+        _consultaNuevaMuestra.value = null
+        _muestraRegistrada.value = null
+        _errorMessage.value = null
+    }
+
     // Función para consultar los datos previos al registrar una nueva muestra (GET al abrir "Nueva muestra")
     fun consultarNuevaMuestra(numOf: String, numEn: String?, type: String) {
         viewModelScope.launch {

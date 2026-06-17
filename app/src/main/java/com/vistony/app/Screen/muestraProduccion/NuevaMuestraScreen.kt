@@ -93,7 +93,10 @@ fun NuevaMuestraScreen(
 
     val tieneOrdenPrecargada = !numOf.isNullOrBlank() && !type.isNullOrBlank()
 
-    LaunchedEffect(numOf, numEn, type) {
+    LaunchedEffect(Unit) {
+        // Limpia cualquier dato/estado de una visita anterior a esta pantalla
+        muestraViewModel.limpiarConsultaNuevaMuestra()
+
         if (tieneOrdenPrecargada) {
             muestraViewModel.consultarNuevaMuestra(numOf!!, numEn, type!!)
         }
