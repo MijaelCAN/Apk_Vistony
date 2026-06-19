@@ -60,6 +60,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.vistony.app.Entidad.ConsultaNuevaMuestra
 import com.vistony.app.Entidad.UserResponse
 import com.vistony.app.ViewModel.MuestraViewModel
 import com.vistony.app.ui.theme.theme.AppTheme
@@ -81,15 +82,19 @@ fun NuevaMuestraScreen(
     onEnviarClick: () -> Unit = {},
     onCancelarClick: () -> Unit = {}
 ) {
-    val consulta by muestraViewModel.consultaNuevaMuestra.collectAsState()
+    val opciones by muestraViewModel.consultaNuevaMuestra.collectAsState()
     val muestraRegistrada by muestraViewModel.muestraRegistrada.collectAsState()
     val isLoading by muestraViewModel.isLoading.collectAsState()
     val isCreating by muestraViewModel.isCreating.collectAsState()
     val errorMessage by muestraViewModel.errorMessage.collectAsState()
+    val muestrasProduccion by muestraViewModel.muestrasProduccion.collectAsState()
+    val pendientesCount = muestrasProduccion.count { it.status == "PENDIENTE" }
 
     var entrega by remember { mutableStateOf("") }
     var observacion by remember { mutableStateOf("") }
     var ordenBuscada by remember { mutableStateOf(numOf ?: "") }
+    var envaseSeleccionado by remember { mutableStateOf<ConsultaNuevaMuestra?>(null) }
+    var envaseBloqueadoMensaje by remember { mutableStateOf<String?>(null) }
 
     val tieneOrdenPrecargada = !numOf.isNullOrBlank() && !type.isNullOrBlank()
 
@@ -99,6 +104,26 @@ fun NuevaMuestraScreen(
 
         if (tieneOrdenPrecargada) {
             muestraViewModel.consultarNuevaMuestra(numOf!!, numEn, type!!)
+        }
+    }
+
+    LaunchedEffect(opciones) {
+        // Si solo hay un envase, se selecciona automáticamente (salvo que ya tenga un intento
+        // pendiente, en cuyo caso se bloquea). Si hay varios, el usuario debe elegir.
+        val unico = opciones.singleOrNull()
+        when {
+            unico == null -> {
+                envaseSeleccionado = null
+                envaseBloqueadoMensaje = null
+            }
+            unico.tieneIntentoPendiente -> {
+                envaseSeleccionado = null
+                envaseBloqueadoMensaje = unico.mensajeIntentoPendiente
+            }
+            else -> {
+                envaseSeleccionado = unico
+                envaseBloqueadoMensaje = null
+            }
         }
     }
 
@@ -134,11 +159,11 @@ fun NuevaMuestraScreen(
                     BadgedBox(
                         badge = {
                             Badge(
-                                containerColor = Color(0xFFD32F2F),
+                                containerColor = if (pendientesCount > 0) Color(0xFFD32F2F) else Color.Transparent,
                                 contentColor = Color.White,
                                 modifier = Modifier.offset(x = (-4).dp, y = 4.dp)
                             ) {
-                                Text("3")
+                                Text("$pendientesCount")
                             }
                         }
                     ) {
@@ -152,7 +177,7 @@ fun NuevaMuestraScreen(
                             Icon(
                                 imageVector = Icons.Default.Notifications,
                                 contentDescription = null,
-                                tint = Color(0xFFFBC02D),
+                                tint = if(pendientesCount > 0)Color(0xFFFBC02D) else Color.LightGray,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
@@ -170,7 +195,7 @@ fun NuevaMuestraScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            val datos = consulta
+            val datos = envaseSeleccionado
 
             if (!tieneOrdenPrecargada) {
                 // Abierto desde el FAB: el usuario debe ingresar la OF y buscarla
@@ -211,7 +236,7 @@ fun NuevaMuestraScreen(
                     }
                 }
 
-                if (errorMessage != null && datos == null) {
+                if (errorMessage != null && opciones.isEmpty()) {
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = errorMessage ?: "",
@@ -220,24 +245,59 @@ fun NuevaMuestraScreen(
                     )
                 }
 
-                if (datos != null) {
+                if (opciones.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(24.dp))
                 }
             }
 
-            if (isLoading && datos == null && tieneOrdenPrecargada) {
+            if (isLoading && opciones.isEmpty() && tieneOrdenPrecargada) {
                 Box(
                     modifier = Modifier.fillMaxWidth().padding(32.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator()
                 }
-            } else if (datos == null && tieneOrdenPrecargada) {
+            } else if (opciones.isEmpty() && tieneOrdenPrecargada) {
                 Text(
                     text = errorMessage ?: "No se pudo cargar la información de la muestra",
                     color = Color(0xFF9E4B4B),
                     fontSize = 14.sp
                 )
+            } else if (datos == null && opciones.size == 1) {
+                // El único envase ya tiene un intento pendiente: no se puede registrar otro
+                Text(
+                    text = envaseBloqueadoMensaje ?: "No se puede registrar una nueva muestra para este envase",
+                    color = Color(0xFF9E4B4B),
+                    fontSize = 14.sp
+                )
+            } else if (datos == null && opciones.size > 1) {
+                // Hay varios envases (OE) bajo esta OF: el usuario debe elegir cuál registrar
+                Label(text = "SELECCIONA EL ENVASE")
+
+                if (envaseBloqueadoMensaje != null) {
+                    Text(
+                        text = envaseBloqueadoMensaje ?: "",
+                        color = Color(0xFF9E4B4B),
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    opciones.forEach { opcion ->
+                        EnvaseOptionCard(
+                            opcion = opcion,
+                            onClick = {
+                                if (opcion.tieneIntentoPendiente) {
+                                    envaseBloqueadoMensaje = "Envase ${opcion.numEn}: ${opcion.mensajeIntentoPendiente}"
+                                } else {
+                                    envaseBloqueadoMensaje = null
+                                    envaseSeleccionado = opcion
+                                }
+                            }
+                        )
+                    }
+                }
             } else if (datos != null) {
                 // Summary Card
                 Card(
@@ -286,7 +346,7 @@ fun NuevaMuestraScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Label(text = "N° INTENTO")
                         CustomTextField(
-                            value = datos.counterSiguiente.toString(),
+                            value = datos.counterSiguiente?.toString() ?: "-",
                             onValueChange = {},
                             readOnly = true,
                             modifier = Modifier.fillMaxWidth()
@@ -295,7 +355,7 @@ fun NuevaMuestraScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Label(text = "VERSIÓN")
                         CustomTextField(
-                            value = datos.versionSiguiente,
+                            value = datos.versionSiguiente ?: "-",
                             onValueChange = {},
                             readOnly = true,
                             modifier = Modifier.fillMaxWidth()
@@ -397,6 +457,48 @@ fun NuevaMuestraScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
             }
+        }
+    }
+}
+
+@Composable
+private fun EnvaseOptionCard(opcion: ConsultaNuevaMuestra, onClick: () -> Unit) {
+    val bloqueado = opcion.tieneIntentoPendiente
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = if (bloqueado) Color(0xFFF5F5F5) else Color.White),
+        border = BorderStroke(1.dp, if (bloqueado) Color.Gray else Color.Black)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = opcion.descripcion,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = if (bloqueado) Color.Gray else Color.Black
+                )
+                if (bloqueado) {
+                    Text(
+                        text = opcion.ultimoIntento?.status ?: "PENDIENTE",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF8B7A4D)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Lote ${opcion.lote} · OE ${opcion.numEn ?: "-"}",
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.vistony.app.Service
 
-import com.vistony.app.Entidad.ConsultaNuevaMuestra
+import com.vistony.app.Entidad.ConsultaNuevaMuestraResponse
 import com.vistony.app.Entidad.CrearMuestraProduccionRequest
 import com.vistony.app.Entidad.CrearMuestraProduccionResponse
 import com.vistony.app.Entidad.FinalizarAnalisisRequest
@@ -35,7 +35,7 @@ interface MuestraProduccionService {
         @Query("numOf") numOf: String,
         @Query("numEn") numEn: String?,
         @Query("type") type: String
-    ): Response<ConsultaNuevaMuestra>
+    ): Response<ConsultaNuevaMuestraResponse>
 
     @POST("v1/muestras")
     suspend fun crearMuestraProduccion(

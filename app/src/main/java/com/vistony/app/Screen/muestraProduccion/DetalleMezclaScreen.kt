@@ -24,6 +24,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Notifications
@@ -31,7 +35,6 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -87,6 +90,8 @@ fun DetalleMezclaScreen(
     val isLoading by muestraViewModel.isLoading.collectAsState()
     val isProcesando by muestraViewModel.isCreating.collectAsState()
     val errorMessage by muestraViewModel.errorMessage.collectAsState()
+    val muestrasProduccion by muestraViewModel.muestrasProduccion.collectAsState()
+    val pendientesCount = muestrasProduccion.count { it.status == "PENDIENTE" }
 
     LaunchedEffect(docEntry) {
         muestraViewModel.obtenerMuestraProduccionDetalle(docEntry)
@@ -98,9 +103,11 @@ fun DetalleMezclaScreen(
         esCalidad = currentUser.role.equals("ASEG. CALIDAD", ignoreCase = true),
         isProcesando = isProcesando,
         errorMessage = errorMessage,
+        pendientesCount = pendientesCount,
         modifier = modifier,
         onBackClick = onBackClick,
         onNotificationClick = onNotificationClick,
+        onRefresh = { muestraViewModel.obtenerMuestraProduccionDetalle(docEntry) },
         onRegistrarMuestraClick = onRegistrarMuestraClick,
         onIniciarAnalisisClick = {
             muestraViewModel.iniciarAnalisis(docEntry, currentUser.dni)
@@ -121,7 +128,7 @@ fun DetalleMezclaScreen(
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun DetalleMezclaScreenContent(
     detalle: MuestraProduccionDetalle?,
@@ -129,13 +136,20 @@ fun DetalleMezclaScreenContent(
     esCalidad: Boolean = false,
     isProcesando: Boolean = false,
     errorMessage: String? = null,
+    pendientesCount: Int = 0,
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
+    onRefresh: () -> Unit = {},
     onRegistrarMuestraClick: () -> Unit = {},
     onIniciarAnalisisClick: () -> Unit = {},
     onConfirmarResolucion: (decision: String, motivo: String?, causa: String, observacion: String) -> Unit = { _, _, _, _ -> }
 ) {
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isLoading,
+        onRefresh = onRefresh
+    )
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -162,11 +176,11 @@ fun DetalleMezclaScreenContent(
                     BadgedBox(
                         badge = {
                             Badge(
-                                containerColor = Color(0xFFD32F2F),
+                                containerColor = if (pendientesCount > 0)Color(0xFFD32F2F) else Color.Transparent,
                                 contentColor = Color.White,
                                 modifier = Modifier.offset(x = (-4).dp, y = 4.dp)
                             ) {
-                                Text("3")
+                                Text("$pendientesCount")
                             }
                         }
                     ) {
@@ -180,7 +194,7 @@ fun DetalleMezclaScreenContent(
                             Icon(
                                 imageVector = Icons.Default.Notifications,
                                 contentDescription = null,
-                                tint = Color(0xFFFBC02D),
+                                tint = if (pendientesCount > 0) Color(0xFFFBC02D) else Color.LightGray,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
@@ -190,28 +204,26 @@ fun DetalleMezclaScreenContent(
             }
         }
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
                 .padding(padding)
+                .fillMaxSize()
+                .pullRefresh(pullRefreshState)
+        ) {
+        Column(
+            modifier = Modifier
                 .fillMaxSize()
                 .background(Color.White)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            if (isLoading && detalle == null) {
-                Box(
-                    modifier = Modifier.fillMaxWidth().padding(32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            } else if (detalle == null) {
+            if (detalle == null && !isLoading) {
                 Text(
                     text = "No se encontró información de la muestra",
                     color = Color.Gray,
                     fontSize = 14.sp
                 )
-            } else {
+            } else if (detalle != null) {
                 MuestraSummaryCard(detalle = detalle)
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -262,6 +274,11 @@ fun DetalleMezclaScreenContent(
                         onConfirmarResolucion = onConfirmarResolucion
                     )
                 } else {
+                    val siguienteTipo = detalle.siguienteTipoMuestra()
+                    val tipoLabel = when (siguienteTipo) {
+                        "ENVASADO_INICIO" -> "ENVASADO-INICIO"
+                        else -> siguienteTipo
+                    }
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -272,7 +289,7 @@ fun DetalleMezclaScreenContent(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
-                                text = "Registrar Muestra",
+                                text = "Registrar muestra $tipoLabel",
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp
@@ -284,7 +301,21 @@ fun DetalleMezclaScreenContent(
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
+
+            PullRefreshIndicator(
+                refreshing = isLoading,
+                state = pullRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
+        }
     }
+}
+
+// Si la muestra actual ya está finalizada (aprobada), el botón de Producción debe
+// pasar a registrar la siguiente etapa del flujo en lugar de otro intento de la misma.
+fun MuestraProduccionDetalle.siguienteTipoMuestra(): String {
+    val finalizado = isFinish || status == "APROBADO"
+    return if (finalizado && type == "MEZCLA") "ENVASADO_INICIO" else type
 }
 
 private val MOTIVOS_RECHAZO = listOf(

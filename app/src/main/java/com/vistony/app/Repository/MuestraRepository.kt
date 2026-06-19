@@ -353,13 +353,13 @@ class MuestraRepository @Inject constructor() {
         }
     }
 
-    suspend fun consultarNuevaMuestra(numOf: String, numEn: String?, type: String): Result<ConsultaNuevaMuestra> {
+    suspend fun consultarNuevaMuestra(numOf: String, numEn: String?, type: String): Result<List<ConsultaNuevaMuestra>> {
         return try {
             val response = muestraProduccionService.consultarNuevaMuestra(numOf, numEn, type)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
-                    Result.success(body)
+                    Result.success(body.data)
                 } else {
                     Result.failure(Exception("Respuesta vacía del servidor"))
                 }

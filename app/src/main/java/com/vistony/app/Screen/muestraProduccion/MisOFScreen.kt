@@ -1,5 +1,7 @@
 package com.vistony.app.Screen.muestraProduccion
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -22,7 +24,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
@@ -30,20 +36,23 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,49 +61,68 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.vistony.app.Entidad.UserResponse
+import com.vistony.app.Entidad.UserState
+import com.vistony.app.Screen.Generic.Drawers.CustomDrawer
 import com.vistony.app.ViewModel.MuestraViewModel
-import com.vistony.app.ui.theme.theme.AppTheme
+import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun MisOFScreen(
+    navController: NavController,
+    userState: UserState,
     modifier: Modifier = Modifier,
     currentUser: UserResponse = UserResponse(),
     muestraViewModel: MuestraViewModel = hiltViewModel(),
     onNavigateToAdd: () -> Unit = {},
-    onMenuClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
     onOrderClick: (Int) -> Unit = {},
-    onTomarACargo: (Int) -> Unit = {}
+    onTomarACargo: (Int) -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
     val esCalidad = currentUser.role.equals("ASEG. CALIDAD", ignoreCase = true)
+    val scope = rememberCoroutineScope()
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
-    val filters = listOf("Todas", "En análisis", "Aprob.", "Rech.")
+    val filters = listOf("Todas", "En análisis", "Aprobados", "Rechazados", "Pendientes")
     var selectedFilter by remember { mutableStateOf("Todas") }
 
     val muestrasProduccion by muestraViewModel.muestrasProduccion.collectAsState()
     val isLoading by muestraViewModel.isLoading.collectAsState()
+    val numPendientes = muestrasProduccion.count { it.status == "PENDIENTE" }
 
-    LaunchedEffect(Unit) {
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun recargar() {
         val fecha = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
         muestraViewModel.obtenerMuestrasProduccion(fecha, fecha)
     }
+
+    LaunchedEffect(Unit) {
+        recargar()
+    }
+
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isLoading,
+        onRefresh = { recargar() }
+    )
 
     val orders = muestrasProduccion
         .filter { muestra ->
             when (selectedFilter) {
                 "En análisis" -> muestra.status == "EN_ANALISIS"
-                "Aprob." -> muestra.status == "APROBADO"
-                "Rech." -> muestra.status == "RECHAZADO"
+                "Aprobados" -> muestra.status == "APROBADO"
+                "Rechazados" -> muestra.status == "RECHAZADO"
+                "Pendientes" -> muestra.status == "PENDIENTE"
                 else -> true
             }
         }
@@ -116,6 +144,17 @@ fun MisOFScreen(
             )
         }
 
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            CustomDrawer(
+                navController = navController,
+                id = currentUser.dni,
+                userState = userState,
+                onLogout = onLogout
+            )
+        }
+    ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -130,7 +169,7 @@ fun MisOFScreen(
                         modifier = Modifier
                             .size(36.dp)
                             .border(1.dp, Color.Gray, CircleShape)
-                            .clickable { onMenuClick() },
+                            .clickable { scope.launch { drawerState.open() } },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -140,7 +179,7 @@ fun MisOFScreen(
                         )
                     }
                     Text(
-                        text = "Mis OF",
+                        text = "Mis Muestras",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier
@@ -150,11 +189,11 @@ fun MisOFScreen(
                     BadgedBox(
                         badge = {
                             Badge(
-                                containerColor = Color(0xFFD32F2F),
+                                containerColor = if (numPendientes > 0) Color(0xFFD32F2F) else Color.Transparent,
                                 contentColor = Color.White,
                                 modifier = Modifier.offset(x = (-4).dp, y = 4.dp)
                             ) {
-                                Text("3")
+                                Text(""+ numPendientes)
                             }
                         }
                     ) {
@@ -168,7 +207,7 @@ fun MisOFScreen(
                             Icon(
                                 imageVector = Icons.Default.Notifications,
                                 contentDescription = null,
-                                tint = Color(0xFFFBC02D),
+                                tint = if (numPendientes > 0)Color(0xFFFBC02D) else Color.LightGray,
                                 modifier = Modifier.size(22.dp)
                             )
                         }
@@ -219,7 +258,7 @@ fun MisOFScreen(
 
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Text(
-                    text = "Órdenes de Fabricación",
+                    text = "Listado de Muestras (" + orders.size + ")",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Normal,
                     color = Color.DarkGray
@@ -228,41 +267,47 @@ fun MisOFScreen(
                 DashedLine()
             }
 
-            if (isLoading && orders.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            } else if (orders.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No hay órdenes de fabricación",
-                        color = Color.Gray,
-                        fontSize = 14.sp
-                    )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    items(orders) { order ->
-                        OFCard(
-                            order = order,
-                            esCalidad = esCalidad,
-                            onClick = { onOrderClick(order.docEntry) },
-                            onTomarACargo = { onTomarACargo(order.docEntry) }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pullRefresh(pullRefreshState)
+            ) {
+                if (orders.isEmpty() && !isLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No hay muestras pendientes para hoy",
+                            color = Color.Gray,
+                            fontSize = 14.sp
                         )
                     }
+                } else if (orders.isNotEmpty()) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        items(orders) { order ->
+                            OFCard(
+                                order = order,
+                                esCalidad = esCalidad,
+                                onClick = { onOrderClick(order.docEntry) },
+                                onTomarACargo = { onTomarACargo(order.docEntry) }
+                            )
+                        }
+                    }
                 }
+
+                PullRefreshIndicator(
+                    refreshing = isLoading,
+                    state = pullRefreshState,
+                    modifier = Modifier.align(Alignment.TopCenter)
+                )
             }
         }
+    }
     }
 }
 
@@ -440,6 +485,7 @@ private data class OrdenFabricacionUI(
 
 // Tiempo corriendo (visible solo para ASEG. CALIDAD): pendiente desde que se registró,
 // en análisis desde que se inició, aprobado/rechazado desde que finalizó el análisis
+@RequiresApi(Build.VERSION_CODES.O)
 private fun calcularTiempoCorriendo(
     status: String,
     dateRegister: String,
@@ -461,6 +507,7 @@ private fun calcularTiempoCorriendo(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 private fun formatearDuracion(duracion: Duration): String {
     val totalMinutos = duracion.toMinutes().coerceAtLeast(0)
     val dias = totalMinutos / (24 * 60)
@@ -474,10 +521,3 @@ private fun formatearDuracion(duracion: Duration): String {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-private fun MisOFScreenPreview() {
-    AppTheme {
-        MisOFScreen()
-    }
-}

@@ -191,8 +191,9 @@ class MuestraViewModel @Inject constructor(
     val muestraProduccionDetalle: StateFlow<MuestraProduccionDetalle?> = _muestraProduccionDetalle.asStateFlow()
 
     // Consulta previa al registrar una nueva muestra (pantalla "Nueva muestra")
-    private val _consultaNuevaMuestra = MutableStateFlow<ConsultaNuevaMuestra?>(null)
-    val consultaNuevaMuestra: StateFlow<ConsultaNuevaMuestra?> = _consultaNuevaMuestra.asStateFlow()
+    // Puede traer varios envases para elegir (ej. varias OE bajo una misma OF)
+    private val _consultaNuevaMuestra = MutableStateFlow<List<ConsultaNuevaMuestra>>(emptyList())
+    val consultaNuevaMuestra: StateFlow<List<ConsultaNuevaMuestra>> = _consultaNuevaMuestra.asStateFlow()
 
     private val _muestraRegistrada = MutableStateFlow<CrearMuestraProduccionResponse?>(null)
     val muestraRegistrada: StateFlow<CrearMuestraProduccionResponse?> = _muestraRegistrada.asStateFlow()
@@ -380,17 +381,18 @@ class MuestraViewModel @Inject constructor(
 
     // Función para limpiar el estado de "Nueva muestra" (ej. al volver a abrirla desde el FAB)
     fun limpiarConsultaNuevaMuestra() {
-        _consultaNuevaMuestra.value = null
+        _consultaNuevaMuestra.value = emptyList()
         _muestraRegistrada.value = null
         _errorMessage.value = null
     }
 
     // Función para consultar los datos previos al registrar una nueva muestra (GET al abrir "Nueva muestra")
+    // La respuesta puede traer varios envases (uno por cada OE bajo la OF) para elegir
     fun consultarNuevaMuestra(numOf: String, numEn: String?, type: String) {
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
-            _consultaNuevaMuestra.value = null
+            _consultaNuevaMuestra.value = emptyList()
 
             try {
                 val result = muestraRepository.consultarNuevaMuestra(numOf, numEn, type)

@@ -616,16 +616,50 @@ data class MuestraProduccionTimelineItem(
 )
 
 // Respuesta de la consulta previa al registrar una nueva muestra (GET al abrir "Nueva muestra")
+// Puede traer varios envases (uno por cada OE bajo la OF) cuando se consulta solo con numOf + type.
+// codePreview/counterSiguiente/versionSiguiente vienen null cuando ese envase ya tiene un intento
+// sin resolver (PENDIENTE/EN_ANALISIS): el servidor no puede calcular el "siguiente intento".
 data class ConsultaNuevaMuestra(
-    @SerializedName("codePreview") val codePreview: String,
-    @SerializedName("counterSiguiente") val counterSiguiente: Int,
+    @SerializedName("codePreview") val codePreview: String?,
+    @SerializedName("counterSiguiente") val counterSiguiente: Int?,
     @SerializedName("descripcion") val descripcion: String,
     @SerializedName("lote") val lote: String,
     @SerializedName("numEn") val numEn: String?,
     @SerializedName("numOf") val numOf: String,
     @SerializedName("type") val type: String,
-    @SerializedName("ultimoIntento") val ultimoIntento: Any?,
-    @SerializedName("versionSiguiente") val versionSiguiente: String
+    @SerializedName("ultimoIntento") val ultimoIntento: UltimoIntentoMuestra?,
+    @SerializedName("versionSiguiente") val versionSiguiente: String?
+) {
+    // Si no hay versión/intento siguiente, es porque ya existe uno pendiente sin resolver
+    val tieneIntentoPendiente: Boolean
+        get() = versionSiguiente == null || counterSiguiente == null
+
+    // Mensaje para el usuario reflejando el estado real del intento sin resolver (PENDIENTE, EN_ANALISIS, etc.)
+    val mensajeIntentoPendiente: String?
+        get() {
+            if (!tieneIntentoPendiente) return null
+            val estado = when (ultimoIntento?.status) {
+                "PENDIENTE" -> "pendiente"
+                "EN_ANALISIS" -> "en análisis"
+                "APROBADO" -> "aprobado"
+                "RECHAZADO" -> "rechazado"
+                else -> "sin resolver"
+            }
+            return "Este envase ya tiene un intento $estado (${ultimoIntento?.version ?: "sin versión"}). Debe resolverse antes de registrar uno nuevo."
+        }
+}
+
+// Último intento registrado para un envase, cuando todavía no se puede calcular uno nuevo
+data class UltimoIntentoMuestra(
+    @SerializedName("docEntry") val docEntry: Int,
+    @SerializedName("reason") val reason: String?,
+    @SerializedName("status") val status: String,
+    @SerializedName("typeReject") val typeReject: String?,
+    @SerializedName("version") val version: String
+)
+
+data class ConsultaNuevaMuestraResponse(
+    @SerializedName("data") val data: List<ConsultaNuevaMuestra>
 )
 
 // Request para registrar una nueva muestra (POST)

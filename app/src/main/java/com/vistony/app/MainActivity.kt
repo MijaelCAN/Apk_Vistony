@@ -55,6 +55,7 @@ import com.vistony.app.Screen.Muestra.DetailMuestra
 import com.vistony.app.Screen.Muestra.EditMuestra
 import com.vistony.app.Screen.muestraProduccion.MisOFScreen
 import com.vistony.app.Screen.muestraProduccion.DetalleMezclaScreen
+import com.vistony.app.Screen.muestraProduccion.siguienteTipoMuestra
 import com.vistony.app.Screen.Muestra.RegistroLlegadaScreen
 import com.vistony.app.Screen.Muestra.RegistroLlegadaTodosScreen
 import com.vistony.app.Screen.muestraProduccion.NuevaMuestraScreen
@@ -390,11 +391,19 @@ class MainActivity : ComponentActivity() {
                             }
                         composable("entregaMuestra") {
                             MisOFScreen(
+                                navController = navController,
+                                userState = userState,
                                 currentUser = userState.currentUser,
                                 muestraViewModel = muestraViewModel,
                                 onNavigateToAdd = { navController.navigate("nuevaMuestra") },
                                 onOrderClick = { docEntry -> navController.navigate("entregaMuestraDetalle/$docEntry") },
-                                onTomarACargo = { /*TODO*/ }
+                                onTomarACargo = { /*TODO*/ },
+                                onLogout = {
+                                    loginViewModel.clearUserData()
+                                    navController.navigate("login") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                }
                             )
                         }
                         composable(
@@ -410,8 +419,13 @@ class MainActivity : ComponentActivity() {
                                 onRegistrarMuestraClick = {
                                     val detalle = muestraViewModel.muestraProduccionDetalle.value
                                     if (detalle != null) {
+                                        val siguienteTipo = detalle.siguienteTipoMuestra()
+                                        val avanzaEtapa = siguienteTipo != detalle.type
+                                        // Al avanzar de etapa (ej. MEZCLA -> ENVASADO_INICIO) aún no hay
+                                        // un envase elegido, así que se omite numEn y se deja elegir en la lista
+                                        val numEnQuery = if (avanzaEtapa) "" else "&numEn=${detalle.ordenEnvase}"
                                         navController.navigate(
-                                            "nuevaMuestra?numOf=${detalle.ordenFabricacion}&numEn=${detalle.ordenEnvase}&type=${detalle.type}"
+                                            "nuevaMuestra?numOf=${detalle.ordenFabricacion}$numEnQuery&type=$siguienteTipo"
                                         )
                                     }
                                 }
