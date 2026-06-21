@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,6 +57,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -482,9 +484,13 @@ private fun EnvaseOptionCard(opcion: ConsultaNuevaMuestra, onClick: () -> Unit) 
                     text = opcion.descripcion,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = if (bloqueado) Color.Gray else Color.Black
+                    color = if (bloqueado) Color.Gray else Color.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
                 )
                 if (bloqueado) {
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = opcion.ultimoIntento?.status ?: "PENDIENTE",
                         fontSize = 12.sp,

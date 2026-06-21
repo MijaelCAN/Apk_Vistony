@@ -612,7 +612,13 @@ data class MuestraProduccionTimelineItem(
     @SerializedName("status") val status: String,
     @SerializedName("typeReject") val typeReject: String?,
     @SerializedName("userRegister") val userRegister: String,
-    @SerializedName("version") val version: String
+    @SerializedName("version") val version: String,
+    // Respuesta real a "¿Se ha realizado corrección?" / "¿Se ha realizado reproceso?" confirmada
+    // por Calidad al finalizar ESE intento. Null mientras el backend no la devuelva (o mientras
+    // el intento siga sin resolver): nunca se debe inferir a partir de la versión, ver nota en
+    // esPrimeraVersion(). Son independientes entre sí.
+    @SerializedName("isCorrection") val isCorrection: Boolean? = null,
+    @SerializedName("isReprocess") val isReprocess: Boolean? = null
 )
 
 // Respuesta de la consulta previa al registrar una nueva muestra (GET al abrir "Nueva muestra")
@@ -719,6 +725,12 @@ data class FinalizarAnalisisRequest(
     @SerializedName("typeReject") val typeReject: String? = null,
     @SerializedName("reason") val reason: String? = null,
     @SerializedName("observation") val observation: String? = null,
+    // Respuesta a "¿Se ha realizado corrección?" / "¿Se ha realizado reproceso?". Son
+    // independientes entre sí (puede haber ambos, uno solo o ninguno) y no condicionan poder
+    // finalizar el análisis. La primera versión de cada tipo de muestra (V_.0) nunca puede ser
+    // una corrección ni un reproceso; en versiones siguientes lo decide Calidad.
+    @SerializedName("isCorrection") val isCorrection: Boolean = false,
+    @SerializedName("isReprocess") val isReprocess: Boolean = false,
     @SerializedName("parametros") val parametros: List<ParametroValorRequest> = emptyList()
 )
 

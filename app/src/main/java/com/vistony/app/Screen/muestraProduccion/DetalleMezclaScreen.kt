@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
@@ -35,6 +36,7 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -61,6 +63,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -70,6 +74,7 @@ import com.vistony.app.Entidad.MuestraProduccionDetalle
 import com.vistony.app.Entidad.MuestraProduccionTimelineItem
 import com.vistony.app.Entidad.ParametroValorRequest
 import com.vistony.app.Entidad.UserResponse
+import com.vistony.app.ViewModel.CalculoDensidadUiState
 import com.vistony.app.ViewModel.MuestraViewModel
 import com.vistony.app.ui.theme.theme.AppTheme
 import java.time.LocalDateTime
@@ -91,10 +96,16 @@ fun DetalleMezclaScreen(
     val isProcesando by muestraViewModel.isCreating.collectAsState()
     val errorMessage by muestraViewModel.errorMessage.collectAsState()
     val muestrasProduccion by muestraViewModel.muestrasProduccion.collectAsState()
+    val motivosRechazo by muestraViewModel.motivosRechazo.collectAsState()
+    val calculoDensidad by muestraViewModel.calculoDensidad.collectAsState()
     val pendientesCount = muestrasProduccion.count { it.status == "PENDIENTE" }
 
     LaunchedEffect(docEntry) {
         muestraViewModel.obtenerMuestraProduccionDetalle(docEntry)
+    }
+
+    LaunchedEffect(Unit) {
+        muestraViewModel.cargarMotivosRechazo()
     }
 
     DetalleMezclaScreenContent(
@@ -104,6 +115,8 @@ fun DetalleMezclaScreen(
         isProcesando = isProcesando,
         errorMessage = errorMessage,
         pendientesCount = pendientesCount,
+        motivosRechazo = motivosRechazo,
+        calculoDensidad = calculoDensidad,
         modifier = modifier,
         onBackClick = onBackClick,
         onNotificationClick = onNotificationClick,
@@ -112,15 +125,31 @@ fun DetalleMezclaScreen(
         onIniciarAnalisisClick = {
             muestraViewModel.iniciarAnalisis(docEntry, currentUser.dni)
         },
-        onConfirmarResolucion = { decision, motivo, causa, observacion ->
+        onCalcularDensidadClick = { densidad ->
+            // Se identifica la muestra por "lote", igual que hace hoy el formulario de
+            // Manufacturing al recalcular densidad (ver INFORME_MODULO_LABORATORIO.md)
+            val lote = detalle?.lote.orEmpty()
+            muestraViewModel.calcularDensidad(lote, densidad)
+        },
+        onConfirmarResolucion = { decision, motivo, causa, observacion, densidad, seRealizoCorreccion, seRealizoReproceso ->
+            val esRechazoONoConforme = decision == "RECHAZADO" || decision == "NO_CONFORME"
+            // idParametro 1/2/3 son provisionales (pendiente catálogo real de parámetros).
+            // Se replica lo que hacía el formulario de Manufacturing: además de la densidad
+            // ingresada, también se envía el peso óptimo/máximo calculado (antes solo se mostraba).
+            val parametros = buildList {
+                if (densidad.isNotBlank()) add(ParametroValorRequest(idParametro = 1, valor = densidad))
+                calculoDensidad.pesoOptimo?.let { add(ParametroValorRequest(idParametro = 2, valor = it)) }
+                calculoDensidad.pesoMaximo?.let { add(ParametroValorRequest(idParametro = 3, valor = it)) }
+            }
             val request = FinalizarAnalisisRequest(
                 status = decision,
                 userEndAnalysis = currentUser.dni,
-                typeReject = if (decision == "RECHAZADO") motivo else null,
-                reason = if (decision == "RECHAZADO") causa else null,
+                typeReject = if (esRechazoONoConforme) motivo else null,
+                reason = if (esRechazoONoConforme) causa else null,
                 observation = observacion.ifBlank { null },
-                // TODO: reemplazar por los parámetros reales medidos cuando se defina el catálogo
-                parametros = listOf(ParametroValorRequest(idParametro = 1, valor = "1000"))
+                isCorrection = seRealizoCorreccion,
+                isReprocess = seRealizoReproceso,
+                parametros = parametros
             )
             muestraViewModel.finalizarAnalisis(docEntry, request)
         }
@@ -137,13 +166,16 @@ fun DetalleMezclaScreenContent(
     isProcesando: Boolean = false,
     errorMessage: String? = null,
     pendientesCount: Int = 0,
+    motivosRechazo: List<String> = emptyList(),
+    calculoDensidad: CalculoDensidadUiState = CalculoDensidadUiState(),
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
     onRefresh: () -> Unit = {},
     onRegistrarMuestraClick: () -> Unit = {},
     onIniciarAnalisisClick: () -> Unit = {},
-    onConfirmarResolucion: (decision: String, motivo: String?, causa: String, observacion: String) -> Unit = { _, _, _, _ -> }
+    onCalcularDensidadClick: (String) -> Unit = {},
+    onConfirmarResolucion: (decision: String, motivo: String?, causa: String, observacion: String, densidad: String, seRealizoCorreccion: Boolean, seRealizoReproceso: Boolean) -> Unit = { _, _, _, _, _, _, _ -> }
 ) {
     val pullRefreshState = rememberPullRefreshState(
         refreshing = isLoading,
@@ -171,6 +203,8 @@ fun DetalleMezclaScreenContent(
                         text = "OF ${detalle?.ordenEnvase ?: ""}",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Normal,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f)
                     )
                     BadgedBox(
@@ -270,7 +304,10 @@ fun DetalleMezclaScreenContent(
                         detalle = detalle,
                         isProcesando = isProcesando,
                         errorMessage = errorMessage,
+                        motivosRechazo = motivosRechazo,
+                        calculoDensidad = calculoDensidad,
                         onIniciarAnalisisClick = onIniciarAnalisisClick,
+                        onCalcularDensidadClick = onCalcularDensidadClick,
                         onConfirmarResolucion = onConfirmarResolucion
                     )
                 } else {
@@ -318,14 +355,24 @@ fun MuestraProduccionDetalle.siguienteTipoMuestra(): String {
     return if (finalizado && type == "MEZCLA") "ENVASADO_INICIO" else type
 }
 
-private val MOTIVOS_RECHAZO = listOf(
-    "Viscosidad fuera de rango",
-    "Partículas visibles",
-    "Tonalidad incorrecta",
-    "Olor no conforme",
-    "Contaminación",
-    "Otro"
+// La primera versión de cualquier tipo de muestra (Mezcla, Envasado-Inicio, Envasado-Fin)
+// nunca puede ser una corrección: recién ahí no hay nada previo que corregir. Esto solo habilita
+// la pregunta "¿Se ha realizado corrección?" — NO permite asumir que toda versión > .0 SÍ lo fue:
+// un segundo (o tercer) intento puede deberse a un simple reproceso (más centrifugado, más
+// agitación...) sin que se haya corregido nada. Esa respuesta solo la sabe Calidad al finalizar
+// el análisis de ese intento (ver el check en AccionesCalidad), por eso el timeline debe mostrar
+// el valor ya confirmado (`item.isCorrection`) y nunca inferirlo a partir de la versión.
+fun esPrimeraVersion(version: String): Boolean = version.substringAfterLast('.', "0") == "0"
+
+// Productos cuya muestra no requiere medir densidad (no aplica el cálculo de peso óptimo/máximo)
+private val PRODUCTOS_SIN_DENSIDAD = listOf(
+    "GRASA", "LEJIA", "LEJÍA", "LAVAVAJILLA", "ADITIVO HIGHT"
 )
+
+private fun requiereDensidad(descripcion: String): Boolean {
+    val descripcionNormalizada = descripcion.uppercase()
+    return PRODUCTOS_SIN_DENSIDAD.none { descripcionNormalizada.contains(it) }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -333,11 +380,16 @@ private fun AccionesCalidad(
     detalle: MuestraProduccionDetalle,
     isProcesando: Boolean,
     errorMessage: String?,
+    motivosRechazo: List<String>,
+    calculoDensidad: CalculoDensidadUiState,
     onIniciarAnalisisClick: () -> Unit,
-    onConfirmarResolucion: (decision: String, motivo: String?, causa: String, observacion: String) -> Unit
+    onCalcularDensidadClick: (String) -> Unit,
+    onConfirmarResolucion: (decision: String, motivo: String?, causa: String, observacion: String, densidad: String, seRealizoCorreccion: Boolean, seRealizoReproceso: Boolean) -> Unit
 ) {
     val analisisIniciado = !detalle.dateStartAnalysis.isNullOrBlank()
     val analisisFinalizado = !detalle.dateEndAnalysis.isNullOrBlank()
+    val densidadRequerida = requiereDensidad(detalle.descripcion)
+    val primeraVersion = esPrimeraVersion(detalle.version)
 
     when {
         detalle.status == "PENDIENTE" && !analisisIniciado -> {
@@ -369,15 +421,26 @@ private fun AccionesCalidad(
             var motivoExpanded by remember(detalle.docEntry) { mutableStateOf(false) }
             var causa by remember(detalle.docEntry) { mutableStateOf("") }
             var observacion by remember(detalle.docEntry) { mutableStateOf("") }
+            var densidad by remember(detalle.docEntry) { mutableStateOf("") }
+            var seRealizoCorreccion by remember(detalle.docEntry) { mutableStateOf(false) }
+            var seRealizoReproceso by remember(detalle.docEntry) { mutableStateOf(false) }
+
+            // Corrección y reproceso son independientes (pueden darse ambos, uno solo o ninguno)
+            // y, a diferencia de la densidad, NO condicionan poder finalizar el análisis.
+            val puedeConfirmar = decisionSeleccionada != null && !isProcesando &&
+                (!densidadRequerida || calculoDensidad.calculado)
 
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
-                    .clickable(enabled = decisionSeleccionada != null && !isProcesando) {
-                        onConfirmarResolucion(decisionSeleccionada ?: "", motivoSeleccionado, causa, observacion)
+                    .clickable(enabled = puedeConfirmar) {
+                        onConfirmarResolucion(
+                            decisionSeleccionada ?: "", motivoSeleccionado, causa, observacion,
+                            densidad, seRealizoCorreccion, seRealizoReproceso
+                        )
                     },
-                color = if (decisionSeleccionada != null && !isProcesando) Color(0xFF212121) else Color.Gray,
+                color = if (puedeConfirmar) Color(0xFF212121) else Color.Gray,
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -393,6 +456,120 @@ private fun AccionesCalidad(
             if (errorMessage != null) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(text = errorMessage, color = Color(0xFF9E4B4B), fontSize = 14.sp)
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            if (densidadRequerida) {
+                Label(text = "DENSIDAD MEDIDA")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = densidad,
+                        onValueChange = { densidad = it },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        shape = RoundedCornerShape(10.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Black,
+                            unfocusedBorderColor = Color.Gray.copy(alpha = 0.8f),
+                            cursorColor = Color.Black
+                        )
+                    )
+                    Surface(
+                        modifier = Modifier
+                            .height(56.dp)
+                            .clickable(enabled = densidad.isNotBlank() && !calculoDensidad.isLoading) {
+                                onCalcularDensidadClick(densidad)
+                            },
+                        color = Color(0xFF212121),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Box(modifier = Modifier.padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
+                            Text(
+                                text = if (calculoDensidad.isLoading) "Calculando..." else "CALCULAR",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+
+                if (calculoDensidad.error != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = calculoDensidad.error, color = Color(0xFF9E4B4B), fontSize = 13.sp)
+                }
+
+                if (calculoDensidad.calculado) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                        Column {
+                            Label(text = "PESO ÓPTIMO")
+                            Text(text = calculoDensidad.pesoOptimo ?: "-", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Column {
+                            Label(text = "PESO MÁXIMO")
+                            Text(text = calculoDensidad.pesoMaximo ?: "-", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                } else {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Calcula la densidad para habilitar \"Confirmar Resolución\"",
+                        color = Color.Gray,
+                        fontSize = 12.sp,
+                        fontStyle = FontStyle.Italic
+                    )
+                }
+            } else {
+                Label(text = "DENSIDAD MEDIDA")
+                Text(
+                    text = "Este producto no requiere medición de densidad",
+                    color = Color.Gray,
+                    fontSize = 13.sp,
+                    fontStyle = FontStyle.Italic
+                )
+            }
+
+            if (!primeraVersion) {
+                Spacer(modifier = Modifier.height(20.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { seRealizoCorreccion = !seRealizoCorreccion }
+                ) {
+                    Checkbox(
+                        checked = seRealizoCorreccion,
+                        onCheckedChange = { seRealizoCorreccion = it }
+                    )
+                    Text(
+                        text = "¿Se ha realizado corrección?",
+                        fontSize = 14.sp,
+                        color = Color.DarkGray
+                    )
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { seRealizoReproceso = !seRealizoReproceso }
+                ) {
+                    Checkbox(
+                        checked = seRealizoReproceso,
+                        onCheckedChange = { seRealizoReproceso = it }
+                    )
+                    Text(
+                        text = "¿Se ha realizado reproceso?",
+                        fontSize = 14.sp,
+                        color = Color.DarkGray
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -429,7 +606,7 @@ private fun AccionesCalidad(
                 )
             }
 
-            if (decisionSeleccionada == "RECHAZADO") {
+            if (decisionSeleccionada == "RECHAZADO" || decisionSeleccionada == "NO_CONFORME") {
                 Spacer(modifier = Modifier.height(16.dp))
                 Label(text = "MOTIVO")
                 ExposedDropdownMenuBox(
@@ -456,7 +633,7 @@ private fun AccionesCalidad(
                         expanded = motivoExpanded,
                         onDismissRequest = { motivoExpanded = false }
                     ) {
-                        MOTIVOS_RECHAZO.forEach { motivo ->
+                        motivosRechazo.forEach { motivo ->
                             DropdownMenuItem(
                                 text = { Text(motivo) },
                                 onClick = {
@@ -564,8 +741,12 @@ private fun MuestraSummaryCard(detalle: MuestraProduccionDetalle) {
                     text = detalle.descripcion,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Normal,
-                    color = Color.DarkGray
+                    color = Color.DarkGray,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
                 )
+                Spacer(modifier = Modifier.width(8.dp))
                 MuestraStatusBadge(status = detalle.status)
             }
             Spacer(modifier = Modifier.height(4.dp))
@@ -665,6 +846,14 @@ private fun MuestraTimelineItem(
                     color = Color.Gray
                 )
                 MuestraStatusBadge(status = item.status)
+                if (item.isCorrection == true) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    TimelineTag(text = "CORRECCIÓN", color = Color(0xFF6B5B95))
+                }
+                if (item.isReprocess == true) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    TimelineTag(text = "REPROCESO", color = Color(0xFF8B7A4D))
+                }
             }
             if (detail != null && detail.isNotBlank()) {
                 Text(
@@ -674,6 +863,23 @@ private fun MuestraTimelineItem(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun TimelineTag(text: String, color: Color) {
+    Surface(
+        color = color.copy(alpha = 0.12f),
+        shape = RoundedCornerShape(6.dp),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.4f))
+    ) {
+        Text(
+            text = text,
+            color = color,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+        )
     }
 }
 

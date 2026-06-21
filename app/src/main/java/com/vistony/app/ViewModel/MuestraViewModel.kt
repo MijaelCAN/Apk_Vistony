@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vistony.app.Entidad.*
 import com.vistony.app.Repository.MuestraRepository
+import com.vistony.app.clean.domain.usecases.GetReasonForRejectionsUseCase
+import com.vistony.app.clean.domain.usecases.RecalculateDensityUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,9 +17,21 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 import javax.inject.Inject
 
+// Estado de UI para el cálculo de densidad (reutiliza el endpoint de Laboratorio/CalculoDensidad
+// mientras no exista un equivalente propio en la API v1 de muestrasProduccion)
+data class CalculoDensidadUiState(
+    val isLoading: Boolean = false,
+    val pesoOptimo: String? = null,
+    val pesoMaximo: String? = null,
+    val calculado: Boolean = false,
+    val error: String? = null
+)
+
 @HiltViewModel
 class MuestraViewModel @Inject constructor(
-    private val muestraRepository: MuestraRepository
+    private val muestraRepository: MuestraRepository,
+    private val recalculateDensityUseCase: RecalculateDensityUseCase,
+    private val getReasonForRejectionsUseCase: GetReasonForRejectionsUseCase
 ) : ViewModel() {
 
     // Estados principales
@@ -197,7 +211,17 @@ class MuestraViewModel @Inject constructor(
 
     private val _muestraRegistrada = MutableStateFlow<CrearMuestraProduccionResponse?>(null)
     val muestraRegistrada: StateFlow<CrearMuestraProduccionResponse?> = _muestraRegistrada.asStateFlow()
-    
+
+    // Motivos de rechazo/no conformidad (pantalla de detalle, "Confirmar Resolución").
+    // Es una sola lista para cualquier tipo de muestra (MEZCLA, ENVASADO_INICIO, ENVASADO_FIN),
+    // cargada desde el catálogo real de Laboratorio (Inspeccion/MotivoCorreccion).
+    private val _motivosRechazo = MutableStateFlow<List<String>>(emptyList())
+    val motivosRechazo: StateFlow<List<String>> = _motivosRechazo.asStateFlow()
+
+    // Resultado del cálculo de densidad (peso óptimo/máximo) para el intento en pantalla
+    private val _calculoDensidad = MutableStateFlow(CalculoDensidadUiState())
+    val calculoDensidad: StateFlow<CalculoDensidadUiState> = _calculoDensidad.asStateFlow()
+
     // Estado para mostrar alert cuando se encuentra la orden
     private val _productoEncontrado = MutableStateFlow<String?>(null)
     val productoEncontrado: StateFlow<String?> = _productoEncontrado.asStateFlow()
@@ -359,6 +383,7 @@ class MuestraViewModel @Inject constructor(
             _isLoading.value = true
             _errorMessage.value = null
             _muestraProduccionDetalle.value = null
+            _calculoDensidad.value = CalculoDensidadUiState()
 
             try {
                 val result = muestraRepository.obtenerMuestraProduccionDetalle(docEntry)
@@ -502,6 +527,54 @@ class MuestraViewModel @Inject constructor(
 
             _isCreating.value = false
         }
+    }
+
+    // Función para cargar el catálogo de motivos de rechazo/no conformidad (una sola vez)
+    fun cargarMotivosRechazo() {
+        if (_motivosRechazo.value.isNotEmpty()) return
+        viewModelScope.launch {
+            try {
+                val response = getReasonForRejectionsUseCase()
+                _motivosRechazo.value = response.data.map { it.name }
+            } catch (e: Exception) {
+                android.util.Log.e("MuestraViewModel", "Error al cargar motivos de rechazo", e)
+            }
+        }
+    }
+
+    // Función para calcular la densidad de una muestra y obtener el peso óptimo/máximo resultante.
+    // Por ahora reutiliza el mismo API de Laboratorio (CalculoDensidad) que el formulario de
+    // Manufacturing, identificando la muestra por su "lote" (igual que hace ese formulario hoy).
+    fun calcularDensidad(lote: String, densidad: String) {
+        viewModelScope.launch {
+            _calculoDensidad.value = _calculoDensidad.value.copy(isLoading = true, error = null)
+            try {
+                val response = recalculateDensityUseCase(lote, densidad)
+                val orden = response.data.firstOrNull()
+                _calculoDensidad.value = if (orden != null) {
+                    CalculoDensidadUiState(
+                        pesoOptimo = orden.optimumWeight,
+                        pesoMaximo = orden.maximumWeight,
+                        calculado = true
+                    )
+                } else {
+                    _calculoDensidad.value.copy(
+                        isLoading = false,
+                        error = "No se pudo calcular la densidad para el lote $lote"
+                    )
+                }
+            } catch (e: Exception) {
+                _calculoDensidad.value = _calculoDensidad.value.copy(
+                    isLoading = false,
+                    error = "Error inesperado al calcular la densidad: ${e.message}"
+                )
+            }
+        }
+    }
+
+    // Función para limpiar el resultado del cálculo de densidad (ej. al cambiar la densidad ingresada)
+    fun resetCalculoDensidad() {
+        _calculoDensidad.value = CalculoDensidadUiState()
     }
 
     // Funciones para actualizar formularios
