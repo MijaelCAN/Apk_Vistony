@@ -1,5 +1,6 @@
 package com.vistony.app.Entidad
 
+import androidx.annotation.AnimRes
 import com.google.gson.annotations.SerializedName
 
 // 1. Información General (Cabecera)
@@ -564,10 +565,10 @@ data class MuestraProduccion(
     @SerializedName("dateRegister") val dateRegister: String,
     @SerializedName("dateStartAnalysis") val dateStartAnalysis: String?,
     @SerializedName("descripcion") val descripcion: String,
-    @SerializedName("docEntry") val docEntry: Int,
+    @SerializedName("docEntry") val docEntry: String,
     @SerializedName("isFinish") val isFinish: Boolean,
     @SerializedName("lote") val lote: String,
-    @SerializedName("ordenEnvase") val ordenEnvase: String,
+    @SerializedName("ordenEnvase") val ordenEnvase: String?,
     @SerializedName("ordenFabricacion") val ordenFabricacion: String,
     @SerializedName("status") val status: String,
     @SerializedName("userRegister") val userRegister: String,
@@ -586,11 +587,11 @@ data class MuestraProduccionDetalle(
     @SerializedName("dateRegister") val dateRegister: String,
     @SerializedName("dateStartAnalysis") val dateStartAnalysis: String?,
     @SerializedName("descripcion") val descripcion: String,
-    @SerializedName("docEntry") val docEntry: Int,
+    @SerializedName("docEntry") val docEntry: String,
     @SerializedName("isFinish") val isFinish: Boolean,
     @SerializedName("lote") val lote: String,
     @SerializedName("observation") val observation: String?,
-    @SerializedName("ordenEnvase") val ordenEnvase: String,
+    @SerializedName("ordenEnvase") val ordenEnvase: String?,
     @SerializedName("ordenFabricacion") val ordenFabricacion: String,
     @SerializedName("reason") val reason: String?,
     @SerializedName("status") val status: String,
@@ -601,6 +602,13 @@ data class MuestraProduccionDetalle(
     @SerializedName("userRegister") val userRegister: String,
     @SerializedName("userStartAnalysis") val userStartAnalysis: String?,
     @SerializedName("version") val version: String
+)
+
+data class ResponseMuestraDetalle(
+    @SerializedName("statusCode") val statusCode: Int,
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String?,
+    @SerializedName("data") val data: MuestraProduccionDetalle
 )
 
 data class MuestraProduccionTimelineItem(
@@ -626,6 +634,7 @@ data class MuestraProduccionTimelineItem(
 // codePreview/counterSiguiente/versionSiguiente vienen null cuando ese envase ya tiene un intento
 // sin resolver (PENDIENTE/EN_ANALISIS): el servidor no puede calcular el "siguiente intento".
 data class ConsultaNuevaMuestra(
+    @SerializedName("DocEntry") val docEntry: String,
     @SerializedName("codePreview") val codePreview: String?,
     @SerializedName("counterSiguiente") val counterSiguiente: Int?,
     @SerializedName("descripcion") val descripcion: String,
@@ -657,7 +666,7 @@ data class ConsultaNuevaMuestra(
 
 // Último intento registrado para un envase, cuando todavía no se puede calcular uno nuevo
 data class UltimoIntentoMuestra(
-    @SerializedName("docEntry") val docEntry: Int,
+    @SerializedName("docEntry") val docEntry: String,
     @SerializedName("reason") val reason: String?,
     @SerializedName("status") val status: String,
     @SerializedName("typeReject") val typeReject: String?,
@@ -665,6 +674,9 @@ data class UltimoIntentoMuestra(
 )
 
 data class ConsultaNuevaMuestraResponse(
+    @SerializedName("statusCode") val statusCode: Int,
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String?,
     @SerializedName("data") val data: List<ConsultaNuevaMuestra>
 )
 
@@ -731,7 +743,7 @@ data class FinalizarAnalisisRequest(
     // una corrección ni un reproceso; en versiones siguientes lo decide Calidad.
     @SerializedName("isCorrection") val isCorrection: Boolean = false,
     @SerializedName("isReprocess") val isReprocess: Boolean = false,
-    @SerializedName("parametros") val parametros: List<ParametroValorRequest> = emptyList()
+    //@SerializedName("parametros") val parametros: List<ParametroValorRequest> = emptyList()
 )
 
 // Respuesta al finalizar el análisis (PATCH)

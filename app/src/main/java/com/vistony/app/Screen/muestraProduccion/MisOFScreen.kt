@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -30,12 +31,15 @@ import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -43,8 +47,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -74,6 +81,7 @@ import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -87,8 +95,8 @@ fun MisOFScreen(
     muestraViewModel: MuestraViewModel = hiltViewModel(),
     onNavigateToAdd: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
-    onOrderClick: (Int) -> Unit = {},
-    onTomarACargo: (Int) -> Unit = {},
+    onOrderClick: (String) -> Unit = {},
+    onTomarACargo: (String) -> Unit = {},
     onLogout: () -> Unit = {}
 ) {
     val esCalidad = currentUser.role.equals("ASEG. CALIDAD", ignoreCase = true)
@@ -102,10 +110,18 @@ fun MisOFScreen(
     val isLoading by muestraViewModel.isLoading.collectAsState()
     val numPendientes = muestrasProduccion.count { it.status == "PENDIENTE" }
 
+    var fechaInicioSeleccionada by remember { mutableStateOf(LocalDate.now()) }
+    var fechaFinSeleccionada by remember { mutableStateOf(LocalDate.now()) }
+    var showDatePickerDialog by remember { mutableStateOf(false) }
+    val displayDateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy") }
+
     @RequiresApi(Build.VERSION_CODES.O)
     fun recargar() {
-        val fecha = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
-        muestraViewModel.obtenerMuestrasProduccion(fecha, fecha)
+        val formatter = DateTimeFormatter.ofPattern("yyyyMMdd")
+        muestraViewModel.obtenerMuestrasProduccion(
+            fechaInicioSeleccionada.format(formatter),
+            fechaFinSeleccionada.format(formatter)
+        )
     }
 
     LaunchedEffect(Unit) {
@@ -130,7 +146,7 @@ fun MisOFScreen(
         .map { muestra ->
             OrdenFabricacionUI(
                 docEntry = muestra.docEntry,
-                id = muestra.ordenEnvase,
+                id = muestra.ordenEnvase ?: muestra.ordenFabricacion,
                 product = muestra.descripcion,
                 lote = "Lote ${muestra.lote}",
                 status = muestra.status,
@@ -187,6 +203,21 @@ fun MisOFScreen(
                             .weight(1f)
                             .padding(horizontal = 12.dp)
                     )
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .border(1.dp, Color.Gray, CircleShape)
+                            .clickable { showDatePickerDialog = true },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = "Filtrar por fecha",
+                            tint = Color.Gray,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
                     BadgedBox(
                         badge = {
                             Badge(
@@ -241,6 +272,16 @@ fun MisOFScreen(
                 .fillMaxSize()
                 .background(Color.White)
         ) {
+            Text(
+                text = if (fechaInicioSeleccionada == fechaFinSeleccionada) {
+                    "Fecha: ${fechaInicioSeleccionada.format(displayDateFormatter)}"
+                } else {
+                    "Periodo: ${fechaInicioSeleccionada.format(displayDateFormatter)} - ${fechaFinSeleccionada.format(displayDateFormatter)}"
+                },
+                fontSize = 13.sp,
+                color = Color.Gray,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp)
+            )
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -309,6 +350,47 @@ fun MisOFScreen(
             }
         }
     }
+    }
+
+    if (showDatePickerDialog) {
+        val hoy = LocalDate.now()
+        val selectableDates = remember(hoy) {
+            object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                    val fecha = Instant.ofEpochMilli(utcTimeMillis).atZone(ZoneOffset.UTC).toLocalDate()
+                    return !fecha.isAfter(hoy)
+                }
+            }
+        }
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = fechaInicioSeleccionada.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+            selectableDates = selectableDates
+        )
+
+        DatePickerDialog(
+            onDismissRequest = { showDatePickerDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val millis = datePickerState.selectedDateMillis
+                    if (millis != null) {
+                        val fechaSeleccionada = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()
+                        fechaInicioSeleccionada = fechaSeleccionada
+                        fechaFinSeleccionada = fechaSeleccionada.plusDays(2).coerceAtMost(hoy)
+                        recargar()
+                    }
+                    showDatePickerDialog = false
+                }) {
+                    Text("Aplicar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePickerDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
     }
 }
 
@@ -476,7 +558,7 @@ private fun StatusBadge(status: String) {
 }
 
 private data class OrdenFabricacionUI(
-    val docEntry: Int,
+    val docEntry: String,
     val id: String,
     val product: String,
     val lote: String,

@@ -1,5 +1,6 @@
 package com.vistony.app.Repository
 
+import android.util.Log
 import com.google.gson.Gson
 import com.vistony.app.Entidad.*
 import com.vistony.app.Service.MuestraService
@@ -335,13 +336,17 @@ class MuestraRepository @Inject constructor() {
         }
     }
 
-    suspend fun obtenerMuestraProduccionDetalle(docEntry: Int): Result<MuestraProduccionDetalle> {
+    suspend fun obtenerMuestraProduccionDetalle(docEntry: String): Result<MuestraProduccionDetalle> {
         return try {
             val response = muestraProduccionService.obtenerMuestraProduccionDetalle(docEntry)
+            Log.d("MuestraRepository", "Response: $response")
             if (response.isSuccessful) {
+                Log.d("MuestraRepository", "Response: $response")
                 val body = response.body()
+                Log.d("MuestraRepository", "Body0: $body")
                 if (body != null) {
-                    Result.success(body)
+                    Log.d("MuestraRepository", "Data: ${body.data}")
+                    Result.success(body.data)
                 } else {
                     Result.failure(Exception("Muestra no encontrada"))
                 }
@@ -389,7 +394,7 @@ class MuestraRepository @Inject constructor() {
         }
     }
 
-    suspend fun iniciarAnalisis(docEntry: Int, userStartAnalysis: String): Result<IniciarAnalisisResponse> {
+    suspend fun iniciarAnalisis(docEntry: String, userStartAnalysis: String): Result<IniciarAnalisisResponse> {
         return try {
             val response = muestraProduccionService.iniciarAnalisis(docEntry, IniciarAnalisisRequest(userStartAnalysis))
             if (response.isSuccessful) {
@@ -407,7 +412,7 @@ class MuestraRepository @Inject constructor() {
         }
     }
 
-    suspend fun finalizarAnalisis(docEntry: Int, request: FinalizarAnalisisRequest): Result<FinalizarAnalisisResponse> {
+    suspend fun finalizarAnalisis(docEntry: String, request: FinalizarAnalisisRequest): Result<FinalizarAnalisisResponse> {
         return try {
             val response = muestraProduccionService.finalizarAnalisis(docEntry, request)
             if (response.isSuccessful) {

@@ -414,7 +414,7 @@ fun NuevaMuestraScreen(
                         .fillMaxWidth()
                         .height(54.dp)
                         .clickable(enabled = !isCreating) {
-                            muestraViewModel.crearMuestraProduccion(datos.numOf, datos.numEn, datos.type, currentUser.dni)
+                            muestraViewModel.crearMuestraProduccion(datos.docEntry, datos.docEntry, datos.type, currentUser.dni)
                         },
                     color = if (isCreating) Color.Gray else Color(0xFF212121),
                     shape = RoundedCornerShape(12.dp)
@@ -550,11 +550,11 @@ private fun CustomTextField(
     )
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
+/*@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable
 private fun NuevaMuestraScreenPreview() {
     AppTheme {
         NuevaMuestraScreen()
     }
-}
+}*/

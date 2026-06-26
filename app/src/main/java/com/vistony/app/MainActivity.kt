@@ -408,9 +408,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(
                             "entregaMuestraDetalle/{docEntry}",
-                            arguments = listOf(navArgument("docEntry") { type = NavType.IntType })
+                            arguments = listOf(navArgument("docEntry") { type = NavType.StringType })
                         ) { backStackEntry ->
-                            val docEntry = backStackEntry.arguments?.getInt("docEntry") ?: 0
+                            val docEntry = backStackEntry.arguments?.getString("docEntry") ?: "0"
                             DetalleMezclaScreen(
                                 docEntry = docEntry,
                                 currentUser = userState.currentUser,
@@ -423,7 +423,7 @@ class MainActivity : ComponentActivity() {
                                         val avanzaEtapa = siguienteTipo != detalle.type
                                         // Al avanzar de etapa (ej. MEZCLA -> ENVASADO_INICIO) aún no hay
                                         // un envase elegido, así que se omite numEn y se deja elegir en la lista
-                                        val numEnQuery = if (avanzaEtapa) "" else "&numEn=${detalle.ordenEnvase}"
+                                        val numEnQuery = if (avanzaEtapa || detalle.ordenEnvase == null) "" else "&numEn=${detalle.ordenEnvase}"
                                         navController.navigate(
                                             "nuevaMuestra?numOf=${detalle.ordenFabricacion}$numEnQuery&type=$siguienteTipo"
                                         )

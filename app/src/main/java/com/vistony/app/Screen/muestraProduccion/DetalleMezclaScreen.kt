@@ -1,6 +1,7 @@
 package com.vistony.app.Screen.muestraProduccion
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -75,6 +76,7 @@ import com.vistony.app.Entidad.MuestraProduccionTimelineItem
 import com.vistony.app.Entidad.ParametroValorRequest
 import com.vistony.app.Entidad.UserResponse
 import com.vistony.app.ViewModel.CalculoDensidadUiState
+import com.vistony.app.ViewModel.EnvacePesoInfo
 import com.vistony.app.ViewModel.MuestraViewModel
 import com.vistony.app.ui.theme.theme.AppTheme
 import java.time.LocalDateTime
@@ -83,7 +85,7 @@ import java.time.format.DateTimeFormatter
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DetalleMezclaScreen(
-    docEntry: Int,
+    docEntry: String,
     modifier: Modifier = Modifier,
     currentUser: UserResponse = UserResponse(),
     muestraViewModel: MuestraViewModel = hiltViewModel(),
@@ -102,6 +104,7 @@ fun DetalleMezclaScreen(
 
     LaunchedEffect(docEntry) {
         muestraViewModel.obtenerMuestraProduccionDetalle(docEntry)
+        Log.d("DetalleMezclaScreen", "LaunchedEffect: $docEntry")
     }
 
     LaunchedEffect(Unit) {
@@ -148,8 +151,8 @@ fun DetalleMezclaScreen(
                 reason = if (esRechazoONoConforme) causa else null,
                 observation = observacion.ifBlank { null },
                 isCorrection = seRealizoCorreccion,
-                isReprocess = seRealizoReproceso,
-                parametros = parametros
+                isReprocess = seRealizoReproceso
+                //parametros = parametros
             )
             muestraViewModel.finalizarAnalisis(docEntry, request)
         }
@@ -507,14 +510,58 @@ private fun AccionesCalidad(
 
                 if (calculoDensidad.calculado) {
                     Spacer(modifier = Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                        Column {
-                            Label(text = "PESO ÓPTIMO")
-                            Text(text = calculoDensidad.pesoOptimo ?: "-", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    if (calculoDensidad.envaces.isNotEmpty()) {
+                        calculoDensidad.envaces.forEachIndexed { index, envace ->
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Text(
+                                    text = "Lote ${envace.lote}",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.Gray
+                                )
+                                Text(
+                                    text = envace.descripcion,
+                                    fontSize = 12.sp,
+                                    color = Color.Gray,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                                    Column {
+                                        Label(text = "PESO ÓPTIMO")
+                                        Text(
+                                            text = envace.pesoOptimo.ifBlank { "-" },
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                    Column {
+                                        Label(text = "PESO MÁXIMO")
+                                        Text(
+                                            text = envace.pesoMaximo.ifBlank { "-" },
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+                            if (index < calculoDensidad.envaces.lastIndex) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f))
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
                         }
-                        Column {
-                            Label(text = "PESO MÁXIMO")
-                            Text(text = calculoDensidad.pesoMaximo ?: "-", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    } else {
+                        Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                            Column {
+                                Label(text = "PESO ÓPTIMO")
+                                Text(text = calculoDensidad.pesoOptimo ?: "-", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            }
+                            Column {
+                                Label(text = "PESO MÁXIMO")
+                                Text(text = calculoDensidad.pesoMaximo ?: "-", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 } else {
@@ -760,12 +807,6 @@ private fun MuestraSummaryCard(detalle: MuestraProduccionDetalle) {
                 color = Color.Gray,
                 fontSize = 14.sp
             )
-            Text(
-                text = "Datos desde SAP — solo lectura",
-                color = Color.Gray,
-                fontSize = 13.sp,
-                fontStyle = FontStyle.Italic
-            )
             if (detalle.status == "RECHAZADO" && (!detalle.reason.isNullOrBlank() || !detalle.typeReject.isNullOrBlank())) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -942,7 +983,7 @@ private fun formatFechaHora(iso: String?): String {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
+/*@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable
 private fun DetalleMezclaScreenPreview() {
@@ -1008,4 +1049,4 @@ private fun DetalleMezclaScreenPreview() {
             isLoading = false
         )
     }
-}
+}*/

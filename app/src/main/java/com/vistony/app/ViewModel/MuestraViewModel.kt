@@ -1,5 +1,6 @@
 package com.vistony.app.ViewModel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vistony.app.Entidad.*
@@ -17,6 +18,13 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 import javax.inject.Inject
 
+data class EnvacePesoInfo(
+    val lote: String,
+    val descripcion: String,
+    val pesoOptimo: String,
+    val pesoMaximo: String
+)
+
 // Estado de UI para el cálculo de densidad (reutiliza el endpoint de Laboratorio/CalculoDensidad
 // mientras no exista un equivalente propio en la API v1 de muestrasProduccion)
 data class CalculoDensidadUiState(
@@ -24,7 +32,8 @@ data class CalculoDensidadUiState(
     val pesoOptimo: String? = null,
     val pesoMaximo: String? = null,
     val calculado: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val envaces: List<EnvacePesoInfo> = emptyList()
 )
 
 @HiltViewModel
@@ -378,7 +387,7 @@ class MuestraViewModel @Inject constructor(
     }
 
     // Función para obtener el detalle de una muestra de producción (pantalla de detalle de "Mis OF")
-    fun obtenerMuestraProduccionDetalle(docEntry: Int) {
+    fun obtenerMuestraProduccionDetalle(docEntry: String) {
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
@@ -387,9 +396,11 @@ class MuestraViewModel @Inject constructor(
 
             try {
                 val result = muestraRepository.obtenerMuestraProduccionDetalle(docEntry)
+                Log.e("MDCR - detalle", result.toString())
 
                 result.fold(
                     onSuccess = { detalle ->
+                        Log.d("MuestraViewModel", "Detalle de muestra de producción obtenido: $detalle")
                         _muestraProduccionDetalle.value = detalle
                     },
                     onFailure = { exception ->
@@ -478,7 +489,7 @@ class MuestraViewModel @Inject constructor(
     }
 
     // Función para iniciar el análisis de una muestra (botón "Iniciar Análisis", ASEG. CALIDAD)
-    fun iniciarAnalisis(docEntry: Int, userStartAnalysis: String) {
+    fun iniciarAnalisis(docEntry: String, userStartAnalysis: String) {
         viewModelScope.launch {
             _isCreating.value = true
             _errorMessage.value = null
@@ -504,7 +515,7 @@ class MuestraViewModel @Inject constructor(
     }
 
     // Función para finalizar el análisis / confirmar la resolución (botón "Confirmar Resolución", ASEG. CALIDAD)
-    fun finalizarAnalisis(docEntry: Int, request: FinalizarAnalisisRequest) {
+    fun finalizarAnalisis(docEntry: String, request: FinalizarAnalisisRequest) {
         viewModelScope.launch {
             _isCreating.value = true
             _errorMessage.value = null
@@ -552,10 +563,20 @@ class MuestraViewModel @Inject constructor(
                 val response = recalculateDensityUseCase(lote, densidad)
                 val orden = response.data.firstOrNull()
                 _calculoDensidad.value = if (orden != null) {
+                    val envaces = orden.detail.map { d ->
+                        EnvacePesoInfo(
+                            lote = d.batchName,
+                            descripcion = d.description,
+                            pesoOptimo = d.optimumWeight,
+                            pesoMaximo = d.maximumWeight
+                        )
+                    }
+                    val primerEnvace = envaces.firstOrNull()
                     CalculoDensidadUiState(
-                        pesoOptimo = orden.optimumWeight,
-                        pesoMaximo = orden.maximumWeight,
-                        calculado = true
+                        pesoOptimo = primerEnvace?.pesoOptimo?.takeIf { it.isNotBlank() && it != "0" && it != "0.0" } ?: orden.optimumWeight,
+                        pesoMaximo = primerEnvace?.pesoMaximo?.takeIf { it.isNotBlank() && it != "0" && it != "0.0" } ?: orden.maximumWeight,
+                        calculado = true,
+                        envaces = envaces
                     )
                 } else {
                     _calculoDensidad.value.copy(

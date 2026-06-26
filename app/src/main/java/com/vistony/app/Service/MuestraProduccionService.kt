@@ -9,6 +9,7 @@ import com.vistony.app.Entidad.IniciarAnalisisRequest
 import com.vistony.app.Entidad.IniciarAnalisisResponse
 import com.vistony.app.Entidad.MuestraProduccionDetalle
 import com.vistony.app.Entidad.MuestraProduccionResponse
+import com.vistony.app.Entidad.ResponseMuestraDetalle
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -17,40 +18,42 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 
-// Nueva interfaz (v1) para los endpoints de la nueva implementación de muestras de producción
+// Interfaz para los endpoints de la nueva implementación de muestras de producción.
+// Backend real: http://192.168.254.27:8036/api/Laboratorio/... (mismo host que el resto de
+// Laboratorio/Inspeccion, vía RetrofitInstance.retrofitNew). Ya no usa el túnel ngrok temporal.
 interface MuestraProduccionService {
-    @GET("v1/muestras")
+    @GET("Laboratorio/muestras")
     suspend fun obtenerMuestrasProduccion(
-        @Query("fechaInicio") fechaInicio: String,
+        @Query("FechaInicio") fechaInicio: String,
         @Query("fechaFin") fechaFin: String
     ): Response<MuestraProduccionResponse>
 
-    @GET("v1/muestras/{docEntry}")
+    @GET("Laboratorio/muestras/{docEntry}")
     suspend fun obtenerMuestraProduccionDetalle(
-        @Path("docEntry") docEntry: Int
-    ): Response<MuestraProduccionDetalle>
+        @Path("docEntry") docEntry: String
+    ): Response<ResponseMuestraDetalle>
 
-    @GET("v1/muestras/consultaProducto")
+    @GET("Laboratorio/muestras/consultaProducto")
     suspend fun consultarNuevaMuestra(
         @Query("numOf") numOf: String,
         @Query("numEn") numEn: String?,
         @Query("type") type: String
     ): Response<ConsultaNuevaMuestraResponse>
 
-    @POST("v1/muestras")
+    @POST("Laboratorio/muestras")
     suspend fun crearMuestraProduccion(
         @Body request: CrearMuestraProduccionRequest
     ): Response<CrearMuestraProduccionResponse>
 
-    @PATCH("v1/muestras/{docEntry}/iniciar-analisis")
+    @PATCH("Laboratorio/muestras/{docEntry}/iniciar-analisis")
     suspend fun iniciarAnalisis(
-        @Path("docEntry") docEntry: Int,
+        @Path("docEntry") docEntry: String,
         @Body request: IniciarAnalisisRequest
     ): Response<IniciarAnalisisResponse>
 
-    @PATCH("v1/muestras/{docEntry}/finalizar-analisis")
+    @PATCH("Laboratorio/muestras/{docEntry}/finalizar-analisis")
     suspend fun finalizarAnalisis(
-        @Path("docEntry") docEntry: Int,
+        @Path("docEntry") docEntry: String,
         @Body request: FinalizarAnalisisRequest
     ): Response<FinalizarAnalisisResponse>
 }
