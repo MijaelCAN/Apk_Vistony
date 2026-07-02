@@ -429,4 +429,27 @@ class MuestraRepository @Inject constructor() {
             Result.failure(e)
         }
     }
+
+    suspend fun confirmarRecepcionMuestra(docEntry: String, userRegister: String): Result<ConfirmarRecepcionMuestraResponse> {
+        return try {
+            val response = muestraProduccionService.confirmarRecepcionMuestra(
+                docEntry,
+                ConfirmarRecepcionMuestraRequest(userRegister = userRegister)
+            )
+            if (response.isSuccessful) {
+                Result.success(
+                    response.body() ?: ConfirmarRecepcionMuestraResponse(null, false, "Error desconocido")
+                )
+            } else {
+                val errorMessage = when (response.code()) {
+                    400 -> "La recepción ya fue confirmada anteriormente"
+                    404 -> "Muestra no encontrada"
+                    else -> "Error del servidor: ${response.message()}"
+                }
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

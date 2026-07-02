@@ -560,13 +560,13 @@ data class ConfirmarRecepcionResponse(
 
 data class MuestraProduccion(
     @SerializedName("code") val code: String,
-    @SerializedName("counter") val counter: Int,
+    @SerializedName("counter") val counter: String,
     @SerializedName("dateEndAnalysis") val dateEndAnalysis: String?,
     @SerializedName("dateRegister") val dateRegister: String,
     @SerializedName("dateStartAnalysis") val dateStartAnalysis: String?,
     @SerializedName("descripcion") val descripcion: String,
     @SerializedName("docEntry") val docEntry: String,
-    @SerializedName("isFinish") val isFinish: Boolean,
+    @SerializedName("isFinish") val isFinish: String,
     @SerializedName("lote") val lote: String,
     @SerializedName("ordenEnvase") val ordenEnvase: String?,
     @SerializedName("ordenFabricacion") val ordenFabricacion: String,
@@ -582,13 +582,13 @@ data class MuestraProduccionResponse(
 // Detalle de una muestra de producción (pantalla de detalle de "Mis OF")
 data class MuestraProduccionDetalle(
     @SerializedName("code") val code: String,
-    @SerializedName("counter") val counter: Int,
+    @SerializedName("counter") val counter: String,
     @SerializedName("dateEndAnalysis") val dateEndAnalysis: String?,
     @SerializedName("dateRegister") val dateRegister: String,
     @SerializedName("dateStartAnalysis") val dateStartAnalysis: String?,
     @SerializedName("descripcion") val descripcion: String,
     @SerializedName("docEntry") val docEntry: String,
-    @SerializedName("isFinish") val isFinish: Boolean,
+    @SerializedName("isFinish") val isFinish: String,
     @SerializedName("lote") val lote: String,
     @SerializedName("observation") val observation: String?,
     @SerializedName("ordenEnvase") val ordenEnvase: String?,
@@ -612,14 +612,14 @@ data class ResponseMuestraDetalle(
 )
 
 data class MuestraProduccionTimelineItem(
-    @SerializedName("counter") val counter: Int,
+    @SerializedName("counter") val counter: String,
     @SerializedName("dateEndAnalysis") val dateEndAnalysis: String?,
     @SerializedName("dateRegister") val dateRegister: String,
-    @SerializedName("esCurrent") val esCurrent: Boolean,
+    @SerializedName("esCurrent") val esCurrent: String,
     @SerializedName("reason") val reason: String?,
     @SerializedName("status") val status: String,
     @SerializedName("typeReject") val typeReject: String?,
-    @SerializedName("userRegister") val userRegister: String,
+    @SerializedName("userRegister") val userRegister: String = "",
     @SerializedName("version") val version: String,
     // Respuesta real a "¿Se ha realizado corrección?" / "¿Se ha realizado reproceso?" confirmada
     // por Calidad al finalizar ESE intento. Null mientras el backend no la devuelva (o mientras
@@ -755,4 +755,16 @@ data class FinalizarAnalisisResponse(
     @SerializedName("status") val status: String,
     @SerializedName("todosCumplen") val todosCumplen: Boolean,
     @SerializedName("userEndAnalysis") val userEndAnalysis: String
+)
+
+// Request para confirmar recepción de muestra de producción (la fecha la pone el servidor)
+data class ConfirmarRecepcionMuestraRequest(
+    @SerializedName("usuario") val userRegister: String
+)
+
+// Respuesta al confirmar recepción de muestra de producción
+data class ConfirmarRecepcionMuestraResponse(
+    @SerializedName("statusCode") val statusCode: Int?,
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String?
 )

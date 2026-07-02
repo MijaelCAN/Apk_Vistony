@@ -420,10 +420,11 @@ class MainActivity : ComponentActivity() {
                                     val detalle = muestraViewModel.muestraProduccionDetalle.value
                                     if (detalle != null) {
                                         val siguienteTipo = detalle.siguienteTipoMuestra()
-                                        val avanzaEtapa = siguienteTipo != detalle.type
-                                        // Al avanzar de etapa (ej. MEZCLA -> ENVASADO_INICIO) aún no hay
-                                        // un envase elegido, así que se omite numEn y se deja elegir en la lista
-                                        val numEnQuery = if (avanzaEtapa || detalle.ordenEnvase == null) "" else "&numEn=${detalle.ordenEnvase}"
+                                        val tipoNorm = detalle.type.replace("-", "_").replace(" ", "_").uppercase()
+                                        // MEZCLA → ENVASADO_INICIO: no hay OE predefinida, el usuario elige
+                                        // ENVASADO_INICIO → ENVASADO_FIN: misma OE, se pasa directamente
+                                        val omitirNumEn = tipoNorm == "MEZCLA" || detalle.ordenEnvase == null
+                                        val numEnQuery = if (omitirNumEn) "" else "&numEn=${detalle.ordenEnvase}"
                                         navController.navigate(
                                             "nuevaMuestra?numOf=${detalle.ordenFabricacion}$numEnQuery&type=$siguienteTipo"
                                         )

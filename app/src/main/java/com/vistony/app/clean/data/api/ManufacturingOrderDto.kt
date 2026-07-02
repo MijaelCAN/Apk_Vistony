@@ -26,9 +26,9 @@ data class ManufacturingOrderDto(
     @SerializedName("aprobacion3")
     val approbationName3: String = "",
     @SerializedName("pesoOptimo")
-    val optimumWeight: String= "",
+    val optimumWeight: Double? = null,
     @SerializedName("pesoMaximo")
-    val maximumWeight: String = "",
+    val maximumWeight: Double? = null,
     @SerializedName("densidad")
     val density: String = "",
     @SerializedName("u_VIS_Adjustment")
@@ -61,9 +61,9 @@ data class ManufacturingOrderDetailDto(
     @SerializedName("estado3")
     val approbationName3: String = "",
     @SerializedName("pesoOptimo")
-    val optimumWeight: String= "",
+    val optimumWeight: Double? = null,
     @SerializedName("pesoMaximo")
-    val maximumWeight: String = "",
+    val maximumWeight: Double? = null,
     @SerializedName("estadoAprob")
     val approbationCode1: String = "",
     @SerializedName("estadoAprob2")

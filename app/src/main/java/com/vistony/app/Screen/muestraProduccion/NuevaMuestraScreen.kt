@@ -92,11 +92,12 @@ fun NuevaMuestraScreen(
     val muestrasProduccion by muestraViewModel.muestrasProduccion.collectAsState()
     val pendientesCount = muestrasProduccion.count { it.status == "PENDIENTE" }
 
-    var entrega by remember { mutableStateOf("") }
+    var entrega by remember { mutableStateOf(currentUser.name) }
     var observacion by remember { mutableStateOf("") }
     var ordenBuscada by remember { mutableStateOf(numOf ?: "") }
     var envaseSeleccionado by remember { mutableStateOf<ConsultaNuevaMuestra?>(null) }
     var envaseBloqueadoMensaje by remember { mutableStateOf<String?>(null) }
+    var envaseBloqueadoStatus by remember { mutableStateOf<String?>(null) }
 
     val tieneOrdenPrecargada = !numOf.isNullOrBlank() && !type.isNullOrBlank()
 
@@ -117,14 +118,17 @@ fun NuevaMuestraScreen(
             unico == null -> {
                 envaseSeleccionado = null
                 envaseBloqueadoMensaje = null
+                envaseBloqueadoStatus = null
             }
             unico.tieneIntentoPendiente -> {
                 envaseSeleccionado = null
-                envaseBloqueadoMensaje = unico.mensajeIntentoPendiente
+                envaseBloqueadoStatus = unico.ultimoIntento?.status
+                envaseBloqueadoMensaje = mensajeBloqueo(unico.ultimoIntento?.status)
             }
             else -> {
                 envaseSeleccionado = unico
                 envaseBloqueadoMensaje = null
+                envaseBloqueadoStatus = null
             }
         }
     }
@@ -269,7 +273,7 @@ fun NuevaMuestraScreen(
                 // El único envase ya tiene un intento pendiente: no se puede registrar otro
                 Text(
                     text = envaseBloqueadoMensaje ?: "No se puede registrar una nueva muestra para este envase",
-                    color = Color(0xFF9E4B4B),
+                    color = colorBloqueo(envaseBloqueadoStatus),
                     fontSize = 14.sp
                 )
             } else if (datos == null && opciones.size > 1) {
@@ -279,7 +283,7 @@ fun NuevaMuestraScreen(
                 if (envaseBloqueadoMensaje != null) {
                     Text(
                         text = envaseBloqueadoMensaje ?: "",
-                        color = Color(0xFF9E4B4B),
+                        color = colorBloqueo(envaseBloqueadoStatus),
                         fontSize = 13.sp,
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
@@ -291,9 +295,11 @@ fun NuevaMuestraScreen(
                             opcion = opcion,
                             onClick = {
                                 if (opcion.tieneIntentoPendiente) {
-                                    envaseBloqueadoMensaje = "Envase ${opcion.numEn}: ${opcion.mensajeIntentoPendiente}"
+                                    envaseBloqueadoStatus = opcion.ultimoIntento?.status
+                                    envaseBloqueadoMensaje = "Envase ${opcion.numEn ?: ""}: ${mensajeBloqueo(opcion.ultimoIntento?.status)}"
                                 } else {
                                     envaseBloqueadoMensaje = null
+                                    envaseBloqueadoStatus = null
                                     envaseSeleccionado = opcion
                                 }
                             }
@@ -334,9 +340,12 @@ fun NuevaMuestraScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Form Fields (Tipo / N° intento / Versión vienen calculados por el servidor)
+                val tipoEfectivo = normalizarTipoMuestra(
+                    if (!type.isNullOrBlank()) type else datos.type
+                )
                 Label(text = "TIPO")
                 CustomTextField(
-                    value = datos.type,
+                    value = tipoEfectivo,
                     onValueChange = {},
                     readOnly = true,
                     modifier = Modifier.fillMaxWidth()
@@ -377,10 +386,11 @@ fun NuevaMuestraScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Label(text = "ENTREGA")
+                Label(text = "USUARIO")
                 CustomTextField(
                     value = entrega,
-                    onValueChange = { entrega = it },
+                    onValueChange = {},
+                    readOnly = true,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -414,7 +424,7 @@ fun NuevaMuestraScreen(
                         .fillMaxWidth()
                         .height(54.dp)
                         .clickable(enabled = !isCreating) {
-                            muestraViewModel.crearMuestraProduccion(datos.docEntry, datos.docEntry, datos.type, currentUser.dni)
+                            muestraViewModel.crearMuestraProduccion(datos.docEntry, datos.docEntry, tipoEfectivo, currentUser.dni)
                         },
                     color = if (isCreating) Color.Gray else Color(0xFF212121),
                     shape = RoundedCornerShape(12.dp)
@@ -548,6 +558,31 @@ private fun CustomTextField(
         ),
         placeholder = placeholder?.let { { Text(text = it, color = Color.LightGray) } }
     )
+}
+
+// El API puede devolver distintas representaciones del tipo de muestra.
+// Mapa de equivalencias conocidas → valor canónico que acepta el backend.
+private fun normalizarTipoMuestra(tipo: String): String {
+    val norm = tipo.trim().replace("-", "_").replace(" ", "_").uppercase()
+    return when (norm) {
+        "MEZCLA"                              -> "MEZCLA"
+        "ENVASADO_INICIO", "ENVASE_INICIO",
+        "ENVASE"                              -> "ENVASADO_INICIO"
+        "ENVASADO_FIN", "ENVASE_FIN"          -> "ENVASADO_FIN"
+        else                                  -> "MEZCLA"
+    }
+}
+
+private fun mensajeBloqueo(status: String?): String = when (status) {
+    "PENDIENTE" -> "Muestra pendiente de análisis en Laboratorio. Solo puedes registrar un nuevo intento cuando sea rechazada."
+    "EN_ANALISIS" -> "Muestra en análisis por Laboratorio. Solo puedes registrar un nuevo intento cuando sea rechazada."
+    else -> "Ya existe un intento sin resolver para este envase. Debe resolverse antes de registrar uno nuevo."
+}
+
+private fun colorBloqueo(status: String?): Color = when (status) {
+    "PENDIENTE" -> Color(0xFF8B7A4D)
+    "EN_ANALISIS" -> Color(0xFF3C5A81)
+    else -> Color(0xFF9E4B4B)
 }
 
 /*@RequiresApi(Build.VERSION_CODES.O)

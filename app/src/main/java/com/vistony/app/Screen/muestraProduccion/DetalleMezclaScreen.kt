@@ -155,6 +155,9 @@ fun DetalleMezclaScreen(
                 //parametros = parametros
             )
             muestraViewModel.finalizarAnalisis(docEntry, request)
+        },
+        onConfirmarRecepcionClick = {
+            muestraViewModel.confirmarRecepcionMuestra(docEntry, currentUser.dni)
         }
     )
 }
@@ -178,7 +181,8 @@ fun DetalleMezclaScreenContent(
     onRegistrarMuestraClick: () -> Unit = {},
     onIniciarAnalisisClick: () -> Unit = {},
     onCalcularDensidadClick: (String) -> Unit = {},
-    onConfirmarResolucion: (decision: String, motivo: String?, causa: String, observacion: String, densidad: String, seRealizoCorreccion: Boolean, seRealizoReproceso: Boolean) -> Unit = { _, _, _, _, _, _, _ -> }
+    onConfirmarResolucion: (decision: String, motivo: String?, causa: String, observacion: String, densidad: String, seRealizoCorreccion: Boolean, seRealizoReproceso: Boolean) -> Unit = { _, _, _, _, _, _, _ -> },
+    onConfirmarRecepcionClick: () -> Unit = {}
 ) {
     val pullRefreshState = rememberPullRefreshState(
         refreshing = isLoading,
@@ -265,7 +269,11 @@ fun DetalleMezclaScreenContent(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                SectionHeader(title = "Intentos de MEZCLA")
+                SectionHeader(title = "Intentos de ${when (detalle.type) {
+                    "ENVASADO_INICIO" -> "ENVASADO-INICIO"
+                    "ENVASADO_FIN"    -> "ENVASADO-FIN"
+                    else              -> detalle.type
+                }}")
 
                 Column(modifier = Modifier.padding(start = 4.dp, top = 16.dp)) {
                     detalle.timeline.forEachIndexed { index, item ->
@@ -278,11 +286,11 @@ fun DetalleMezclaScreenContent(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                SectionHeader(title = "Órdenes de Envasado (SAP)")
+                SectionHeader(title = " ")
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Card(
+                /*Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFE0E0E0).copy(alpha = 0.5f)),
@@ -300,7 +308,7 @@ fun DetalleMezclaScreenContent(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(32.dp))*/
 
                 if (esCalidad) {
                     AccionesCalidad(
@@ -317,14 +325,21 @@ fun DetalleMezclaScreenContent(
                     val siguienteTipo = detalle.siguienteTipoMuestra()
                     val tipoLabel = when (siguienteTipo) {
                         "ENVASADO_INICIO" -> "ENVASADO-INICIO"
-                        else -> siguienteTipo
+                        "ENVASADO_FIN"    -> "ENVASADO-FIN"
+                        else              -> siguienteTipo
+                    }
+                    val bloqueado = detalle.status == "PENDIENTE" || detalle.status == "EN_ANALISIS"
+                    val mensajeBloqueado = when (detalle.status) {
+                        "PENDIENTE" -> "Muestra pendiente de análisis en Laboratorio. Solo puedes registrar un nuevo intento cuando sea rechazada."
+                        "EN_ANALISIS" -> "Muestra en análisis por Laboratorio. Solo puedes registrar un nuevo intento cuando sea rechazada."
+                        else -> null
                     }
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp)
-                            .clickable { onRegistrarMuestraClick() },
-                        color = Color(0xFF212121),
+                            .clickable(enabled = !bloqueado) { onRegistrarMuestraClick() },
+                        color = if (bloqueado) Color.Gray else Color(0xFF212121),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
@@ -334,6 +349,37 @@ fun DetalleMezclaScreenContent(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp
                             )
+                        }
+                    }
+                    if (mensajeBloqueado != null) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = mensajeBloqueado,
+                            color = Color(0xFF8B7A4D),
+                            fontSize = 13.sp
+                        )
+                    }
+
+                    val tieneIntentoAprobado = detalle.timeline.any { it.status == "APROBADO" }
+                        || detalle.status == "APROBADO"
+                    if (tieneIntentoAprobado) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .clickable(enabled = !isProcesando) { onConfirmarRecepcionClick() },
+                            color = if (isProcesando) Color.Gray else Color(0xFF1B5E20),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = if (isProcesando) "Confirmando..." else "Confirmar Recepción",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                )
+                            }
                         }
                     }
                 }
@@ -351,11 +397,27 @@ fun DetalleMezclaScreenContent(
     }
 }
 
-// Si la muestra actual ya está finalizada (aprobada), el botón de Producción debe
-// pasar a registrar la siguiente etapa del flujo en lugar de otro intento de la misma.
+// Flujo de etapas: MEZCLA (aprobada) → ENVASADO_INICIO (aprobada) → ENVASADO_FIN
+// El API puede devolver distintas representaciones del tipo (con guion, espacio, o
+// nombres cortos como "Envase"). Se mapea a la forma canónica antes de evaluar el flujo.
 fun MuestraProduccionDetalle.siguienteTipoMuestra(): String {
-    val finalizado = isFinish || status == "APROBADO"
-    return if (finalizado && type == "MEZCLA") "ENVASADO_INICIO" else type
+    val estaAprobada = isFinish.equals("Y", ignoreCase = true)
+        || isFinish.equals("true", ignoreCase = true)
+        || isFinish == "1"
+        || status.equals("APROBADO", ignoreCase = true)
+    val tipoNorm = type.trim().replace("-", "_").replace(" ", "_").uppercase()
+    val tipoCanonico = when (tipoNorm) {
+        "MEZCLA"                           -> "MEZCLA"
+        "ENVASADO_INICIO", "ENVASE_INICIO",
+        "ENVASE"                           -> "ENVASADO_INICIO"
+        "ENVASADO_FIN", "ENVASE_FIN"       -> "ENVASADO_FIN"
+        else                               -> tipoNorm
+    }
+    return when {
+        estaAprobada && tipoCanonico == "MEZCLA"          -> "ENVASADO_INICIO"
+        estaAprobada && tipoCanonico == "ENVASADO_INICIO" -> "ENVASADO_FIN"
+        else                                               -> tipoCanonico
+    }
 }
 
 // La primera versión de cualquier tipo de muestra (Mezcla, Envasado-Inicio, Envasado-Fin)
@@ -428,40 +490,7 @@ private fun AccionesCalidad(
             var seRealizoCorreccion by remember(detalle.docEntry) { mutableStateOf(false) }
             var seRealizoReproceso by remember(detalle.docEntry) { mutableStateOf(false) }
 
-            // Corrección y reproceso son independientes (pueden darse ambos, uno solo o ninguno)
-            // y, a diferencia de la densidad, NO condicionan poder finalizar el análisis.
-            val puedeConfirmar = decisionSeleccionada != null && !isProcesando &&
-                (!densidadRequerida || calculoDensidad.calculado)
-
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .clickable(enabled = puedeConfirmar) {
-                        onConfirmarResolucion(
-                            decisionSeleccionada ?: "", motivoSeleccionado, causa, observacion,
-                            densidad, seRealizoCorreccion, seRealizoReproceso
-                        )
-                    },
-                color = if (puedeConfirmar) Color(0xFF212121) else Color.Gray,
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = if (isProcesando) "Enviando..." else "Confirmar Resolución",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
-                }
-            }
-
-            if (errorMessage != null) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(text = errorMessage, color = Color(0xFF9E4B4B), fontSize = 14.sp)
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
+            val puedeConfirmar = decisionSeleccionada != null && !isProcesando
 
             if (densidadRequerida) {
                 Label(text = "DENSIDAD MEDIDA")
@@ -564,14 +593,6 @@ private fun AccionesCalidad(
                             }
                         }
                     }
-                } else {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Calcula la densidad para habilitar \"Confirmar Resolución\"",
-                        color = Color.Gray,
-                        fontSize = 12.sp,
-                        fontStyle = FontStyle.Italic
-                    )
                 }
             } else {
                 Label(text = "DENSIDAD MEDIDA")
@@ -723,6 +744,36 @@ private fun AccionesCalidad(
                     .fillMaxWidth()
                     .height(100.dp)
             )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .clickable(enabled = puedeConfirmar) {
+                        onConfirmarResolucion(
+                            decisionSeleccionada ?: "", motivoSeleccionado, causa, observacion,
+                            densidad, seRealizoCorreccion, seRealizoReproceso
+                        )
+                    },
+                color = if (puedeConfirmar) Color(0xFF212121) else Color.Gray,
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = if (isProcesando) "Enviando..." else "Confirmar Resolución",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
+            }
+
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(text = errorMessage, color = Color(0xFF9E4B4B), fontSize = 14.sp)
+            }
         }
         else -> {
             // Ya resuelto (aprobado/rechazado): no hay acciones disponibles
@@ -798,7 +849,7 @@ private fun MuestraSummaryCard(detalle: MuestraProduccionDetalle) {
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Lote ${detalle.lote} · 2 500 kg · Línea Mezcladora 3", // Mocking extended details from image
+                text = "Lote ${detalle.lote}", // Mocking extended details from image
                 color = Color.Gray,
                 fontSize = 14.sp
             )
@@ -840,7 +891,7 @@ private fun MuestraTimelineItem(
     isLast: Boolean
 ) {
     val statusColor = timelineStatusColor(item.status)
-    val dotColor = if (item.esCurrent) Color.Black else statusColor
+    val dotColor = if (item.esCurrent == "Y") Color.Black else statusColor
     
     val detail = when {
         !item.reason.isNullOrBlank() -> item.reason
@@ -858,7 +909,7 @@ private fun MuestraTimelineItem(
             Box(
                 modifier = Modifier
                     .size(16.dp)
-                    .background(if (item.esCurrent) dotColor else Color.Transparent, CircleShape)
+                    .background(if (item.esCurrent == "Y") dotColor else Color.Transparent, CircleShape)
                     .border(2.dp, dotColor, CircleShape)
             )
             if (!isLast) {

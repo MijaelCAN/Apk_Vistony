@@ -143,6 +143,7 @@ fun MisOFScreen(
                 else -> true
             }
         }
+        .sortedByDescending { it.dateRegister }
         .map { muestra ->
             OrdenFabricacionUI(
                 docEntry = muestra.docEntry,
@@ -151,7 +152,7 @@ fun MisOFScreen(
                 lote = "Lote ${muestra.lote}",
                 status = muestra.status,
                 version = muestra.version,
-                intentos = muestra.counter,
+                intentos = muestra.counter.toIntOrNull(),
                 tiempoCorriendo = calcularTiempoCorriendo(
                     status = muestra.status,
                     dateRegister = muestra.dateRegister,

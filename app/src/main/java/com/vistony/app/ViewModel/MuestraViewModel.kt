@@ -540,6 +540,32 @@ class MuestraViewModel @Inject constructor(
         }
     }
 
+    // Función para confirmar recepción de una muestra de producción (botón "Confirmar Recepción", PRODUCCION)
+    fun confirmarRecepcionMuestra(docEntry: String, userRegister: String) {
+        viewModelScope.launch {
+            _isCreating.value = true
+            _errorMessage.value = null
+
+            try {
+                val result = muestraRepository.confirmarRecepcionMuestra(docEntry, userRegister)
+
+                result.fold(
+                    onSuccess = {
+                        _successMessage.value = "Recepción confirmada correctamente"
+                        obtenerMuestraProduccionDetalle(docEntry)
+                    },
+                    onFailure = { exception ->
+                        _errorMessage.value = exception.message
+                    }
+                )
+            } catch (e: Exception) {
+                _errorMessage.value = "Error inesperado: ${e.message}"
+            }
+
+            _isCreating.value = false
+        }
+    }
+
     // Función para cargar el catálogo de motivos de rechazo/no conformidad (una sola vez)
     fun cargarMotivosRechazo() {
         if (_motivosRechazo.value.isNotEmpty()) return

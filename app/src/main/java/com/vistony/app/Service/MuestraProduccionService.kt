@@ -1,5 +1,7 @@
 package com.vistony.app.Service
 
+import com.vistony.app.Entidad.ConfirmarRecepcionMuestraRequest
+import com.vistony.app.Entidad.ConfirmarRecepcionMuestraResponse
 import com.vistony.app.Entidad.ConsultaNuevaMuestraResponse
 import com.vistony.app.Entidad.CrearMuestraProduccionRequest
 import com.vistony.app.Entidad.CrearMuestraProduccionResponse
@@ -56,4 +58,10 @@ interface MuestraProduccionService {
         @Path("docEntry") docEntry: String,
         @Body request: FinalizarAnalisisRequest
     ): Response<FinalizarAnalisisResponse>
+
+    @PATCH("Laboratorio/muestras/{docEntry}/conformidad")
+    suspend fun confirmarRecepcionMuestra(
+        @Path("docEntry") docEntry: String,
+        @Body request: ConfirmarRecepcionMstraRequest
+    ): Response<ConfirmarRecepcionMuestraResponse>
 }
