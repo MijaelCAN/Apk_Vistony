@@ -62,6 +62,6 @@ interface MuestraProduccionService {
     @PATCH("Laboratorio/muestras/{docEntry}/conformidad")
     suspend fun confirmarRecepcionMuestra(
         @Path("docEntry") docEntry: String,
-        @Body request: ConfirmarRecepcionMstraRequest
+        @Body request: ConfirmarRecepcionMuestraRequest
     ): Response<ConfirmarRecepcionMuestraResponse>
 }

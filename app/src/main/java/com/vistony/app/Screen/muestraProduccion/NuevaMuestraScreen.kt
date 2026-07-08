@@ -340,9 +340,26 @@ fun NuevaMuestraScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Form Fields (Tipo / N° intento / Versión vienen calculados por el servidor)
-                val tipoEfectivo = normalizarTipoMuestra(
+                // El "type" de navegación viene calculado desde el doc de MEZCLA y puede estar
+                // desactualizado: si el ENVASADO_INICIO de este envase ya fue APROBADO (dato fresco
+                // que sí trae consultaProducto en ultimoIntento), el siguiente paso real es
+                // ENVASADO_FIN, y el backend no recalcula versionSiguiente para ese cambio de tipo
+                // (sigue devolviendo el minor del contador viejo, ej. "2.3" en vez de "3.1"), por
+                // lo que se arma con el counterSiguiente nuevo + primer intento (".1").
+                val tipoBase = normalizarTipoMuestra(
                     if (!type.isNullOrBlank()) type else datos.type
                 )
+                val envaseYaAprobado = datos.ultimoIntento?.status == "APROBADO"
+                val tipoEfectivo = if (tipoBase == "ENVASADO_INICIO" && envaseYaAprobado) {
+                    "ENVASADO_FIN"
+                } else {
+                    tipoBase
+                }
+                val versionEfectiva = if (envaseYaAprobado && datos.counterSiguiente != null) {
+                    "${datos.counterSiguiente}.1"
+                } else {
+                    datos.versionSiguiente
+                }
                 Label(text = "TIPO")
                 CustomTextField(
                     value = tipoEfectivo,
@@ -366,7 +383,7 @@ fun NuevaMuestraScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Label(text = "VERSIÓN")
                         CustomTextField(
-                            value = datos.versionSiguiente ?: "-",
+                            value = versionEfectiva ?: "-",
                             onValueChange = {},
                             readOnly = true,
                             modifier = Modifier.fillMaxWidth()
