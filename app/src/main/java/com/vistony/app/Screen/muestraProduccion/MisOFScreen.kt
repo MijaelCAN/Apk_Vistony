@@ -31,9 +31,11 @@ import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
@@ -45,7 +47,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
@@ -105,6 +110,7 @@ fun MisOFScreen(
 
     val filters = listOf("Todas", "En análisis", "Aprobados", "Rechazados", "Pendientes")
     var selectedFilter by remember { mutableStateOf("Todas") }
+    var searchQuery by remember { mutableStateOf("") }
 
     val muestrasProduccion by muestraViewModel.muestrasProduccion.collectAsState()
     val isLoading by muestraViewModel.isLoading.collectAsState()
@@ -135,13 +141,19 @@ fun MisOFScreen(
 
     val orders = muestrasProduccion
         .filter { muestra ->
-            when (selectedFilter) {
+            val matchesFilter = when (selectedFilter) {
                 "En análisis" -> muestra.status == "EN_ANALISIS"
                 "Aprobados" -> muestra.status == "APROBADO"
                 "Rechazados" -> muestra.status == "RECHAZADO"
                 "Pendientes" -> muestra.status == "PENDIENTE"
                 else -> true
             }
+            val matchesSearch = searchQuery.isBlank() || listOfNotNull(
+                muestra.ordenFabricacion,
+                muestra.ordenEnvase,
+                muestra.descripcion
+            ).any { it.contains(searchQuery, ignoreCase = true) }
+            matchesFilter && matchesSearch
         }
         .sortedByDescending { it.dateRegister }
         .map { muestra ->
@@ -282,6 +294,46 @@ fun MisOFScreen(
                 fontSize = 13.sp,
                 color = Color.Gray,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp)
+            )
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                placeholder = {
+                    Text(
+                        text = "Buscar por OF, producto o descripción",
+                        color = Color.Gray,
+                        fontSize = 14.sp
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Buscar",
+                        tint = Color.Gray
+                    )
+                },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Limpiar búsqueda",
+                                tint = Color.Gray
+                            )
+                        }
+                    }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Black,
+                    unfocusedBorderColor = Color.Gray,
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
+                )
             )
             LazyRow(
                 modifier = Modifier
@@ -473,6 +525,7 @@ private fun OFCard(
                             color = Color.Gray
                         )
                     }
+                    TipoMuestraBadge(version = order.version)
                     StatusBadge(status = order.status)
                 }
             }
@@ -550,6 +603,40 @@ private fun StatusBadge(status: String) {
     ) {
         Text(
             text = status,
+            color = textColor,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+        )
+    }
+}
+
+private fun tipoMuestraLabel(version: String?): String? {
+    return when (version?.trim().orEmpty().substringBefore(".")) {
+        "1" -> "MEZCLA"
+        "2" -> "ENVASADO INICIO"
+        "3" -> "ENVASADO FINAL"
+        else -> null
+    }
+}
+
+@Composable
+private fun TipoMuestraBadge(version: String?) {
+    val label = tipoMuestraLabel(version) ?: return
+    val (bgColor, textColor) = when (label) {
+        "MEZCLA" -> Color(0xFFEDE3F7) to Color(0xFF6B4C93)
+        "ENVASADO INICIO" -> Color(0xFFFCE9D6) to Color(0xFFB5651D)
+        "ENVASADO FINAL" -> Color(0xFFDCF0EA) to Color(0xFF2D7D66)
+        else -> Color.LightGray to Color.DarkGray
+    }
+
+    Surface(
+        color = bgColor,
+        shape = RoundedCornerShape(6.dp),
+        border = BorderStroke(1.dp, textColor.copy(alpha = 0.3f))
+    ) {
+        Text(
+            text = label,
             color = textColor,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
