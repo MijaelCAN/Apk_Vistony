@@ -457,9 +457,8 @@ class MuestraViewModel @Inject constructor(
             _muestraRegistrada.value = null
 
             try {
-                val fechaRegistro = java.time.Instant.now()
-                    .truncatedTo(java.time.temporal.ChronoUnit.SECONDS)
-                    .toString()
+                val fechaRegistro = LocalDateTime.now()
+                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
 
                 val request = CrearMuestraProduccionRequest(
                     numOf = numOf,

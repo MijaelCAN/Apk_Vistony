@@ -593,6 +593,7 @@ private fun StatusBadge(status: String) {
         "APROBADO" -> Color(0xFFDFF0E0) to Color(0xFF568057)
         "PENDIENTE" -> Color(0xFFFAF3E0) to Color(0xFF8B7A4D)
         "RECHAZADO" -> Color(0xFFF9E0E0) to Color(0xFF9E4B4B)
+        "NO_CONFORME" -> Color(0xFFF9E0E0) to Color(0xFF9E4B4B)
         else -> Color.LightGray to Color.DarkGray
     }
 

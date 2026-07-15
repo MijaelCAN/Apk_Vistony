@@ -360,9 +360,9 @@ fun DetalleMezclaScreenContent(
                         )
                     }
 
-                    val tieneIntentoAprobado = detalle.timeline.any { it.status == "APROBADO" }
-                        || detalle.status == "APROBADO"
-                    if (tieneIntentoAprobado) {
+                    val habilitaConfirmarRecepcion = detalle.timeline.any { it.status == "APROBADO" || it.status == "NO_CONFORME" }
+                        || detalle.status == "APROBADO" || detalle.status == "NO_CONFORME"
+                    if (habilitaConfirmarRecepcion) {
                         Spacer(modifier = Modifier.height(12.dp))
                         Surface(
                             modifier = Modifier
@@ -977,6 +977,7 @@ private fun TimelineTag(text: String, color: Color) {
 
 private fun timelineStatusColor(status: String): Color = when (status) {
     "RECHAZADO" -> Color(0xFF9E4B4B)
+    "NO_CONFORME" -> Color(0xFF9E4B4B)
     "APROBADO" -> Color(0xFF568057)
     "EN_ANALISIS" -> Color(0xFF3C5A81)
     else -> Color(0xFF8B7A4D)
@@ -989,6 +990,7 @@ private fun MuestraStatusBadge(status: String) {
         "APROBADO" -> Color(0xFFDFF0E0) to Color(0xFF568057)
         "PENDIENTE" -> Color(0xFFFAF3E0) to Color(0xFF8B7A4D)
         "RECHAZADO" -> Color(0xFFF9E0E0) to Color(0xFF9E4B4B)
+        "NO_CONFORME" -> Color(0xFFF9E0E0) to Color(0xFF9E4B4B)
         else -> Color.LightGray to Color.DarkGray
     }
 
