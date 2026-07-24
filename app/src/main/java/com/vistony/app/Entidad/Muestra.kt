@@ -601,7 +601,10 @@ data class MuestraProduccionDetalle(
     @SerializedName("userEndAnalysis") val userEndAnalysis: String?,
     @SerializedName("userRegister") val userRegister: String,
     @SerializedName("userStartAnalysis") val userStartAnalysis: String?,
-    @SerializedName("version") val version: String
+    @SerializedName("version") val version: String,
+    @SerializedName("pesoOptimo") val pesoOptimo: String? = null,
+    @SerializedName("pesoMaximo") val pesoMaximo: String? = null,
+    @SerializedName("densidad") val densidad: String? = null
 )
 
 data class ResponseMuestraDetalle(

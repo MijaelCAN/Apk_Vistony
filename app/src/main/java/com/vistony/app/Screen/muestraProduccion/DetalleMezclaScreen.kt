@@ -328,10 +328,19 @@ fun DetalleMezclaScreenContent(
                         "ENVASADO_FIN"    -> "ENVASADO-FIN"
                         else              -> siguienteTipo
                     }
-                    val bloqueado = detalle.status == "PENDIENTE" || detalle.status == "EN_ANALISIS"
-                    val mensajeBloqueado = when (detalle.status) {
-                        "PENDIENTE" -> "Muestra pendiente de análisis en Laboratorio. Solo puedes registrar un nuevo intento cuando sea rechazada."
-                        "EN_ANALISIS" -> "Muestra en análisis por Laboratorio. Solo puedes registrar un nuevo intento cuando sea rechazada."
+
+                    // El backend aún no expone la fecha de confirmación de recepción en el detalle,
+                    // así que por ahora se simula localmente: hasta que en esta pantalla se presione
+                    // "Confirmar Recepción", no se habilita registrar la siguiente muestra ENVASADO.
+                    var recepcionConfirmada by remember(detalle.docEntry) { mutableStateOf(false) }
+                    val requiereConfirmarRecepcion = siguienteTipo == "ENVASADO_INICIO" || siguienteTipo == "ENVASADO_FIN"
+
+                    val bloqueado = detalle.status == "PENDIENTE" || detalle.status == "EN_ANALISIS" ||
+                        (requiereConfirmarRecepcion && !recepcionConfirmada)
+                    val mensajeBloqueado = when {
+                        detalle.status == "PENDIENTE" -> "Muestra pendiente de análisis en Laboratorio. Solo puedes registrar un nuevo intento cuando sea rechazada."
+                        detalle.status == "EN_ANALISIS" -> "Muestra en análisis por Laboratorio. Solo puedes registrar un nuevo intento cuando sea rechazada."
+                        requiereConfirmarRecepcion && !recepcionConfirmada -> "Debes confirmar la recepción antes de registrar la muestra $tipoLabel."
                         else -> null
                     }
                     Surface(
@@ -362,13 +371,16 @@ fun DetalleMezclaScreenContent(
 
                     val habilitaConfirmarRecepcion = detalle.timeline.any { it.status == "APROBADO" || it.status == "NO_CONFORME" }
                         || detalle.status == "APROBADO" || detalle.status == "NO_CONFORME"
-                    if (habilitaConfirmarRecepcion) {
+                    if (habilitaConfirmarRecepcion && !recepcionConfirmada) {
                         Spacer(modifier = Modifier.height(12.dp))
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(48.dp)
-                                .clickable(enabled = !isProcesando) { onConfirmarRecepcionClick() },
+                                .clickable(enabled = !isProcesando) {
+                                    recepcionConfirmada = true
+                                    onConfirmarRecepcionClick()
+                                },
                             color = if (isProcesando) Color.Gray else Color(0xFF1B5E20),
                             shape = RoundedCornerShape(8.dp)
                         ) {
@@ -405,19 +417,33 @@ fun MuestraProduccionDetalle.siguienteTipoMuestra(): String {
         || isFinish.equals("true", ignoreCase = true)
         || isFinish == "1"
         || status.equals("APROBADO", ignoreCase = true)
+    val tipoCanonico = tipoMuestraCanonico(type)
+    return when {
+        estaAprobada && tipoCanonico == "MEZCLA"          -> "ENVASADO_INICIO"
+        estaAprobada && tipoCanonico == "ENVASADO_INICIO" -> "ENVASADO_FIN"
+        else                                               -> tipoCanonico
+    }
+}
+
+// Normaliza el campo "type" (puede llegar con guion, espacio, o nombres cortos como "Envase")
+// a su forma canónica: MEZCLA | ENVASADO_INICIO | ENVASADO_FIN
+fun tipoMuestraCanonico(type: String): String {
     val tipoNorm = type.trim().replace("-", "_").replace(" ", "_").uppercase()
-    val tipoCanonico = when (tipoNorm) {
+    return when (tipoNorm) {
         "MEZCLA"                           -> "MEZCLA"
         "ENVASADO_INICIO", "ENVASE_INICIO",
         "ENVASE"                           -> "ENVASADO_INICIO"
         "ENVASADO_FIN", "ENVASE_FIN"       -> "ENVASADO_FIN"
         else                               -> tipoNorm
     }
-    return when {
-        estaAprobada && tipoCanonico == "MEZCLA"          -> "ENVASADO_INICIO"
-        estaAprobada && tipoCanonico == "ENVASADO_INICIO" -> "ENVASADO_FIN"
-        else                                               -> tipoCanonico
-    }
+}
+
+// Muestras de tipo ENVASADO (inicio o fin) ya no miden densidad manualmente en esta pantalla:
+// el backend calcula y devuelve densidad/pesoOptimo/pesoMaximo directamente en el detalle
+// (calculados en la etapa de MEZCLA), por lo que solo se muestran de forma informativa.
+fun esTipoEnvasado(type: String): Boolean {
+    val canonico = tipoMuestraCanonico(type)
+    return canonico == "ENVASADO_INICIO" || canonico == "ENVASADO_FIN"
 }
 
 // La primera versión de cualquier tipo de muestra (Mezcla, Envasado-Inicio, Envasado-Fin)
@@ -454,6 +480,7 @@ private fun AccionesCalidad(
     val analisisIniciado = !detalle.dateStartAnalysis.isNullOrBlank()
     val analisisFinalizado = !detalle.dateEndAnalysis.isNullOrBlank()
     val densidadRequerida = requiereDensidad(detalle.descripcion)
+    val esEnvasado = esTipoEnvasado(detalle.type)
     val primeraVersion = esPrimeraVersion(detalle.version)
 
     when {
@@ -492,7 +519,36 @@ private fun AccionesCalidad(
 
             val puedeConfirmar = decisionSeleccionada != null && !isProcesando
 
-            if (densidadRequerida) {
+            if (densidadRequerida && esEnvasado) {
+                // Para ENVASADO (inicio/fin) la densidad y los pesos óptimo/máximo ya vienen
+                // calculados por el backend en el propio detalle (calculados en la etapa de
+                // MEZCLA): no se pide densidad manual ni se muestra el botón CALCULAR.
+                Label(text = "DENSIDAD MEDIDA")
+                Text(
+                    text = detalle.densidad?.takeIf { it.isNotBlank() } ?: "-",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                    Column {
+                        Label(text = "PESO ÓPTIMO")
+                        Text(
+                            text = detalle.pesoOptimo?.takeIf { it.isNotBlank() } ?: "-",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Column {
+                        Label(text = "PESO MÁXIMO")
+                        Text(
+                            text = detalle.pesoMaximo?.takeIf { it.isNotBlank() } ?: "-",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            } else if (densidadRequerida) {
                 Label(text = "DENSIDAD MEDIDA")
                 Row(
                     modifier = Modifier.fillMaxWidth(),

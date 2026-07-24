@@ -161,7 +161,7 @@ fun MisOFScreen(
                 docEntry = muestra.docEntry,
                 id = muestra.ordenEnvase ?: muestra.ordenFabricacion,
                 product = muestra.descripcion,
-                lote = "Lote ${muestra.lote}",
+                lote = "Lote ${muestra.ordenFabricacion}",
                 status = muestra.status,
                 version = muestra.version,
                 intentos = muestra.counter.toIntOrNull(),
@@ -548,8 +548,8 @@ private fun OFCard(
                     color = Color.Gray
                 )
                 val detail = buildString {
-                    order.version?.let { append(it) }
-                    order.intentos?.let { append(" · $it intentos") }
+                    order.version?.let { append("V. $it") }
+                    //order.intentos?.let { append(" · $it intentos") }
                     order.extraInfo?.let { append(it) }
                 }
                 Text(
