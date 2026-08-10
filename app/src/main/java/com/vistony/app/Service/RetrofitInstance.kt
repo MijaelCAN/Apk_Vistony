@@ -1,6 +1,11 @@
 package com.vistony.app.Service
 
 import android.util.Log
+import com.google.gson.GsonBuilder
+import com.vistony.app.Entidad.ConsultaNuevaMuestra
+import com.vistony.app.Entidad.ConsultaNuevaMuestraResponse
+import com.vistony.app.Extras.ConsultaNuevaMuestraDeserializer
+import com.vistony.app.Extras.ConsultaNuevaMuestraResponseDeserializer
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,7 +26,7 @@ object RetrofitInstance {
     //private const val BASE_URL = "http://190.12.79.135:9004/api/" // free
     //private const val BASE_URL = "http://192.168.254.26:9004/api/"
     private const val BASE_URL = "http://192.168.254.27:8060/api/" // LOCAL
-    private const val BASE_URL_NEW = "http://192.168.254.27:8036/api/" // NUEVA IMPLEMENTACION
+    private const val BASE_URL_NEW = "http://192.168.254.27:8036/test/api/" // NUEVA IMPLEMENTACION
     private val client = OkHttpClient.Builder()
         .connectTimeout(60,TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
@@ -44,11 +49,18 @@ object RetrofitInstance {
             .build()
     }
 
+    // Gson de retrofitNew con adapters para casos donde el backend responde de forma
+    // inconsistente (p.ej. "data" como objeto único en vez de lista)
+    private val gsonNew = GsonBuilder()
+        .registerTypeAdapter(ConsultaNuevaMuestraResponse::class.java, ConsultaNuevaMuestraResponseDeserializer())
+        .registerTypeAdapter(ConsultaNuevaMuestra::class.java, ConsultaNuevaMuestraDeserializer())
+        .create()
+
     private val retrofitNew: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL_NEW)
             .client(client)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gsonNew))
             .build()
     }
 
@@ -95,6 +107,10 @@ object RetrofitInstance {
 
     val muestraService: MuestraService by lazy {
         retrofitNew.create(MuestraService::class.java)
+    }
+
+    val muestraProduccionService: MuestraProduccionService by lazy {
+        retrofitNew.create(MuestraProduccionService::class.java)
     }
 
 }

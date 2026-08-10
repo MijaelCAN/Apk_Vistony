@@ -139,25 +139,40 @@ class FirestoreRepository @Inject constructor() {
     }
 
     /**
-     * Consulta la colección "ordenes_envase" filtrando por OT_Envase.
-     * Retorna la lista de OTItem con ItemName, Qty (→ PlannedQty) y OT_Mezcla.
+     * Consulta la colección "ordenes_envase" filtrando por OT_Mezcla.
+     * Firestore puede almacenar el campo como número o como String, por lo que
+     * se lanzan dos queries en paralelo y se fusionan los resultados por ID de documento.
      */
     suspend fun getOTMezcla(otEnvase: Long): Result<List<OTItem>> {
         return try {
-            val snapshot = db.collection(COLLECTION_ORDENES_ENVASE)
+            // Firestore almacena OT_Mezcla como String en algunos docs y como número en otros.
+            // doc.get() devuelve el valor raw sin castear, evitando el RuntimeException de getLong()
+            // cuando el campo es String. Se hacen dos queries para cubrir ambos tipos de almacenamiento.
+            val snapshotLong = db.collection(COLLECTION_ORDENES_ENVASE)
                 .whereEqualTo("OT_Mezcla", otEnvase)
                 .get()
                 .await()
 
-            val items = snapshot.documents.map { doc ->
+            val snapshotString = db.collection(COLLECTION_ORDENES_ENVASE)
+                .whereEqualTo("OT_Mezcla", otEnvase.toString())
+                .get()
+                .await()
+
+            val allDocs = (snapshotLong.documents + snapshotString.documents)
+                .distinctBy { it.id }
+
+            val items = allDocs.map { doc ->
                 OTItem(
-                    ItemName  = doc.getString("ItemName") ?: "",
-                    PlannedQty = doc.getLong("Qty")?.toString() ?: "0",
-                    OT_Mezcla  = doc.getLong("OT_Mezcla") ?: 0
+                    ItemName   = doc.getString("ItemName") ?: "",
+                    UomName    = doc.getString("UomName") ?: "",
+                    PlannedQty = doc.get("PlannedQty")?.toString()
+                        ?: doc.get("Qty")?.toString()
+                        ?: "0",
+                    OT_Mezcla  = doc.get("OT_Mezcla")?.toString() ?: ""
                 )
             }
 
-            Log.d("FirestoreRepository", "OT Mezcla encontrados: ${items.size} para OT_Envase=$otEnvase")
+            Log.d("FirestoreRepository", "OT Mezcla encontrados: ${items.size} para OT_Mezcla=$otEnvase")
             Result.success(items)
         } catch (e: Exception) {
             Log.e("FirestoreRepository", "Error al consultar ordenes_envase", e)

@@ -1,5 +1,7 @@
 package com.vistony.app.Repository
 
+import android.util.Log
+import com.google.gson.Gson
 import com.vistony.app.Entidad.*
 import com.vistony.app.Service.MuestraService
 import com.vistony.app.Service.RetrofitInstance
@@ -9,6 +11,18 @@ import javax.inject.Singleton
 class MuestraRepository @Inject constructor() {
 
     val muestraService =  RetrofitInstance.muestraService
+    val muestraProduccionService = RetrofitInstance.muestraProduccionService
+
+    // Las respuestas de error de la API v1 vienen como { "error": { "code", "details", "message" } }
+    private fun mensajeErrorApi(response: retrofit2.Response<*>): String {
+        val cuerpoError = response.errorBody()?.string()
+        val mensaje = try {
+            Gson().fromJson(cuerpoError, ApiErrorResponse::class.java)?.error?.message
+        } catch (e: Exception) {
+            null
+        }
+        return mensaje ?: "Error del servidor: ${response.message()}"
+    }
 
     suspend fun obtenerMuestras(dni: String, fechaInicio: String, fechaFin: String, auxiliar: String?): Result<MuestraResponse> {
         return try {
@@ -213,7 +227,7 @@ class MuestraRepository @Inject constructor() {
     suspend fun obtenerEspecificacionSoplado(codProducto: String): Result<EspecificacionSopladoResponse> {
         return try {
             android.util.Log.d("MuestraRepository", "Obteniendo especificación soplado - CodProducto: $codProducto")
-            
+
             val response = muestraService.obtenerEspecificacionSoplado(codProducto)
             
             android.util.Log.d("MuestraRepository", "Respuesta - Código: ${response.code()}, Éxito: ${response.isSuccessful}")
@@ -308,7 +322,134 @@ class MuestraRepository @Inject constructor() {
             Result.failure(e)
         }
     }
+
+    suspend fun obtenerMuestrasProduccion(fechaInicio: String, fechaFin: String): Result<MuestraProduccionResponse> {
+        return try {
+            val response = muestraProduccionService.obtenerMuestrasProduccion(fechaInicio, fechaFin)
+            if (response.isSuccessful) {
+                Result.success(response.body() ?: MuestraProduccionResponse(emptyList()))
+            } else {
+                Result.failure(Exception("Error del servidor: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun obtenerMuestraProduccionDetalle(docEntry: String): Result<MuestraProduccionDetalle> {
+        return try {
+            val response = muestraProduccionService.obtenerMuestraProduccionDetalle(docEntry)
+            Log.d("MuestraRepository", "Response: $response")
+            if (response.isSuccessful) {
+                Log.d("MuestraRepository", "Response: $response")
+                val body = response.body()
+                Log.d("MuestraRepository", "Body0: $body")
+                if (body != null) {
+                    Log.d("MuestraRepository", "Data: ${body.data}")
+                    Result.success(body.data)
+                } else {
+                    Result.failure(Exception("Muestra no encontrada"))
+                }
+            } else {
+                Result.failure(Exception("Error del servidor: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun consultarNuevaMuestra(numOf: String, numEn: String?, type: String): Result<List<ConsultaNuevaMuestra>> {
+        return try {
+            val response = muestraProduccionService.consultarNuevaMuestra(numOf, numEn, type)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    Result.success(body.data)
+                } else {
+                    Result.failure(Exception("Respuesta vacía del servidor"))
+                }
+            } else {
+                Result.failure(Exception(mensajeErrorApi(response)))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun crearMuestraProduccion(request: CrearMuestraProduccionRequest): Result<CrearMuestraProduccionResponse> {
+        return try {
+            val response = muestraProduccionService.crearMuestraProduccion(request)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("Respuesta vacía del servidor"))
+                }
+            } else {
+                Result.failure(Exception(mensajeErrorApi(response)))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun iniciarAnalisis(docEntry: String, userStartAnalysis: String): Result<IniciarAnalisisResponse> {
+        return try {
+            val response = muestraProduccionService.iniciarAnalisis(docEntry, IniciarAnalisisRequest(userStartAnalysis))
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("Respuesta vacía del servidor"))
+                }
+            } else {
+                Result.failure(Exception(mensajeErrorApi(response)))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun finalizarAnalisis(docEntry: String, request: FinalizarAnalisisRequest): Result<FinalizarAnalisisResponse> {
+        return try {
+            val response = muestraProduccionService.finalizarAnalisis(docEntry, request)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("Respuesta vacía del servidor"))
+                }
+            } else {
+                Result.failure(Exception(mensajeErrorApi(response)))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun confirmarRecepcionMuestra(docEntry: String, userRegister: String): Result<ConfirmarRecepcionMuestraResponse> {
+        return try {
+            val response = muestraProduccionService.confirmarRecepcionMuestra(
+                docEntry,
+                ConfirmarRecepcionMuestraRequest(userRegister = userRegister)
+            )
+            if (response.isSuccessful) {
+                Result.success(
+                    response.body() ?: ConfirmarRecepcionMuestraResponse(null, false, "Error desconocido")
+                )
+            } else {
+                val errorMessage = when (response.code()) {
+                    400 -> "La recepción ya fue confirmada anteriormente"
+                    404 -> "Muestra no encontrada"
+                    else -> "Error del servidor: ${response.message()}"
+                }
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
-
-
-

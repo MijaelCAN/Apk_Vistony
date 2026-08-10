@@ -17,6 +17,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -52,20 +53,21 @@ import com.vistony.app.Screen.Muestra.ListMuestra
 import com.vistony.app.Screen.Muestra.CreateMuestra
 import com.vistony.app.Screen.Muestra.DetailMuestra
 import com.vistony.app.Screen.Muestra.EditMuestra
+import com.vistony.app.Screen.muestraProduccion.MisOFScreen
+import com.vistony.app.Screen.muestraProduccion.DetalleMezclaScreen
+import com.vistony.app.Screen.muestraProduccion.siguienteTipoMuestra
 import com.vistony.app.Screen.Muestra.RegistroLlegadaScreen
 import com.vistony.app.Screen.Muestra.RegistroLlegadaTodosScreen
+import com.vistony.app.Screen.muestraProduccion.NuevaMuestraScreen
 import com.vistony.app.ViewModel.LoginViewModel
 import com.vistony.app.ViewModel.TemperaturaViewModel
 import com.vistony.app.ViewModel.MuestraViewModel
-import com.vistony.app.clean.core.utils.ObservableObject
 import com.vistony.app.clean.core.utils.ZebraDW
 import com.vistony.app.clean.core.utils.ZebraDWComunication
 import com.vistony.app.clean.core.utils.ZebraDWReceiver
 import com.vistony.app.clean.presentation.view.pages.ManuFacturingOrderPage
 import com.vistony.app.clean.presentation.viewmodels.ScanViewModel
-import com.vistony.app.ui.theme.theme.AppTypography
 import dagger.hilt.android.AndroidEntryPoint
-import kotlin.text.compareTo
 
 
 @AndroidEntryPoint
@@ -387,6 +389,69 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
+                        composable("entregaMuestra") {
+                            MisOFScreen(
+                                navController = navController,
+                                userState = userState,
+                                currentUser = userState.currentUser,
+                                muestraViewModel = muestraViewModel,
+                                onNavigateToAdd = { navController.navigate("nuevaMuestra") },
+                                onOrderClick = { docEntry -> navController.navigate("entregaMuestraDetalle/$docEntry") },
+                                onTomarACargo = { /*TODO*/ },
+                                onLogout = {
+                                    loginViewModel.clearUserData()
+                                    navController.navigate("login") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+                        composable(
+                            "entregaMuestraDetalle/{docEntry}",
+                            arguments = listOf(navArgument("docEntry") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val docEntry = backStackEntry.arguments?.getString("docEntry") ?: "0"
+                            DetalleMezclaScreen(
+                                docEntry = docEntry,
+                                currentUser = userState.currentUser,
+                                muestraViewModel = muestraViewModel,
+                                onBackClick = { navController.popBackStack() },
+                                onRegistrarMuestraClick = {
+                                    val detalle = muestraViewModel.muestraProduccionDetalle.value
+                                    if (detalle != null) {
+                                        val siguienteTipo = detalle.siguienteTipoMuestra()
+                                        val tipoNorm = detalle.type.replace("-", "_").replace(" ", "_").uppercase()
+                                        // MEZCLA → ENVASADO_INICIO: no hay OE predefinida, el usuario elige
+                                        // ENVASADO_INICIO → ENVASADO_FIN: misma OE, se pasa directamente
+                                        val omitirNumEn = tipoNorm == "MEZCLA" || detalle.ordenEnvase == null
+                                        val numEnQuery = if (omitirNumEn) "" else "&numEn=${detalle.ordenEnvase}"
+                                        navController.navigate(
+                                            "nuevaMuestra?numOf=${detalle.ordenFabricacion}$numEnQuery&type=$siguienteTipo"
+                                        )
+                                    }
+                                }
+                            )
+                        }
+                        composable(
+                            "nuevaMuestra?numOf={numOf}&numEn={numEn}&type={type}",
+                            arguments = listOf(
+                                navArgument("numOf") { type = NavType.StringType; nullable = true; defaultValue = null },
+                                navArgument("numEn") { type = NavType.StringType; nullable = true; defaultValue = null },
+                                navArgument("type") { type = NavType.StringType; nullable = true; defaultValue = null }
+                            )
+                        ) { backStackEntry ->
+                            NuevaMuestraScreen(
+                                numOf = backStackEntry.arguments?.getString("numOf"),
+                                numEn = backStackEntry.arguments?.getString("numEn"),
+                                type = backStackEntry.arguments?.getString("type"),
+                                currentUser = userState.currentUser,
+                                muestraViewModel = muestraViewModel,
+                                onBackClick = { navController.popBackStack() },
+                                onNotificationClick = { /*TODO*/ },
+                                onEnviarClick = { navController.popBackStack() },
+                                onCancelarClick = { navController.popBackStack() }
+                            )
+                        }
                     }
 
                 }

@@ -19,8 +19,8 @@ android {
         applicationId = "com.vistony.app"
         minSdk = 24
         targetSdk = 33
-        versionCode = 13
-        versionName = "1.6.1"
+        versionCode = 15
+        versionName = "1.7.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
@@ -29,7 +29,7 @@ android {
 
     buildTypes {
         release {
-            isDebuggable = true
+            isDebuggable = false
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
