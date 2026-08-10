@@ -19,8 +19,8 @@ android {
         applicationId = "com.vistony.app"
         minSdk = 24
         targetSdk = 33
-        versionCode = 14
-        versionName = "1.6.1"
+        versionCode = 15
+        versionName = "1.7.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
